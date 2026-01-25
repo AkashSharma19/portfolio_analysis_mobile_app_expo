@@ -1,12 +1,12 @@
-import { Text, View } from '@/components/Themed';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { useRouter } from 'expo-router';
 import { Edit2, Filter, Search, Trash2 } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { RectButton, Swipeable } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HistoryScreen() {
   const router = useRouter();
@@ -134,169 +134,175 @@ export default function HistoryScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.searchContainer}>
-          <Search size={18} color="#8E8E93" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search symbol..."
-            placeholderTextColor="#8E8E93"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.searchContainer}>
+            <Search size={18} color="#8E8E93" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search symbol..."
+              placeholderTextColor="#8E8E93"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.filterToggle}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={20} color={showFilters ? '#007AFF' : '#FFF'} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.filterToggle}
-          onPress={() => setShowFilters(!showFilters)}
-        >
-          <Filter size={20} color={showFilters ? '#007AFF' : '#FFF'} />
-        </TouchableOpacity>
-      </View>
 
-      {showFilters && (
-        <View style={styles.filtersContainer}>
-          <View style={styles.filterRow}>
-            <Text style={styles.filterLabel}>Sort by:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {(['date', 'symbol', 'amount'] as const).map((s) => (
-                <TouchableOpacity
-                  key={s}
-                  style={[styles.filterChip, sortBy === s && styles.filterChipActive]}
-                  onPress={() => {
-                    if (sortBy === s) {
-                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                    } else {
-                      setSortBy(s);
-                      setSortOrder('desc');
-                    }
-                  }}
-                >
-                  <Text style={[styles.filterChipText, sortBy === s && styles.filterChipTextActive]}>
-                    {s.charAt(0).toUpperCase() + s.slice(1)} {sortBy === s && (sortOrder === 'asc' ? '↑' : '↓')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          <View style={styles.filterRow}>
-            <Text style={styles.filterLabel}>Type:</Text>
-            <View style={styles.chipRow}>
-              {[null, 'BUY', 'SELL'].map((t) => (
-                <TouchableOpacity
-                  key={t || 'all'}
-                  style={[styles.filterChip, filterType === t && styles.filterChipActive]}
-                  onPress={() => setFilterType(t)}
-                >
-                  <Text style={[styles.filterChipText, filterType === t && styles.filterChipTextActive]}>
-                    {t || 'All'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {uniqueAssetTypes.length > 0 && (
+        {showFilters && (
+          <View style={styles.filtersContainer}>
             <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>Asset Type:</Text>
+              <Text style={styles.filterLabel}>Sort by:</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <TouchableOpacity
-                  style={[styles.filterChip, filterAssetType === null && styles.filterChipActive]}
-                  onPress={() => setFilterAssetType(null)}
-                >
-                  <Text style={[styles.filterChipText, filterAssetType === null && styles.filterChipTextActive]}>
-                    All
-                  </Text>
-                </TouchableOpacity>
-                {uniqueAssetTypes.map((at) => (
-                  <TouchableOpacity
-                    key={at}
-                    style={[styles.filterChip, filterAssetType === at && styles.filterChipActive]}
-                    onPress={() => setFilterAssetType(at)}
-                  >
-                    <Text style={[styles.filterChipText, filterAssetType === at && styles.filterChipTextActive]}>
-                      {at}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          {uniqueSectors.length > 0 && (
-            <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>Sector:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <TouchableOpacity
-                  style={[styles.filterChip, filterSector === null && styles.filterChipActive]}
-                  onPress={() => setFilterSector(null)}
-                >
-                  <Text style={[styles.filterChipText, filterSector === null && styles.filterChipTextActive]}>
-                    All
-                  </Text>
-                </TouchableOpacity>
-                {uniqueSectors.map((s) => (
+                {(['date', 'symbol', 'amount'] as const).map((s) => (
                   <TouchableOpacity
                     key={s}
-                    style={[styles.filterChip, filterSector === s && styles.filterChipActive]}
-                    onPress={() => setFilterSector(s)}
+                    style={[styles.filterChip, sortBy === s && styles.filterChipActive]}
+                    onPress={() => {
+                      if (sortBy === s) {
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortBy(s);
+                        setSortOrder('desc');
+                      }
+                    }}
                   >
-                    <Text style={[styles.filterChipText, filterSector === s && styles.filterChipTextActive]}>
-                      {s}
+                    <Text style={[styles.filterChipText, sortBy === s && styles.filterChipTextActive]}>
+                      {s.charAt(0).toUpperCase() + s.slice(1)} {sortBy === s && (sortOrder === 'asc' ? '↑' : '↓')}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
-          )}
 
-          {uniqueBrokers.length > 0 && (
             <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>Broker:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <TouchableOpacity
-                  style={[styles.filterChip, filterBroker === null && styles.filterChipActive]}
-                  onPress={() => setFilterBroker(null)}
-                >
-                  <Text style={[styles.filterChipText, filterBroker === null && styles.filterChipTextActive]}>
-                    All
-                  </Text>
-                </TouchableOpacity>
-                {uniqueBrokers.map((b) => (
+              <Text style={styles.filterLabel}>Type:</Text>
+              <View style={styles.chipRow}>
+                {[null, 'BUY', 'SELL'].map((t) => (
                   <TouchableOpacity
-                    key={b}
-                    style={[styles.filterChip, filterBroker === b && styles.filterChipActive]}
-                    onPress={() => setFilterBroker(b)}
+                    key={t || 'all'}
+                    style={[styles.filterChip, filterType === t && styles.filterChipActive]}
+                    onPress={() => setFilterType(t)}
                   >
-                    <Text style={[styles.filterChipText, filterBroker === b && styles.filterChipTextActive]}>
-                      {b}
+                    <Text style={[styles.filterChipText, filterType === t && styles.filterChipTextActive]}>
+                      {t || 'All'}
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </View>
             </View>
-          )}
-        </View>
-      )}
 
-      {filteredAndSortedTransactions.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No transactions found.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredAndSortedTransactions}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
-    </View>
+            {uniqueAssetTypes.length > 0 && (
+              <View style={styles.filterRow}>
+                <Text style={styles.filterLabel}>Asset Type:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <TouchableOpacity
+                    style={[styles.filterChip, filterAssetType === null && styles.filterChipActive]}
+                    onPress={() => setFilterAssetType(null)}
+                  >
+                    <Text style={[styles.filterChipText, filterAssetType === null && styles.filterChipTextActive]}>
+                      All
+                    </Text>
+                  </TouchableOpacity>
+                  {uniqueAssetTypes.map((at) => (
+                    <TouchableOpacity
+                      key={at}
+                      style={[styles.filterChip, filterAssetType === at && styles.filterChipActive]}
+                      onPress={() => setFilterAssetType(at)}
+                    >
+                      <Text style={[styles.filterChipText, filterAssetType === at && styles.filterChipTextActive]}>
+                        {at}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {uniqueSectors.length > 0 && (
+              <View style={styles.filterRow}>
+                <Text style={styles.filterLabel}>Sector:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <TouchableOpacity
+                    style={[styles.filterChip, filterSector === null && styles.filterChipActive]}
+                    onPress={() => setFilterSector(null)}
+                  >
+                    <Text style={[styles.filterChipText, filterSector === null && styles.filterChipTextActive]}>
+                      All
+                    </Text>
+                  </TouchableOpacity>
+                  {uniqueSectors.map((s) => (
+                    <TouchableOpacity
+                      key={s}
+                      style={[styles.filterChip, filterSector === s && styles.filterChipActive]}
+                      onPress={() => setFilterSector(s)}
+                    >
+                      <Text style={[styles.filterChipText, filterSector === s && styles.filterChipTextActive]}>
+                        {s}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {uniqueBrokers.length > 0 && (
+              <View style={styles.filterRow}>
+                <Text style={styles.filterLabel}>Broker:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <TouchableOpacity
+                    style={[styles.filterChip, filterBroker === null && styles.filterChipActive]}
+                    onPress={() => setFilterBroker(null)}
+                  >
+                    <Text style={[styles.filterChipText, filterBroker === null && styles.filterChipTextActive]}>
+                      All
+                    </Text>
+                  </TouchableOpacity>
+                  {uniqueBrokers.map((b) => (
+                    <TouchableOpacity
+                      key={b}
+                      style={[styles.filterChip, filterBroker === b && styles.filterChipActive]}
+                      onPress={() => setFilterBroker(b)}
+                    >
+                      <Text style={[styles.filterChipText, filterBroker === b && styles.filterChipTextActive]}>
+                        {b}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
+        )}
+
+        {filteredAndSortedTransactions.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No transactions found.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredAndSortedTransactions}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
   container: {
     flex: 1,
     backgroundColor: '#000',
@@ -372,6 +378,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 0,
+    paddingBottom: 40,
   },
   emptyState: {
     flex: 1,

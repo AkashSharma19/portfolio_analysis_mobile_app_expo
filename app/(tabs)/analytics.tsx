@@ -1,15 +1,22 @@
-import { Text, View } from '@/components/Themed';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Briefcase, Building2, PieChart as ChartIcon, Layers } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Dimensions, RefreshControl, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Dimensions, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { PieChart } from 'react-native-gifted-charts';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const CHART_COLORS = [
-    '#007AFF', '#5856D6', '#AF52DE', '#FF2D55', '#FF9500',
-    '#FFCC00', '#34C759', '#5AC8FA', '#8E8E93', '#2C2C2E'
+    '#0A84FF', '#5E5CE6', '#BF5AF2', '#FF2D55', '#FF9F0A',
+    '#FFD60A', '#30D158', '#64D2FF', '#8E8E93', '#1C1C1E'
 ];
+
+const GRADIENTS = {
+    card: ['#1C1C1E', '#000000'] as const,
+    active: ['#007AFF', '#004080'] as const,
+};
 
 type Dimension = 'Sector' | 'Company Name' | 'Asset Type' | 'Broker';
 
@@ -57,121 +64,156 @@ export default function AnalyticsScreen() {
         );
     }
 
-    const dimensions: { id: Dimension; label: string }[] = [
-        { id: 'Sector', label: 'Sector' },
-        { id: 'Company Name', label: 'Company' },
-        { id: 'Asset Type', label: 'Asset Type' },
-        { id: 'Broker', label: 'Broker' },
+    const dimensions: { id: Dimension; label: string; icon: React.ReactNode }[] = [
+        { id: 'Sector', label: 'Sector', icon: <Layers size={14} color="currentColor" /> },
+        { id: 'Company Name', label: 'Company', icon: <Building2 size={14} color="currentColor" /> },
+        { id: 'Asset Type', label: 'Asset Type', icon: <Briefcase size={14} color="currentColor" /> },
+        { id: 'Broker', label: 'Broker', icon: <ChartIcon size={14} color="currentColor" /> },
     ];
 
     return (
-        <View style={styles.container}>
-            <View style={styles.selectorBar}>
-                {dimensions.map((dim) => (
-                    <TouchableOpacity
-                        key={dim.id}
-                        style={[
-                            styles.selectorButton,
-                            selectedDimension === dim.id && styles.selectorButtonActive
-                        ]}
-                        onPress={() => setSelectedDimension(dim.id)}
-                    >
-                        <Text style={[
-                            styles.selectorText,
-                            selectedDimension === dim.id && styles.selectorTextActive
-                        ]}>
-                            {dim.label}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />
-                }
-            >
-                <View style={styles.chartContainer}>
-                    <Text style={styles.title}>{selectedDimension} Allocation</Text>
-                    <View style={styles.pieWrapper}>
-                        {allocation.length > 0 ? (
-                            <PieChart
-                                data={chartData}
-                                donut
-                                showGradient
-                                sectionAutoFocus
-                                radius={SCREEN_WIDTH * 0.3}
-                                innerRadius={SCREEN_WIDTH * 0.18}
-                                innerCircleColor={'#1C1C1E'}
-                                centerLabelComponent={() => (
-                                    <View style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' }}>
-                                        <Text style={{ fontSize: 22, color: 'white', fontWeight: 'bold' }}>
-                                            {allocation.length}
+        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+            <View style={styles.container}>
+                <View style={styles.selectorBar}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorScroll}>
+                        {dimensions.map((dim) => {
+                            const isActive = selectedDimension === dim.id;
+                            return (
+                                <TouchableOpacity
+                                    key={dim.id}
+                                    style={[styles.selectorButton, isActive && styles.selectorButtonActive]}
+                                    onPress={() => setSelectedDimension(dim.id)}
+                                >
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                        <Text style={{ color: isActive ? '#FFF' : '#8E8E93' }}>{dim.icon}</Text>
+                                        <Text style={[styles.selectorText, isActive && styles.selectorTextActive]}>
+                                            {dim.label}
                                         </Text>
-                                        <Text style={{ fontSize: 10, color: '#8E8E93' }}>Items</Text>
                                     </View>
-                                )}
-                            />
-                        ) : (
-                            <Text style={styles.noDataText}>Data for this dimension is unavailable</Text>
-                        )}
-                    </View>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
                 </View>
 
-                <View style={styles.listContainer}>
-                    <Text style={styles.listTitle}>Details</Text>
-                    {allocation.map((item, index) => (
-                        <View key={item.name} style={styles.listItem}>
-                            <View style={styles.listLeft}>
-                                <View
-                                    style={[
-                                        styles.colorDot,
-                                        { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }
-                                    ]}
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />
+                    }
+                >
+                    <LinearGradient
+                        colors={GRADIENTS.card}
+                        style={styles.chartContainer}
+                    >
+                        <Text style={styles.cardTitle}>{selectedDimension} Distribution</Text>
+                        <View style={styles.pieWrapper}>
+                            {allocation.length > 0 ? (
+                                <PieChart
+                                    data={chartData}
+                                    donut
+                                    sectionAutoFocus
+                                    radius={SCREEN_WIDTH * 0.3}
+                                    innerRadius={SCREEN_WIDTH * 0.22}
+                                    innerCircleColor={'#1C1C1E'}
+                                    centerLabelComponent={() => (
+                                        <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                                            <Text style={{ fontSize: 28, color: 'white', fontWeight: 'bold' }}>
+                                                {allocation.length}
+                                            </Text>
+                                            <Text style={{ fontSize: 10, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1 }}>
+                                                {selectedDimension.split(' ')[0]}s
+                                            </Text>
+                                        </View>
+                                    )}
                                 />
-                                <View style={styles.nameContainer}>
-                                    <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                                </View>
-                            </View>
-                            <View style={styles.listRight}>
-                                <Text style={styles.itemValue}>₹{item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</Text>
-                                <Text style={styles.itemPercentage}>{item.percentage.toFixed(1)}%</Text>
-                            </View>
+                            ) : (
+                                <Text style={styles.noDataText}>Data unavailable</Text>
+                            )}
                         </View>
-                    ))}
-                </View>
-            </ScrollView>
-        </View>
+                    </LinearGradient>
+
+                    <View style={styles.listContainer}>
+                        <Text style={styles.listTitle}>Portfolio Spread</Text>
+                        {allocation.map((item, index) => (
+                            <TouchableOpacity key={item.name} style={styles.listItemShadow}>
+                                <LinearGradient
+                                    colors={['#1C1C1E', '#161618']}
+                                    style={styles.listItem}
+                                >
+                                    <View style={styles.itemHeader}>
+                                        <View style={styles.listLeft}>
+                                            <View
+                                                style={[
+                                                    styles.colorDot,
+                                                    { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }
+                                                ]}
+                                            />
+                                            <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+                                        </View>
+                                        <Text style={styles.itemValue}>
+                                            ₹{item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                        </Text>
+                                    </View>
+
+                                    <View style={styles.progressContainer}>
+                                        <View style={styles.progressBarBg}>
+                                            <View
+                                                style={[
+                                                    styles.progressBarFill,
+                                                    {
+                                                        width: `${item.percentage}%`,
+                                                        backgroundColor: CHART_COLORS[index % CHART_COLORS.length]
+                                                    }
+                                                ]}
+                                            />
+                                        </View>
+                                        <Text style={styles.itemPercentage}>{item.percentage.toFixed(1)}%</Text>
+                                    </View>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </ScrollView>
+            </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#000',
+    },
     container: {
         flex: 1,
         backgroundColor: '#000',
     },
     selectorBar: {
-        flexDirection: 'row',
-        paddingHorizontal: 16,
         paddingVertical: 12,
         backgroundColor: '#000',
         borderBottomWidth: 1,
         borderBottomColor: '#1C1C1E',
-        justifyContent: 'space-between',
+    },
+    selectorScroll: {
+        paddingHorizontal: 16,
+        gap: 8,
     },
     selectorButton: {
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        borderRadius: 16,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
         backgroundColor: '#1C1C1E',
+        borderWidth: 1,
+        borderColor: '#2C2C2E',
     },
     selectorButtonActive: {
         backgroundColor: '#007AFF',
+        borderColor: '#0A84FF',
     },
     selectorText: {
         color: '#8E8E93',
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: '600',
     },
     selectorTextActive: {
@@ -179,102 +221,124 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 16,
+        paddingBottom: 40,
+        gap: 20,
     },
-    title: {
-        fontSize: 18,
-        fontWeight: 'bold',
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: '700',
         color: '#FFF',
-        marginBottom: 16,
+        marginBottom: 20,
+        letterSpacing: 0.5,
     },
     chartContainer: {
-        backgroundColor: '#1C1C1E',
-        borderRadius: 16,
-        padding: 16,
+        borderRadius: 24,
+        padding: 24,
         alignItems: 'center',
-        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#2C2C2E',
     },
     pieWrapper: {
-        backgroundColor: 'transparent',
         alignItems: 'center',
         justifyContent: 'center',
         height: SCREEN_WIDTH * 0.65,
     },
     noDataText: {
-        color: '#444',
+        color: '#8E8E93',
         fontSize: 14,
     },
     listContainer: {
-        backgroundColor: '#1C1C1E',
-        borderRadius: 16,
-        padding: 16,
+        gap: 12,
     },
     listTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontSize: 18,
+        fontWeight: '800',
         color: '#FFF',
-        marginBottom: 12,
+        marginBottom: 8,
+        marginLeft: 4,
+    },
+    listItemShadow: {
+        borderRadius: 16,
+        backgroundColor: '#1C1C1E',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     listItem: {
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#2C2C2E',
+    },
+    itemHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#2C2C2E',
-        backgroundColor: 'transparent',
+        marginBottom: 12,
     },
     listLeft: {
         flexDirection: 'row',
         alignItems: 'center',
         flex: 1,
-        backgroundColor: 'transparent',
     },
     colorDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
         marginRight: 10,
-    },
-    nameContainer: {
-        flex: 1,
-        backgroundColor: 'transparent',
     },
     itemName: {
         color: '#FFF',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    listRight: {
-        alignItems: 'flex-end',
-        backgroundColor: 'transparent',
-        marginLeft: 10,
+        fontSize: 15,
+        fontWeight: '600',
+        flex: 1,
     },
     itemValue: {
         color: '#FFF',
-        fontSize: 14,
-        fontWeight: '600',
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    progressContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    progressBarBg: {
+        flex: 1,
+        height: 6,
+        backgroundColor: '#2C2C2E',
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        borderRadius: 3,
     },
     itemPercentage: {
         color: '#8E8E93',
-        fontSize: 12,
-        marginTop: 2,
+        fontSize: 13,
+        fontWeight: '600',
+        width: 45,
+        textAlign: 'right',
     },
     emptyState: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 40,
-        backgroundColor: 'transparent',
     },
     emptyText: {
         color: '#FFF',
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         marginBottom: 8,
     },
     emptySubtext: {
         color: '#8E8E93',
-        fontSize: 14,
+        fontSize: 15,
         textAlign: 'center',
+        lineHeight: 22,
     },
 });

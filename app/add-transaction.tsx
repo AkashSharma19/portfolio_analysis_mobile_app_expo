@@ -1,4 +1,3 @@
-import { Text, View } from '@/components/Themed';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Ticker, TransactionType } from '@/types';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -6,7 +5,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Calendar, Check, ChevronDown, PlusCircle, Save } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddTransactionScreen() {
   const router = useRouter();
@@ -105,188 +105,194 @@ export default function AddTransactionScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>{editingTransaction ? 'Edit Transaction' : 'Add Transaction'}</Text>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <View style={styles.container}>
+        <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          <Text style={styles.title}>{editingTransaction ? 'Edit Transaction' : 'Add Transaction'}</Text>
 
-        <View style={styles.typeSelector}>
-          <Pressable
-            style={[styles.typeButton, type === 'BUY' && styles.typeButtonActive]}
-            onPress={() => setType('BUY')}
-          >
-            <Text style={[styles.typeButtonText, type === 'BUY' && styles.typeButtonTextActive]}>BUY</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.typeButton, type === 'SELL' && styles.typeButtonActive]}
-            onPress={() => setType('SELL')}
-          >
-            <Text style={[styles.typeButtonText, type === 'SELL' && styles.typeButtonTextActive]}>SELL</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Symbol</Text>
-          <Pressable
-            style={styles.dropdownTrigger}
-            onPress={() => setShowSymbolModal(true)}
-          >
-            <View style={{ backgroundColor: 'transparent', flex: 1 }}>
-              <Text style={[styles.dropdownValue, !symbol && styles.placeholder]}>
-                {symbol || 'Select Symbol from Ticker Sheet'}
-              </Text>
-              {selectedTicker && (
-                <Text style={styles.dropdownSubtitle}>{selectedTicker['Company Name']}</Text>
-              )}
-            </View>
-            <ChevronDown size={20} color="#666" />
-          </Pressable>
-        </View>
-
-        <View style={styles.row}>
-          <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-            <Text style={styles.label}>Quantity</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0.00"
-              placeholderTextColor="#666"
-              value={quantity}
-              onChangeText={setQuantity}
-              keyboardType="decimal-pad"
-            />
-          </View>
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <Text style={styles.label}>Price</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0.00"
-              placeholderTextColor="#666"
-              value={price}
-              onChangeText={setPrice}
-              keyboardType="decimal-pad"
-            />
-          </View>
-        </View>
-
-        <View style={styles.row}>
-          <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-            <Text style={styles.label}>Currency</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="INR"
-              placeholderTextColor="#666"
-              value={currency}
-              onChangeText={setCurrency}
-              autoCapitalize="characters"
-            />
-          </View>
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <Text style={styles.label}>Date</Text>
-            <Pressable style={styles.dateSelector} onPress={() => setShowDatePicker(true)}>
-              <Calendar size={18} color="#999" style={{ marginRight: 8 }} />
-              <Text style={styles.dateText}>{date.toLocaleDateString()}</Text>
+          <View style={styles.typeSelector}>
+            <Pressable
+              style={[styles.typeButton, type === 'BUY' && styles.typeButtonActive]}
+              onPress={() => setType('BUY')}
+            >
+              <Text style={[styles.typeButtonText, type === 'BUY' && styles.typeButtonTextActive]}>BUY</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.typeButton, type === 'SELL' && styles.typeButtonActive]}
+              onPress={() => setType('SELL')}
+            >
+              <Text style={[styles.typeButtonText, type === 'SELL' && styles.typeButtonTextActive]}>SELL</Text>
             </Pressable>
           </View>
-        </View>
 
-        {showDatePicker && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="default"
-            onChange={onDateChange}
-            maximumDate={new Date()}
-          />
-        )}
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Broker</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. Zerodha, Robinhood"
-            placeholderTextColor="#666"
-            value={broker}
-            onChangeText={(text) => {
-              setBroker(text);
-              setShowBrokerSuggestions(true);
-            }}
-            onFocus={() => setShowBrokerSuggestions(true)}
-          />
-          {showBrokerSuggestions && filteredBrokers.length > 0 && (
-            <View style={styles.suggestionsContainer}>
-              {filteredBrokers.map((item) => (
-                <TouchableOpacity
-                  key={item}
-                  style={styles.suggestionItem}
-                  onPress={() => {
-                    setBroker(item);
-                    setShowBrokerSuggestions(false);
-                  }}
-                >
-                  <Text style={styles.suggestionText}>{item}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
-        <Pressable style={styles.saveButton} onPress={handleSave}>
-          {editingTransaction ? <Save color="#fff" size={20} /> : <PlusCircle color="#fff" size={20} />}
-          <Text style={styles.saveButtonText}>{editingTransaction ? 'Update Transaction' : 'Add to Portfolio'}</Text>
-        </Pressable>
-      </ScrollView>
-
-      {/* Symbol Selection Modal */}
-      <Modal
-        visible={showSymbolModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowSymbolModal(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Ticker</Text>
-            <TouchableOpacity onPress={() => setShowSymbolModal(false)}>
-              <Text style={styles.closeButton}>Close</Text>
-            </TouchableOpacity>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Symbol</Text>
+            <Pressable
+              style={styles.dropdownTrigger}
+              onPress={() => setShowSymbolModal(true)}
+            >
+              <View style={{ backgroundColor: 'transparent', flex: 1 }}>
+                <Text style={[styles.dropdownValue, !symbol && styles.placeholder]}>
+                  {symbol || 'Select Symbol from Ticker Sheet'}
+                </Text>
+                {selectedTicker?.['Company Name'] && (
+                  <Text style={styles.dropdownSubtitle}>{selectedTicker['Company Name']}</Text>
+                )}
+              </View>
+              <ChevronDown size={20} color="#666" />
+            </Pressable>
           </View>
 
-          <TextInput
-            style={styles.modalSearch}
-            placeholder="Search symbol or company..."
-            placeholderTextColor="#666"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoFocus
-          />
+          <View style={styles.row}>
+            <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
+              <Text style={styles.label}>Quantity</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="0.00"
+                placeholderTextColor="#666"
+                value={quantity}
+                onChangeText={setQuantity}
+                keyboardType="decimal-pad"
+              />
+            </View>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <Text style={styles.label}>Price</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="0.00"
+                placeholderTextColor="#666"
+                value={price}
+                onChangeText={setPrice}
+                keyboardType="decimal-pad"
+              />
+            </View>
+          </View>
 
-          <FlatList
-            data={filteredTickers}
-            keyExtractor={(item) => item.Tickers}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.tickerItem}
-                onPress={() => selectTicker(item)}
-              >
-                <View style={{ backgroundColor: 'transparent', flex: 1 }}>
-                  <Text style={styles.tickerSymbol}>{item.Tickers}</Text>
-                  <Text style={styles.companyName}>{item['Company Name']}</Text>
-                </View>
-                <View style={{ backgroundColor: 'transparent', alignItems: 'flex-end', flexDirection: 'row' }}>
-                  <Text style={styles.tickerPrice}>₹{item['Current Value']}</Text>
-                  {symbol === item.Tickers && <Check size={18} color="#007AFF" style={{ marginLeft: 8 }} />}
-                </View>
-              </TouchableOpacity>
+          <View style={styles.row}>
+            <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
+              <Text style={styles.label}>Currency</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="INR"
+                placeholderTextColor="#666"
+                value={currency}
+                onChangeText={setCurrency}
+                autoCapitalize="characters"
+              />
+            </View>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <Text style={styles.label}>Date</Text>
+              <Pressable style={styles.dateSelector} onPress={() => setShowDatePicker(true)}>
+                <Calendar size={18} color="#999" style={{ marginRight: 8 }} />
+                <Text style={styles.dateText}>{date.toLocaleDateString()}</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display="default"
+              onChange={onDateChange}
+              maximumDate={new Date()}
+            />
+          )}
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Broker</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Zerodha, Robinhood"
+              placeholderTextColor="#666"
+              value={broker}
+              onChangeText={(text) => {
+                setBroker(text);
+                setShowBrokerSuggestions(true);
+              }}
+              onFocus={() => setShowBrokerSuggestions(true)}
+            />
+            {showBrokerSuggestions && filteredBrokers.length > 0 && (
+              <View style={styles.suggestionsContainer}>
+                {filteredBrokers.map((item) => (
+                  <TouchableOpacity
+                    key={item}
+                    style={styles.suggestionItem}
+                    onPress={() => {
+                      setBroker(item);
+                      setShowBrokerSuggestions(false);
+                    }}
+                  >
+                    <Text style={styles.suggestionText}>{item}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             )}
-            contentContainerStyle={styles.tickerList}
-          />
-        </View>
-      </Modal>
-    </View>
+          </View>
+
+          <Pressable style={styles.saveButton} onPress={handleSave}>
+            {editingTransaction ? <Save color="#fff" size={20} /> : <PlusCircle color="#fff" size={20} />}
+            <Text style={styles.saveButtonText}>{editingTransaction ? 'Update Transaction' : 'Add to Portfolio'}</Text>
+          </Pressable>
+        </ScrollView>
+
+        {/* Symbol Selection Modal */}
+        <Modal
+          visible={showSymbolModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowSymbolModal(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Ticker</Text>
+              <TouchableOpacity onPress={() => setShowSymbolModal(false)}>
+                <Text style={styles.closeButton}>Close</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.modalSearch}
+              placeholder="Search symbol or company..."
+              placeholderTextColor="#666"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus
+            />
+
+            <FlatList
+              data={filteredTickers}
+              keyExtractor={(item) => item.Tickers}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.tickerItem}
+                  onPress={() => selectTicker(item)}
+                >
+                  <View style={{ backgroundColor: 'transparent', flex: 1 }}>
+                    <Text style={styles.tickerSymbol}>{item.Tickers}</Text>
+                    <Text style={styles.companyName}>{item['Company Name']}</Text>
+                  </View>
+                  <View style={{ backgroundColor: 'transparent', alignItems: 'flex-end', flexDirection: 'row' }}>
+                    <Text style={styles.tickerPrice}>₹{item['Current Value']}</Text>
+                    {symbol === item.Tickers && <Check size={18} color="#007AFF" style={{ marginLeft: 8 }} />}
+                  </View>
+                </TouchableOpacity>
+              )}
+              contentContainerStyle={styles.tickerList}
+            />
+          </View>
+        </Modal>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
   container: {
     flex: 1,
     backgroundColor: '#000',

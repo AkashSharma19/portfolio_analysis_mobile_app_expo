@@ -27,3 +27,9 @@ export interface PortfolioSummary {
   totalReturn: number;
   xirr: number;
 }
+export interface YearlyAnalysis {
+  year: number;
+  investment: number;
+  percentageIncrease: number;
+  assetDistribution: { name: string; value: number; percentage: number }[];
+}

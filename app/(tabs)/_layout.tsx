@@ -1,19 +1,12 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs, useRouter } from 'expo-router';
+import { Briefcase, History, Plus, TrendingUp, User } from 'lucide-react-native';
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { Platform, View } from 'react-native';
 
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { useColorScheme } from '@/components/useColorScheme';
-import Colors from '@/constants/Colors';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
+// No longer using TabBarIcon, using Lucide directly in the config
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -22,57 +15,57 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
-        headerRight: () => (
-          <Pressable onPress={() => router.push('/add-transaction')}>
-            {({ pressed }) => (
-              <FontAwesome
-                name="plus"
-                size={22}
-                color={Colors[colorScheme ?? 'light'].text}
-                style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-              />
-            )}
-          </Pressable>
-        ),
+        tabBarActiveTintColor: '#007AFF',
+        tabBarInactiveTintColor: '#8E8E93',
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#1C1C1E',
+          height: Platform.OS === 'ios' ? 88 : 70,
+          borderTopWidth: 1,
+          borderTopColor: '#2C2C2E',
+          paddingBottom: Platform.OS === 'ios' ? 30 : 12,
+          paddingTop: 10,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        }
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Portfolio',
-          tabBarIcon: ({ color }) => <TabBarIcon name="pie-chart" color={color} />,
+          tabBarIcon: ({ color }) => <Briefcase color={color} size={24} />,
         }}
       />
       <Tabs.Screen
         name="analytics"
         options={{
           title: 'Analytics',
-          tabBarIcon: ({ color }) => <TabBarIcon name="dashboard" color={color} />,
+          tabBarIcon: ({ color, size }) => <TrendingUp color={color} size={24} />,
         }}
       />
       <Tabs.Screen
         name="add"
         options={{
           title: 'Add',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{
-              width: 48,
-              height: 48,
-              backgroundColor: '#007AFF',
-              borderRadius: 24,
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginTop: -10,
-              shadowColor: '#007AFF',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 5,
-            }}>
-              <FontAwesome name="plus" size={24} color="#FFF" />
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: '#007AFF',
+                justifyContent: 'center',
+                alignItems: 'center',
+                shadowColor: '#007AFF',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 6,
+                elevation: 4,
+              }}
+            >
+              <Plus size={24} color="#FFF" />
             </View>
           ),
           tabBarLabel: () => null,
@@ -88,7 +81,14 @@ export default function TabLayout() {
         name="two"
         options={{
           title: 'History',
-          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
+          tabBarIcon: ({ color, size }) => <History color={color} size={24} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => <User color={color} size={24} />,
         }}
       />
     </Tabs>

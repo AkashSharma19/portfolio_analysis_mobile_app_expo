@@ -12,6 +12,7 @@ interface PortfolioState {
     fetchTickers: () => Promise<void>;
     calculateSummary: () => PortfolioSummary;
     getAllocationData: (dimension: 'Sector' | 'Company Name' | 'Asset Type' | 'Broker') => { name: string; value: number; percentage: number }[];
+    getYearlyAnalysis: () => import('../types').YearlyAnalysis[];
 }
 
 export const usePortfolioStore = create<PortfolioState>((set, get) => ({
@@ -134,5 +135,86 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
                 percentage: (value / totalPortfolioValue) * 100
             }))
             .sort((a, b) => b.value - a.value);
+    },
+    getYearlyAnalysis: () => {
+        const { transactions, tickers } = get();
+        if (transactions.length === 0) return [];
+
+        const tickerMap = new Map(tickers.map(t => [t.Tickers.toUpperCase(), t]));
+
+        // Sort transactions by date
+        const sortedTransactions = [...transactions].sort((a, b) =>
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+
+        const years = Array.from(new Set(sortedTransactions.map(t => new Date(t.date).getFullYear()))).sort();
+        const analysis: import('../types').YearlyAnalysis[] = [];
+
+        const cumulativeHoldings = new Map<string, number>();
+        let previousYearInvestment = 0;
+
+        years.forEach(year => {
+            const yearTransactions = sortedTransactions.filter(t => new Date(t.date).getFullYear() === year);
+            let yearInvestment = 0;
+
+            // Update cumulative holdings and calculate yearly investment
+            yearTransactions.forEach(t => {
+                const currentQty = cumulativeHoldings.get(t.symbol) || 0;
+                const qtyChange = t.type === 'BUY' ? t.quantity : -t.quantity;
+                cumulativeHoldings.set(t.symbol, currentQty + qtyChange);
+
+                if (t.type === 'BUY') {
+                    yearInvestment += t.quantity * t.price;
+                } else {
+                    yearInvestment -= t.quantity * t.price;
+                }
+            });
+
+            // Calculate asset distribution for this year based on cumulative holdings
+            const assetValueMap = new Map<string, number>();
+            let totalYearEndValue = 0;
+
+            cumulativeHoldings.forEach((quantity, symbol) => {
+                if (quantity <= 0) return;
+                const ticker = tickerMap.get(symbol.toUpperCase());
+
+                // For past years, we don't have historical prices, so we use the last known/buy price as proxy 
+                // for "distribution" estimation, though it's technically "at current/last prices".
+                const lastTransaction = [...sortedTransactions]
+                    .filter(t => new Date(t.date).getFullYear() <= year && t.symbol.toUpperCase() === symbol.toUpperCase())
+                    .reverse()[0];
+
+                const fallbackPrice = lastTransaction ? lastTransaction.price : 0;
+                const price = (ticker && ticker['Current Value']) ? ticker['Current Value'] : fallbackPrice;
+                const assetType = (ticker && ticker['Asset Type']) || 'Other';
+
+                const value = quantity * price;
+                totalYearEndValue += value;
+                assetValueMap.set(assetType, (assetValueMap.get(assetType) || 0) + value);
+            });
+
+            const assetDistribution = Array.from(assetValueMap.entries())
+                .map(([name, value]) => ({
+                    name,
+                    value,
+                    percentage: totalYearEndValue > 0 ? (value / totalYearEndValue) * 100 : 0
+                }))
+                .sort((a, b) => b.value - a.value);
+
+            const percentageIncrease = previousYearInvestment > 0
+                ? ((yearInvestment - previousYearInvestment) / previousYearInvestment) * 100
+                : 0;
+
+            analysis.push({
+                year,
+                investment: yearInvestment,
+                percentageIncrease,
+                assetDistribution
+            });
+
+            previousYearInvestment = yearInvestment;
+        });
+
+        return analysis;
     }
 }));
