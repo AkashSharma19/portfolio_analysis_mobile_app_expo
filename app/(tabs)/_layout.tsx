@@ -1,6 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
+import { Pressable, View } from 'react-native';
 
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -25,6 +26,18 @@ export default function TabLayout() {
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
         headerShown: useClientOnlyValue(false, true),
+        headerRight: () => (
+          <Pressable onPress={() => router.push('/add-transaction')}>
+            {({ pressed }) => (
+              <FontAwesome
+                name="plus"
+                size={22}
+                color={Colors[colorScheme ?? 'light'].text}
+                style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
+              />
+            )}
+          </Pressable>
+        ),
       }}>
       <Tabs.Screen
         name="index"
@@ -37,7 +50,24 @@ export default function TabLayout() {
         name="add"
         options={{
           title: 'Add',
-          tabBarIcon: ({ color }) => <TabBarIcon name="plus-circle" color="#007AFF" />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{
+              width: 48,
+              height: 48,
+              backgroundColor: '#007AFF',
+              borderRadius: 24,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginTop: -10,
+              shadowColor: '#007AFF',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 5,
+            }}>
+              <FontAwesome name="plus" size={24} color="#FFF" />
+            </View>
+          ),
           tabBarLabel: () => null,
         }}
         listeners={{

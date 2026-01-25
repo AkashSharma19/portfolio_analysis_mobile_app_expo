@@ -8,6 +8,7 @@ interface PortfolioState {
     tickers: Ticker[];
     addTransaction: (transaction: Transaction) => void;
     removeTransaction: (id: string) => void;
+    updateTransaction: (id: string, transaction: Transaction) => void;
     fetchTickers: () => Promise<void>;
     calculateSummary: () => PortfolioSummary;
 }
@@ -19,6 +20,10 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
         set((state) => ({ transactions: [...state.transactions, transaction] })),
     removeTransaction: (id) =>
         set((state) => ({ transactions: state.transactions.filter(t => t.id !== id) })),
+    updateTransaction: (id, transaction) =>
+        set((state) => ({
+            transactions: state.transactions.map((t) => (t.id === id ? transaction : t)),
+        })),
     fetchTickers: async () => {
         if (!API_CONFIG.WEB_APP_URL) return;
         try {

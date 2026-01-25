@@ -15,6 +15,8 @@ export interface Ticker {
   Tickers: string;
   'Current Value': number;
   'Company Name': string;
+  'Asset Type'?: string;
+  'Sector'?: string;
 }
 
 export interface PortfolioSummary {

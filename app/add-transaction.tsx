@@ -2,15 +2,20 @@ import { Text, View } from '@/components/Themed';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Ticker, TransactionType } from '@/types';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Calendar, Check, ChevronDown, PlusCircle } from 'lucide-react-native';
+import { Calendar, Check, ChevronDown, PlusCircle, Save } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 
 export default function AddTransactionScreen() {
   const router = useRouter();
-  const { addTransaction, transactions, tickers, fetchTickers } = usePortfolioStore();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { addTransaction, updateTransaction, transactions, tickers, fetchTickers } = usePortfolioStore();
+
+  const editingTransaction = useMemo(() =>
+    id ? transactions.find(t => t.id === id) : null,
+    [id, transactions]);
 
   const [symbol, setSymbol] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -27,7 +32,16 @@ export default function AddTransactionScreen() {
 
   useEffect(() => {
     fetchTickers();
-  }, []);
+    if (editingTransaction) {
+      setSymbol(editingTransaction.symbol);
+      setQuantity(editingTransaction.quantity.toString());
+      setPrice(editingTransaction.price.toString());
+      setType(editingTransaction.type);
+      setDate(new Date(editingTransaction.date));
+      setCurrency(editingTransaction.currency || 'INR');
+      setBroker(editingTransaction.broker || '');
+    }
+  }, [editingTransaction]);
 
   const selectedTicker = useMemo(() =>
     tickers.find(t => t.Tickers === symbol),
@@ -56,8 +70,8 @@ export default function AddTransactionScreen() {
   const handleSave = () => {
     if (!symbol || !quantity || !price) return;
 
-    addTransaction({
-      id: Math.random().toString(36).substring(7),
+    const transactionData = {
+      id: editingTransaction ? editingTransaction.id : Math.random().toString(36).substring(7),
       symbol: symbol.toUpperCase(),
       quantity: parseFloat(quantity),
       price: parseFloat(price),
@@ -65,7 +79,13 @@ export default function AddTransactionScreen() {
       type: type,
       currency: currency.toUpperCase(),
       broker: broker.trim(),
-    });
+    };
+
+    if (editingTransaction) {
+      updateTransaction(editingTransaction.id, transactionData);
+    } else {
+      addTransaction(transactionData);
+    }
 
     router.back();
   };
@@ -88,7 +108,7 @@ export default function AddTransactionScreen() {
     <View style={styles.container}>
       <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Add Transaction</Text>
+        <Text style={styles.title}>{editingTransaction ? 'Edit Transaction' : 'Add Transaction'}</Text>
 
         <View style={styles.typeSelector}>
           <Pressable
@@ -211,8 +231,8 @@ export default function AddTransactionScreen() {
         </View>
 
         <Pressable style={styles.saveButton} onPress={handleSave}>
-          <PlusCircle color="#fff" size={20} />
-          <Text style={styles.saveButtonText}>Add to Portfolio</Text>
+          {editingTransaction ? <Save color="#fff" size={20} /> : <PlusCircle color="#fff" size={20} />}
+          <Text style={styles.saveButtonText}>{editingTransaction ? 'Update Transaction' : 'Add to Portfolio'}</Text>
         </Pressable>
       </ScrollView>
 
