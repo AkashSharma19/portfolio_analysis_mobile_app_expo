@@ -34,3 +34,37 @@ export interface YearlyAnalysis {
   percentageIncrease: number;
   assetDistribution: { name: string; value: number; percentage: number }[];
 }
+
+export interface MonthlyAnalysis {
+  month: string; // e.g., "Jan 2024"
+  monthKey: string; // e.g., "2024-01" for sorting
+  investment: number;
+  percentageIncrease: number;
+  assetDistribution: { name: string; value: number; percentage: number }[];
+}
+
+export interface Holding {
+  symbol: string;
+  companyName: string;
+  quantity: number;
+  avgPrice: number;
+  currentPrice: number;
+  investedValue: number;
+  currentValue: number;
+  pnl: number;
+  pnlPercentage: number;
+  contributionPercentage: number;
+  assetType: string;
+  sector: string;
+  broker: string;
+}
+
+export interface AllocationItem {
+  name: string;
+  value: number; // current value
+  percentage: number;
+  totalCost: number;
+  pnl: number;
+  pnlPercentage: number;
+  quantity: number;
+}

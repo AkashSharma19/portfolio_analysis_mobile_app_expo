@@ -1,96 +1,101 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs, useRouter } from 'expo-router';
-import { Briefcase, History, Plus, TrendingUp, User } from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
 import React from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, TouchableOpacity, View } from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
-
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-// No longer using TabBarIcon, using Lucide directly in the config
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: '#8E8E93',
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#1C1C1E',
-          height: Platform.OS === 'ios' ? 88 : 70,
-          borderTopWidth: 1,
-          borderTopColor: '#2C2C2E',
-          paddingBottom: Platform.OS === 'ios' ? 30 : 12,
-          paddingTop: 10,
-        },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
-        }
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Portfolio',
-          tabBarIcon: ({ color }) => <Briefcase color={color} size={20} />,
-        }}
-      />
-      <Tabs.Screen
-        name="analytics"
-        options={{
-          title: 'Analytics',
-          tabBarIcon: ({ color }) => <TrendingUp color={color} size={20} />,
-        }}
-      />
-      <Tabs.Screen
-        name="add"
-        options={{
-          title: 'Add',
-          tabBarIcon: ({ focused }) => (
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: '#007AFF',
-                justifyContent: 'center',
-                alignItems: 'center',
-                shadowColor: '#007AFF',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 6,
-                elevation: 4,
-              }}
-            >
-              <Plus size={20} color="#FFF" />
-            </View>
-          ),
-          tabBarLabel: () => null,
-        }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            router.push('/add-transaction');
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: '#007AFF',
+          tabBarInactiveTintColor: '#444',
+          headerShown: false,
+          tabBarShowLabel: true,
+          tabBarStyle: {
+            backgroundColor: '#000',
+            height: Platform.OS === 'ios' ? 90 : 75,
+            borderTopWidth: 0,
+            elevation: 0,
+            paddingBottom: Platform.OS === 'ios' ? 30 : 12,
+            paddingTop: 8,
           },
+          tabBarLabelStyle: {
+            fontSize: 10,
+            fontWeight: '400',
+            marginTop: 4,
+            marginBottom: 4,
+          }
+        }}>
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Portfolio',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? "briefcase" : "briefcase-outline"} size={22} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="analytics"
+          options={{
+            title: 'Analytics',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? "pie-chart" : "pie-chart-outline"} size={22} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="add"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="two"
+          options={{
+            title: 'History',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? "time" : "time-outline"} size={22} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? "person" : "person-outline"} size={22} color={color} />
+            ),
+          }}
+        />
+      </Tabs>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        onPress={() => router.push('/add-transaction')}
+        activeOpacity={0.8}
+        style={{
+          position: 'absolute',
+          right: 20,
+          bottom: Platform.OS === 'ios' ? 100 : 85,
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          backgroundColor: '#007AFF',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
-      />
-      <Tabs.Screen
-        name="two"
-        options={{
-          title: 'History',
-          tabBarIcon: ({ color }) => <History color={color} size={20} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <User color={color} size={20} />,
-        }}
-      />
-    </Tabs>
+      >
+        <Plus size={30} color="#FFF" strokeWidth={2} />
+      </TouchableOpacity>
+    </View>
+
   );
 }

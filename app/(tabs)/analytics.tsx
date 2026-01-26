@@ -1,5 +1,6 @@
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ArrowUpDown } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dimensions, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { PieChart } from 'react-native-gifted-charts';
@@ -20,13 +21,23 @@ const GRADIENTS = {
 type Dimension = 'Sector' | 'Company Name' | 'Asset Type' | 'Broker';
 
 export default function AnalyticsScreen() {
+    /**
+     * Analytics Screen Refinements
+     * - Clean Layout: Removed the redundant "Portfolio Spread" heading.
+     * - Minimalist List: Removed the colored dots from the distribution list.
+     * - Text Wrapping: Item names now wrap to 2 lines if they are long.
+     */
     const fetchTickers = usePortfolioStore((state) => state.fetchTickers);
     const getAllocationData = usePortfolioStore((state) => state.getAllocationData);
+    const getHoldingsData = usePortfolioStore((state) => state.getHoldingsData);
     const transactions = usePortfolioStore((state) => state.transactions);
     const tickers = usePortfolioStore((state) => state.tickers);
+    const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
 
     const [refreshing, setRefreshing] = useState(false);
     const [selectedDimension, setSelectedDimension] = useState<Dimension>('Sector');
+    const [holdingsViewMode, setHoldingsViewMode] = useState<'Current' | 'Returns' | 'Contribution'>('Current');
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetchTickers();
@@ -43,14 +54,24 @@ export default function AnalyticsScreen() {
         [getAllocationData, selectedDimension, transactions, tickers]
     );
 
+    const filteredAllocation = useMemo(() => {
+        let data = allocation;
+        if (searchQuery) {
+            data = data.filter(item =>
+                item.name.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+        return data;
+    }, [allocation, searchQuery]);
+
     const chartData = useMemo(() => {
         return allocation.map((item, index) => ({
             value: item.percentage,
             color: CHART_COLORS[index % CHART_COLORS.length],
-            text: `${item.percentage.toFixed(1)}%`,
+            text: isPrivacyMode ? '****' : `${item.percentage.toFixed(1)}%`,
             label: item.name,
         }));
-    }, [allocation]);
+    }, [allocation, isPrivacyMode]);
 
     if (transactions.length === 0) {
         return (
@@ -74,24 +95,20 @@ export default function AnalyticsScreen() {
         <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
             <View style={styles.container}>
                 <View style={styles.selectorBar}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.selectorScroll}>
-                        {dimensions.map((dim) => {
-                            const isActive = selectedDimension === dim.id;
-                            return (
-                                <TouchableOpacity
-                                    key={dim.id}
-                                    style={[styles.selectorButton, isActive && styles.selectorButtonActive]}
-                                    onPress={() => setSelectedDimension(dim.id)}
-                                >
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                        <Text style={[styles.selectorText, isActive && styles.selectorTextActive]}>
-                                            {dim.label}
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
+                    {dimensions.map((dim) => {
+                        const isActive = selectedDimension === dim.id;
+                        return (
+                            <TouchableOpacity
+                                key={dim.id}
+                                style={[styles.selectorButton, isActive && styles.selectorButtonActive]}
+                                onPress={() => setSelectedDimension(dim.id)}
+                            >
+                                <Text style={[styles.selectorText, isActive && styles.selectorTextActive]}>
+                                    {dim.label}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
 
                 <ScrollView
@@ -118,7 +135,7 @@ export default function AnalyticsScreen() {
                                     innerCircleColor={'#1C1C1E'}
                                     centerLabelComponent={() => (
                                         <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                                            <Text style={{ fontSize: 28, color: 'white', fontWeight: 'bold' }}>
+                                            <Text style={{ fontSize: 28, color: 'white' }}>
                                                 {allocation.length}
                                             </Text>
                                             <Text style={{ fontSize: 10, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -133,48 +150,104 @@ export default function AnalyticsScreen() {
                         </View>
                     </LinearGradient>
 
-                    <View style={styles.listContainer}>
-                        <Text style={styles.listTitle}>Portfolio Spread</Text>
-                        {allocation.map((item, index) => (
-                            <TouchableOpacity key={item.name} style={styles.listItemShadow}>
-                                <LinearGradient
-                                    colors={['#1C1C1E', '#161618']}
-                                    style={styles.listItem}
-                                >
-                                    <View style={styles.itemHeader}>
-                                        <View style={styles.listLeft}>
-                                            <View
-                                                style={[
-                                                    styles.colorDot,
-                                                    { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }
-                                                ]}
-                                            />
-                                            <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                                        </View>
-                                        <Text style={styles.itemValue}>
-                                            ₹{item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                        </Text>
-                                    </View>
+                    {/* Unified Actions Bar (Toggle) */}
+                    <View style={[styles.holdingsHeader, { justifyContent: 'flex-end' }]}>
+                        <TouchableOpacity
+                            style={styles.viewModeToggle}
+                            onPress={() => {
+                                if (holdingsViewMode === 'Current') setHoldingsViewMode('Returns');
+                                else if (holdingsViewMode === 'Returns') setHoldingsViewMode('Contribution');
+                                else setHoldingsViewMode('Current');
+                            }}
+                        >
+                            <ArrowUpDown size={14} color="#FFF" />
+                            <Text style={styles.viewModeText}>
+                                {holdingsViewMode === 'Current' ? 'Current (Invested)' :
+                                    holdingsViewMode === 'Returns' ? 'Returns (%)' :
+                                        'Contribution (Current)'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
 
-                                    <View style={styles.progressContainer}>
-                                        <View style={styles.progressBarBg}>
-                                            <View
-                                                style={[
-                                                    styles.progressBarFill,
-                                                    {
-                                                        width: `${item.percentage}%`,
-                                                        backgroundColor: CHART_COLORS[index % CHART_COLORS.length]
-                                                    }
-                                                ]}
-                                            />
+                    {/* Unified Distribution/Holdings List */}
+                    <View style={styles.holdingsList}>
+                        {filteredAllocation.map((item, index) => {
+                            const isLast = index === filteredAllocation.length - 1;
+                            return (
+                                <View
+                                    key={item.name}
+                                    style={[
+                                        styles.holdingItem,
+                                        !isLast && styles.holdingItemBorder
+                                    ]}
+                                >
+                                    <View style={styles.holdingRow}>
+                                        <View style={styles.holdingMain}>
+                                            <View style={[styles.holdingIcon, { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] + '22' }]}>
+                                                <Text style={[styles.iconLetter, { color: CHART_COLORS[index % CHART_COLORS.length] }]}>
+                                                    {item.name[0]?.toUpperCase() || '?'}
+                                                </Text>
+                                            </View>
+                                            <View style={styles.holdingInfo}>
+                                                <Text style={styles.holdingSymbol} numberOfLines={2} ellipsizeMode="tail">{item.name}</Text>
+                                                {selectedDimension === 'Company Name' && (
+                                                    <Text style={styles.holdingSub} numberOfLines={1}>
+                                                        Qty {item.quantity.toLocaleString()}
+                                                    </Text>
+                                                )}
+                                            </View>
                                         </View>
-                                        <Text style={styles.itemPercentage}>{item.percentage.toFixed(1)}%</Text>
+
+                                        <View style={styles.holdingValues}>
+                                            {holdingsViewMode === 'Current' && (
+                                                <>
+                                                    <Text style={styles.primaryValue}>
+                                                        {isPrivacyMode ? '****' : `₹${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                                                    </Text>
+                                                    <Text style={styles.secondaryValue}>
+                                                        {isPrivacyMode ? '****' : `₹${item.totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                                                    </Text>
+                                                </>
+                                            )}
+                                            {holdingsViewMode === 'Returns' && (
+                                                <>
+                                                    <Text style={[styles.primaryValue, { color: item.pnl >= 0 ? '#30D158' : '#FF453A' }]}>
+                                                        {isPrivacyMode ? '****' : `${item.pnl >= 0 ? '+' : '-'}₹${Math.abs(item.pnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                                                    </Text>
+                                                    <Text style={[styles.secondaryValue, { color: item.pnl >= 0 ? '#30D158' : '#FF453A' }]}>
+                                                        {isPrivacyMode ? '****' : `${item.pnl >= 0 ? '+' : ''}${item.pnlPercentage.toFixed(2)}%`}
+                                                    </Text>
+                                                </>
+                                            )}
+                                            {holdingsViewMode === 'Contribution' && (
+                                                <>
+                                                    <Text style={styles.primaryValue}>
+                                                        {isPrivacyMode ? '****' : `${item.percentage.toFixed(2)}%`}
+                                                    </Text>
+                                                    <Text style={styles.secondaryValue}>
+                                                        {isPrivacyMode ? '****' : `₹${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                                                    </Text>
+                                                </>
+                                            )}
+                                        </View>
                                     </View>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                        ))}
+                                    {holdingsViewMode === 'Contribution' && (
+                                        <View style={styles.contributionProgressBarContainer}>
+                                            <View style={[
+                                                styles.contributionProgressBarFill,
+                                                {
+                                                    width: `${item.percentage}%`,
+                                                    backgroundColor: CHART_COLORS[index % CHART_COLORS.length]
+                                                }
+                                            ]} />
+                                        </View>
+                                    )}
+                                </View>
+                            );
+                        })}
                     </View>
                 </ScrollView>
+
             </View>
         </SafeAreaView>
     );
@@ -191,21 +264,22 @@ const styles = StyleSheet.create({
     },
     selectorBar: {
         paddingVertical: 12,
+        paddingHorizontal: 16,
         backgroundColor: '#000',
         borderBottomWidth: 1,
         borderBottomColor: '#1C1C1E',
-    },
-    selectorScroll: {
-        paddingHorizontal: 16,
+        flexDirection: 'row',
         gap: 8,
     },
     selectorButton: {
+        flex: 1,
         paddingVertical: 8,
-        paddingHorizontal: 16,
         borderRadius: 20,
         backgroundColor: '#1C1C1E',
         borderWidth: 1,
         borderColor: '#2C2C2E',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     selectorButtonActive: {
         backgroundColor: '#007AFF',
@@ -214,7 +288,7 @@ const styles = StyleSheet.create({
     selectorText: {
         color: '#8E8E93',
         fontSize: 11,
-        fontWeight: '600',
+        fontWeight: '400',
     },
     selectorTextActive: {
         color: '#FFF',
@@ -226,7 +300,7 @@ const styles = StyleSheet.create({
     },
     cardTitle: {
         fontSize: 14,
-        fontWeight: '700',
+        fontWeight: '400',
         color: '#FFF',
         marginBottom: 20,
         letterSpacing: 0.5,
@@ -247,82 +321,6 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
         fontSize: 11,
     },
-    listContainer: {
-        gap: 12,
-    },
-    listTitle: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: '#FFF',
-        marginBottom: 8,
-        marginLeft: 4,
-    },
-    listItemShadow: {
-        borderRadius: 16,
-        backgroundColor: '#1C1C1E',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    listItem: {
-        borderRadius: 16,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: '#2C2C2E',
-    },
-    itemHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    listLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    colorDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginRight: 10,
-    },
-    itemName: {
-        color: '#FFF',
-        fontSize: 14,
-        fontWeight: '600',
-        flex: 1,
-    },
-    itemValue: {
-        color: '#FFF',
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    progressContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    progressBarBg: {
-        flex: 1,
-        height: 6,
-        backgroundColor: '#2C2C2E',
-        borderRadius: 3,
-        overflow: 'hidden',
-    },
-    progressBarFill: {
-        height: '100%',
-        borderRadius: 3,
-    },
-    itemPercentage: {
-        color: '#8E8E93',
-        fontSize: 11,
-        fontWeight: '600',
-        width: 45,
-        textAlign: 'right',
-    },
     emptyState: {
         flex: 1,
         justifyContent: 'center',
@@ -332,7 +330,7 @@ const styles = StyleSheet.create({
     emptyText: {
         color: '#FFF',
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '400',
         marginBottom: 8,
     },
     emptySubtext: {
@@ -340,5 +338,143 @@ const styles = StyleSheet.create({
         fontSize: 14,
         textAlign: 'center',
         lineHeight: 22,
+    },
+    // Unified List Styles
+    holdingsHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    holdingsLeft: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    iconButtonSmall: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        backgroundColor: '#1C1C1E',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#2C2C2E',
+    },
+    viewModeToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#2C2C2E',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+    },
+    viewModeText: {
+        color: '#FFF',
+        fontSize: 12,
+        fontWeight: '400',
+    },
+    searchBarContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#1C1C1E',
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#2C2C2E',
+        gap: 8,
+    },
+    searchBarInput: {
+        flex: 1,
+        color: '#FFF',
+        fontSize: 14,
+        height: 24,
+        padding: 0,
+    },
+    holdingsList: {
+        backgroundColor: '#1C1C1E',
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#2C2C2E',
+    },
+    holdingItem: {
+        padding: 16,
+        alignSelf: 'stretch',
+    },
+    holdingItemBorder: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#2C2C2E',
+    },
+    holdingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+    },
+    holdingMain: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        flex: 1,
+        marginRight: 20, // More space for the right-side values
+    },
+    holdingIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#2C2C2E',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    iconLetter: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: '400',
+    },
+    holdingInfo: {
+        justifyContent: 'center',
+        flex: 1,
+        minWidth: 0,
+    },
+    holdingSymbol: {
+        color: '#FFF',
+        fontSize: 14,
+        fontWeight: '400',
+        flexShrink: 1,
+    },
+    holdingSub: {
+        color: '#8E8E93',
+        fontSize: 12,
+        marginTop: 2,
+        flexShrink: 1,
+    },
+    holdingValues: {
+        alignItems: 'flex-end',
+        flexShrink: 0,
+    },
+    primaryValue: {
+        color: '#FFF',
+        fontSize: 14,
+        fontWeight: '400',
+    },
+    secondaryValue: {
+        color: '#8E8E93',
+        fontSize: 12,
+        marginTop: 2,
+    },
+    contributionProgressBarContainer: {
+        height: 4,
+        backgroundColor: '#2C2C2E',
+        borderRadius: 2,
+        marginTop: 12,
+        marginHorizontal: 4,
+        overflow: 'hidden',
+    },
+    contributionProgressBarFill: {
+        height: '100%',
+        backgroundColor: '#8E8E93', // Simple grey for the progress bar
+        borderRadius: 2,
     },
 });

@@ -1,8 +1,8 @@
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
-import { ChevronDown, TrendingUp } from 'lucide-react-native';
+import { ArrowRightCircle, ChevronDown, Eye, EyeOff, TrendingUp } from 'lucide-react-native';
 import React, { useEffect, useMemo } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CHART_COLORS = [
@@ -16,9 +16,15 @@ export default function PortfolioScreen() {
   const fetchTickers = usePortfolioStore((state) => state.fetchTickers);
   const tickers = usePortfolioStore((state) => state.tickers);
   const getYearlyAnalysis = usePortfolioStore((state) => state.getYearlyAnalysis);
+  const getMonthlyAnalysis = usePortfolioStore((state) => state.getMonthlyAnalysis);
+  const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
+  const togglePrivacyMode = usePortfolioStore((state) => state.togglePrivacyMode);
 
   const summary = useMemo(() => calculateSummary(), [transactions, calculateSummary, tickers]);
   const yearlyAnalysis = useMemo(() => getYearlyAnalysis(), [transactions, getYearlyAnalysis, tickers]);
+  const monthlyAnalysis = useMemo(() => getMonthlyAnalysis(), [transactions, getMonthlyAnalysis, tickers]);
+
+  const previewMonthlyAnalysis = useMemo(() => monthlyAnalysis.slice(0, 6), [monthlyAnalysis]);
 
   useEffect(() => {
     fetchTickers();
@@ -29,6 +35,7 @@ export default function PortfolioScreen() {
 
   const [refreshing, setRefreshing] = React.useState(false);
   const [expandedYear, setExpandedYear] = React.useState<number | null>(null);
+  const [showMonthlyModal, setShowMonthlyModal] = React.useState(false);
 
   const toggleYear = (year: number) => {
     setExpandedYear(expandedYear === year ? null : year);
@@ -53,27 +60,30 @@ export default function PortfolioScreen() {
             <View style={styles.heroCard}>
               <View style={styles.heroHeaderRow}>
                 <Text style={styles.heroLabel}>HOLDINGS ({tickers.length})</Text>
+                <TouchableOpacity onPress={togglePrivacyMode} style={styles.iconButton}>
+                  {isPrivacyMode ? <EyeOff size={16} color="#FFF" /> : <Eye size={16} color="#FFF" />}
+                </TouchableOpacity>
               </View>
 
-              <Text style={styles.heroValue}>₹{summary.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
+              <Text style={styles.heroValue}>{isPrivacyMode ? '****' : `₹${summary.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
 
               <View style={styles.dashedDivider} />
 
               <View style={styles.heroRow}>
                 <Text style={styles.heroRowLabel}>Total returns</Text>
-                <Text style={[styles.heroRowValue, { color: summary.profitAmount >= 0 ? '#4CAF50' : '#F44336' }]}>
-                  {summary.profitAmount >= 0 ? '+' : '-'}₹{Math.abs(summary.profitAmount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ({Math.abs(summary.profitPercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)
+                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (summary.profitAmount >= 0 ? '#4CAF50' : '#F44336') }]}>
+                  {isPrivacyMode ? '****' : `${summary.profitAmount >= 0 ? '+' : '-'}₹${Math.abs(summary.profitAmount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(summary.profitPercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)`}
                 </Text>
               </View>
 
               <View style={styles.heroRow}>
                 <Text style={styles.heroRowLabel}>Invested</Text>
-                <Text style={styles.heroRowValueWhite}>₹{summary.totalCost.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
+                <Text style={styles.heroRowValueWhite}>{isPrivacyMode ? '****' : `₹${summary.totalCost.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
               </View>
 
               <View style={[styles.heroRow, { marginBottom: 0 }]}>
                 <Text style={styles.heroRowLabel}>XIRR</Text>
-                <Text style={styles.heroRowValueWhite}>{summary.xirr.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%</Text>
+                <Text style={styles.heroRowValueWhite}>{isPrivacyMode ? '****' : `${summary.xirr.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`}</Text>
               </View>
             </View>
           </View>
@@ -81,16 +91,15 @@ export default function PortfolioScreen() {
 
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Calendar view</Text>
             <ActivityCalendar transactions={transactions} />
           </View>
 
 
 
           <View style={[styles.section, { marginBottom: 20 }]}>
-            <Text style={styles.sectionTitle}>Yearly Analysis</Text>
             {yearlyAnalysis.length > 0 ? (
               <View style={styles.accordionContainer}>
+                <Text style={styles.innerSectionTitle}>YEARLY ANALYSIS</Text>
                 {yearlyAnalysis.map((item, index) => {
                   const isExpanded = expandedYear === item.year;
                   return (
@@ -102,7 +111,7 @@ export default function PortfolioScreen() {
                       >
                         <View style={styles.headerLeft}>
                           <Text style={styles.yearText}>{item.year}</Text>
-                          <Text style={styles.subText}>Avg. Inv: ₹{item.averageMonthlyInvestment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}</Text>
+                          <Text style={styles.subText}>Avg. Inv: {isPrivacyMode ? '****' : `₹${item.averageMonthlyInvestment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
                         </View>
 
                         <View style={styles.headerRight}>
@@ -130,7 +139,7 @@ export default function PortfolioScreen() {
                                   <View style={[styles.dot, { backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }]} />
                                   <Text style={styles.assetName} numberOfLines={1}>{asset.name}</Text>
                                 </View>
-                                <Text style={styles.assetValue}>₹{asset.value.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}</Text>
+                                <Text style={styles.assetValue}>{isPrivacyMode ? '****' : `₹${asset.value.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
                               </View>
                             ))}
                           </View>
@@ -146,9 +155,84 @@ export default function PortfolioScreen() {
               </View>
             )}
           </View>
+
+          {/* Monthly Analysis Section */}
+          <View style={[styles.section, { marginBottom: 40 }]}>
+            {monthlyAnalysis.length > 0 ? (
+              <View style={styles.accordionContainer}>
+                <View style={[styles.headerWithAction]}>
+                  <Text style={styles.innerSectionTitle}>MONTHLY ANALYSIS</Text>
+                  {monthlyAnalysis.length > 6 && (
+                    <TouchableOpacity onPress={() => setShowMonthlyModal(true)} style={styles.viewMoreButton}>
+                      <ArrowRightCircle size={18} color="#007AFF" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {previewMonthlyAnalysis.map((item, index) => (
+                  <View key={item.monthKey} style={[styles.monthlyItem, index === previewMonthlyAnalysis.length - 1 && { borderBottomWidth: 0 }]}>
+                    <View style={styles.headerLeft}>
+                      <Text style={styles.monthText}>{item.month}</Text>
+                      <Text style={styles.subText}>Invested: {isPrivacyMode ? '****' : `₹${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
+                    </View>
+                    {item.percentageIncrease !== 0 && (
+                      <View style={[styles.growthBadge, { backgroundColor: item.percentageIncrease >= 0 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)' }]}>
+                        <TrendingUp size={12} color={item.percentageIncrease >= 0 ? '#4CAF50' : '#F44336'} style={{ transform: [{ rotate: item.percentageIncrease >= 0 ? '0deg' : '180deg' }] }} />
+                        <Text style={[styles.growthText, { color: item.percentageIncrease >= 0 ? '#4CAF50' : '#F44336' }]}>
+                          {Math.abs(item.percentageIncrease).toFixed(1)}%
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyCard}>
+                <Text style={styles.placeholderText}>Not enough data for monthly analysis</Text>
+              </View>
+            )}
+          </View>
         </ScrollView>
+
+        {/* FULL LIST MODAL */}
+        <Modal
+          visible={showMonthlyModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowMonthlyModal(false)}
+        >
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Monthly Analysis</Text>
+              <TouchableOpacity onPress={() => setShowMonthlyModal(false)} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={monthlyAnalysis}
+              keyExtractor={(item) => item.monthKey}
+              contentContainerStyle={styles.modalList}
+              renderItem={({ item, index }) => (
+                <View style={[styles.monthlyItem, { paddingHorizontal: 20 }, index === monthlyAnalysis.length - 1 && { borderBottomWidth: 0 }]}>
+                  <View style={styles.headerLeft}>
+                    <Text style={styles.monthText}>{item.month}</Text>
+                    <Text style={styles.subText}>Invested: {isPrivacyMode ? '****' : `₹${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
+                  </View>
+                  {item.percentageIncrease !== 0 && (
+                    <View style={[styles.growthBadge, { backgroundColor: item.percentageIncrease >= 0 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)' }]}>
+                      <TrendingUp size={12} color={item.percentageIncrease >= 0 ? '#4CAF50' : '#F44336'} style={{ transform: [{ rotate: item.percentageIncrease >= 0 ? '0deg' : '180deg' }] }} />
+                      <Text style={[styles.growthText, { color: item.percentageIncrease >= 0 ? '#4CAF50' : '#F44336' }]}>
+                        {Math.abs(item.percentageIncrease).toFixed(1)}%
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            />
+          </SafeAreaView>
+        </Modal>
       </View>
     </SafeAreaView>
+
   );
 }
 
@@ -168,7 +252,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginTop: 10,
-    marginBottom: 30,
+    marginBottom: 20,
     backgroundColor: 'transparent',
   },
   heroCard: {
@@ -182,12 +266,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 2,
   },
   heroLabel: {
     color: '#8E8E93',
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '400',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -204,8 +288,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heroValue: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '400',
     color: '#FFF',
     marginBottom: 16,
   },
@@ -229,21 +313,21 @@ const styles = StyleSheet.create({
   },
   heroRowValue: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '400',
   },
   heroRowValueWhite: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '400',
     color: '#FFF',
   },
 
   section: {
-    marginTop: 10,
+    marginTop: 0,
     backgroundColor: 'transparent',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '400',
     marginBottom: 16,
     color: '#FFF',
   },
@@ -269,6 +353,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#1C1C1E',
     borderWidth: 1,
     borderColor: '#2C2C2E',
+    paddingTop: 16,
+  },
+  innerSectionTitle: {
+    color: '#8E8E93',
+    fontSize: 10,
+    fontWeight: '400',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 12,
+    marginLeft: 16,
+  },
+  headerWithAction: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingRight: 16,
+    marginBottom: 12,
+  },
+  viewMoreButton: {
+    padding: 4,
+    marginBottom: 8,
   },
   accordionItem: {
     borderBottomWidth: 1,
@@ -293,13 +398,13 @@ const styles = StyleSheet.create({
   },
   yearText: {
     color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '400',
     marginBottom: 2,
   },
   subText: {
     color: '#8E8E93',
-    fontSize: 12,
+    fontSize: 11,
   },
   growthBadge: {
     flexDirection: 'row',
@@ -310,8 +415,8 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   growthText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '400',
     marginLeft: 4,
   },
   chevron: {
@@ -344,12 +449,12 @@ const styles = StyleSheet.create({
   },
   assetName: {
     color: '#CCC',
-    fontSize: 13,
+    fontSize: 12,
   },
   assetValue: {
     color: '#FFF',
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '400',
   },
   emptyCard: {
     height: 150,
@@ -360,5 +465,49 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
     borderStyle: 'dashed',
+  },
+  monthlyItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#1C1C1E',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2C2C2E',
+  },
+  monthText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '400',
+    marginBottom: 2,
+  },
+  modalSafeArea: {
+    flex: 1,
+    backgroundColor: '#1C1C1E',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2C2C2E',
+  },
+  modalTitle: {
+    color: '#FFF',
+    fontSize: 17,
+    fontWeight: '400',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  closeButtonText: {
+    color: '#007AFF',
+    fontSize: 17,
+    fontWeight: '400',
+  },
+  modalList: {
+    paddingBottom: 40,
   },
 });

@@ -10,10 +10,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const { transactions, tickers, removeTransaction } = usePortfolioStore();
+  const { transactions, tickers, removeTransaction, isPrivacyMode } = usePortfolioStore();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'date' | 'symbol' | 'amount'>('date');
+  const [sortBy, setSortBy] = useState<'date' | 'company' | 'amount'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterBroker, setFilterBroker] = useState<string | null>(null);
@@ -58,8 +58,10 @@ export default function HistoryScreen() {
       let comparison = 0;
       if (sortBy === 'date') {
         comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-      } else if (sortBy === 'symbol') {
-        comparison = a.symbol.localeCompare(b.symbol);
+      } else if (sortBy === 'company') {
+        const companyA = tickerMap.get(a.symbol.toUpperCase())?.['Company Name'] || a.symbol;
+        const companyB = tickerMap.get(b.symbol.toUpperCase())?.['Company Name'] || b.symbol;
+        comparison = companyA.localeCompare(companyB);
       } else if (sortBy === 'amount') {
         comparison = (a.quantity * a.price) - (b.quantity * b.price);
       }
@@ -127,7 +129,7 @@ export default function HistoryScreen() {
           </View>
 
           <View style={styles.infoCol}>
-            <Text style={styles.symbol} numberOfLines={1} ellipsizeMode="tail">{displayName}</Text>
+            <Text style={styles.symbol} numberOfLines={2} ellipsizeMode="tail">{displayName}</Text>
             <View style={styles.dateRow}>
               <Text style={styles.date}>{format(new Date(item.date), 'MMM dd')}</Text>
               {item.broker && (
@@ -141,10 +143,10 @@ export default function HistoryScreen() {
 
           <View style={styles.rightCol}>
             <Text style={[styles.amountValue, { color: isBuy ? '#FFF' : '#FFF' }]}>
-              {item.currency === 'USD' ? '$' : '₹'}{totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {isPrivacyMode ? '****' : `${item.currency === 'USD' ? '$' : '₹'}${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             </Text>
             <Text style={styles.quantityDetails}>
-              {item.quantity} @ {item.price.toLocaleString()}
+              {item.quantity} @ {isPrivacyMode ? '****' : item.price.toLocaleString()}
             </Text>
           </View>
         </View>
@@ -179,7 +181,7 @@ export default function HistoryScreen() {
             <View style={styles.filterRow}>
               <Text style={styles.filterLabel}>Sort by:</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
-                {(['date', 'symbol', 'amount'] as const).map((s) => (
+                {(['date', 'company', 'amount'] as const).map((s) => (
                   <TouchableOpacity
                     key={s}
                     style={[styles.filterChip, sortBy === s && styles.filterChipActive]}

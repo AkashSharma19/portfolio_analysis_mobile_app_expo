@@ -8,7 +8,10 @@ interface ActivityCalendarProps {
     transactions: Transaction[];
 }
 
+import { usePortfolioStore } from '@/store/usePortfolioStore';
+
 export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
+    const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
     // Group transactions by date
     const dailyStats = useMemo(() => {
         const stats: Record<string, { buy: number; sell: number }> = {};
@@ -48,7 +51,7 @@ export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
                 <View style={styles.statContainer}>
                     {sellValue > 0 && (
                         <Text style={styles.sellText} numberOfLines={1}>
-                            -{sellValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                            {isPrivacyMode ? '****' : `-${sellValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                         </Text>
                     )}
                 </View>
@@ -66,7 +69,7 @@ export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
                 <View style={styles.statContainer}>
                     {buyValue > 0 && (
                         <Text style={styles.buyText} numberOfLines={1}>
-                            +{buyValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                            {isPrivacyMode ? '****' : `+${buyValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                         </Text>
                     )}
                 </View>
@@ -76,6 +79,7 @@ export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
 
     return (
         <View style={styles.container}>
+            <Text style={styles.title}>CALENDAR VIEW</Text>
             <Calendar
                 dayComponent={({ date, state }: { date?: DateData; state?: string }) => {
                     if (!date) return <View />;
@@ -122,16 +126,16 @@ const styles = StyleSheet.create({
     },
 
     dayContainer: {
-        width: 48,
-        height: 48,
+        width: 36,
+        height: 36,
         alignItems: 'center',
         justifyContent: 'center',
     },
     dayText: {
-        fontSize: 16,
+        fontSize: 14,
         color: '#FFF',
         fontWeight: '500',
-        marginBottom: 2,
+        marginBottom: 0,
     },
     todayText: {
         color: '#2ac4c7', // Cyan-ish for today
@@ -141,19 +145,27 @@ const styles = StyleSheet.create({
         color: '#444',
     },
     statContainer: {
-        height: 12, // Fixed height to prevent jitter
+        height: 10, // Fixed height to prevent jitter
         justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
     },
     sellText: {
-        fontSize: 9,
+        fontSize: 7,
         color: '#8E8E93', // Gray as requested for sells (or use Red #FF453A if preferred)
         textAlign: 'center',
     },
     buyText: {
-        fontSize: 9,
+        fontSize: 7,
         color: '#2ac4c7', // Cyan/Green for buys
         textAlign: 'center',
+    },
+    title: {
+        color: '#8E8E93',
+        fontSize: 10,
+        fontWeight: '700',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+        marginBottom: 12,
     },
 });

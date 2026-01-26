@@ -12,7 +12,7 @@ import * as XLSX from 'xlsx';
 
 export default function ProfileScreen() {
     const router = useRouter();
-    const { transactions, tickers, importTransactions } = usePortfolioStore();
+    const { transactions, tickers, importTransactions, isPrivacyMode } = usePortfolioStore();
 
     const handleExport = async () => {
         if (transactions.length === 0) {
@@ -218,12 +218,12 @@ export default function ProfileScreen() {
 
                             <View style={styles.statsRow}>
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statValue}>{transactions.length}</Text>
+                                    <Text style={styles.statValue}>{isPrivacyMode ? '****' : transactions.length}</Text>
                                     <Text style={styles.statLabel}>Transactions</Text>
                                 </View>
                                 <View style={styles.statDivider} />
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statValue}>{tickers.length}</Text>
+                                    <Text style={styles.statValue}>{isPrivacyMode ? '****' : tickers.length}</Text>
                                     <Text style={styles.statLabel}>Holdings</Text>
                                 </View>
                             </View>
