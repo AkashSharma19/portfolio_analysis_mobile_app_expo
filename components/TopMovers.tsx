@@ -7,6 +7,8 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 export default function TopMovers() {
     const router = useRouter();
     const getHoldingsData = usePortfolioStore((state) => state.getHoldingsData);
+    const transactions = usePortfolioStore((state) => state.transactions);
+    const tickers = usePortfolioStore((state) => state.tickers);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
 
     const topMovers = useMemo(() => {
@@ -19,7 +21,7 @@ export default function TopMovers() {
 
         // Take top 8 performers
         return sorted.slice(0, 8);
-    }, [getHoldingsData]);
+    }, [getHoldingsData, transactions, tickers]);
 
     if (topMovers.length === 0) return null;
 
