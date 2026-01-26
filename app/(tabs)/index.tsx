@@ -1,6 +1,6 @@
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
-import { ArrowRightCircle, ChevronDown, Eye, EyeOff, TrendingUp } from 'lucide-react-native';
+import { ArrowRight, ChevronDown, Eye, EyeOff, TrendingUp } from 'lucide-react-native';
 import React, { useEffect, useMemo } from 'react';
 import { FlatList, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -164,7 +164,9 @@ export default function PortfolioScreen() {
                   <Text style={styles.innerSectionTitle}>MONTHLY ANALYSIS</Text>
                   {monthlyAnalysis.length > 6 && (
                     <TouchableOpacity onPress={() => setShowMonthlyModal(true)} style={styles.viewMoreButton}>
-                      <ArrowRightCircle size={18} color="#007AFF" />
+                      <View style={styles.iconCircle}>
+                        <ArrowRight size={14} color="#007AFF" />
+                      </View>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -372,8 +374,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   viewMoreButton: {
-    padding: 4,
+    padding: 2,
     marginBottom: 8,
+  },
+  iconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#2C2C2E',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   accordionItem: {
     borderBottomWidth: 1,
