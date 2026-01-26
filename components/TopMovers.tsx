@@ -23,17 +23,58 @@ export default function TopMovers() {
         return sorted.slice(0, 10);
     }, [getHoldingsData, transactions, tickers]);
 
-    if (transactions.length === 0) return null;
+    // If no transactions, show a welcome "story" to guide the user
+    if (transactions.length === 0) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.sectionTitle}>GET STARTED</Text>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.listContent}
+                >
+                    <TouchableOpacity
+                        style={styles.storyContainer}
+                        onPress={() => router.push('/(tabs)/two')} // Navigate to History/Add
+                    >
+                        <LinearGradient
+                            colors={['#007AFF', '#004080']}
+                            style={styles.ring}
+                        >
+                            <View style={styles.innerCircle}>
+                                <Text style={styles.symbolText}>HAY</Text>
+                            </View>
+                        </LinearGradient>
+                        <Text style={styles.nameText}>Welcome!</Text>
+                    </TouchableOpacity>
 
-    // If we have transactions but no top movers calculated yet (e.g. initial load), 
-    // keep the space or show a subtle placeholder instead of returning null
-    // This prevents the UI from jumping once data loads
+                    <TouchableOpacity
+                        style={styles.storyContainer}
+                        onPress={() => router.push('/(tabs)/two')}
+                    >
+                        <LinearGradient
+                            colors={['#8E8E93', '#2C2C2E']}
+                            style={styles.ring}
+                        >
+                            <View style={styles.innerCircle}>
+                                <Text style={styles.symbolText}>+</Text>
+                            </View>
+                        </LinearGradient>
+                        <Text style={styles.nameText}>Add Trade</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </View>
+        );
+    }
+
+    // If we have transactions but no top movers calculated yet (initial load), 
+    // keep the space or show a subtle placeholder
     if (topMovers.length === 0) {
         return (
             <View style={styles.container}>
                 <Text style={styles.sectionTitle}>TOP PERFORMERS</Text>
-                <View style={[styles.listContent, { height: 80, justifyContent: 'center' }]}>
-                    <Text style={{ color: '#444', fontSize: 12 }}>Loading performers...</Text>
+                <View style={[styles.listContent, { height: 80, justifyContent: 'center', paddingLeft: 16 }]}>
+                    <Text style={{ color: '#8E8E93', fontSize: 12 }}>Calculating movers...</Text>
                 </View>
             </View>
         );
