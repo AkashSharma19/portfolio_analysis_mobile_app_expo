@@ -165,34 +165,32 @@ export default function AnalyticsScreen() {
 
                     {/* Unified Actions Bar (Sort & View Mode) */}
                     <View style={styles.holdingsHeader}>
-                        <View style={styles.actionsBarLeft}>
-                            <TouchableOpacity
-                                style={styles.actionIconButton}
-                                onPress={() => setSortDirection(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
-                            >
-                                {sortDirection === 'DESC' ? (
-                                    <ArrowDown size={14} color="#FFF" />
-                                ) : (
-                                    <ArrowUp size={14} color="#FFF" />
-                                )}
-                            </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.actionIconButton}
+                            onPress={() => setSortDirection(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
+                        >
+                            {sortDirection === 'DESC' ? (
+                                <ArrowDown size={14} color="#FFF" />
+                            ) : (
+                                <ArrowUp size={14} color="#FFF" />
+                            )}
+                        </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={styles.viewModeToggle}
-                                onPress={() => {
-                                    if (holdingsViewMode === 'Current') setHoldingsViewMode('Returns');
-                                    else if (holdingsViewMode === 'Returns') setHoldingsViewMode('Contribution');
-                                    else setHoldingsViewMode('Current');
-                                }}
-                            >
-                                <ArrowUpDown size={14} color="#FFF" />
-                                <Text style={styles.viewModeText}>
-                                    {holdingsViewMode === 'Current' ? 'Current (Invested)' :
-                                        holdingsViewMode === 'Returns' ? 'Returns (%)' :
-                                            'Contribution (Current)'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity
+                            style={styles.viewModeToggle}
+                            onPress={() => {
+                                if (holdingsViewMode === 'Current') setHoldingsViewMode('Returns');
+                                else if (holdingsViewMode === 'Returns') setHoldingsViewMode('Contribution');
+                                else setHoldingsViewMode('Current');
+                            }}
+                        >
+                            <ArrowUpDown size={14} color="#FFF" />
+                            <Text style={styles.viewModeText}>
+                                {holdingsViewMode === 'Current' ? 'Current (Invested)' :
+                                    holdingsViewMode === 'Returns' ? 'Returns (%)' :
+                                        'Contribution (Current)'}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
 
                     {/* Unified Distribution/Holdings List */}
@@ -370,12 +368,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
-    },
-    actionsBarLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
     },
     actionIconButton: {
         width: 36,
