@@ -13,10 +13,9 @@ export default function TopMovers() {
         const holdings = getHoldingsData();
         if (holdings.length === 0) return [];
 
-        // Filter for profitable holdings only and sort by Total Profit amount
+        // Sort by Daily Change Percentage
         const sorted = [...holdings]
-            .filter(h => h.pnl > 0)
-            .sort((a, b) => b.pnl - a.pnl);
+            .sort((a, b) => b.dayChangePercentage - a.dayChangePercentage);
 
         // Take top 8 performers
         return sorted.slice(0, 8);
@@ -33,7 +32,7 @@ export default function TopMovers() {
                 contentContainerStyle={styles.listContent}
             >
                 {topMovers.map((item, index) => {
-                    const isProfit = item.pnlPercentage >= 0;
+                    const isProfit = item.dayChangePercentage >= 0;
                     return (
                         <TouchableOpacity
                             key={item.symbol}
@@ -51,7 +50,7 @@ export default function TopMovers() {
 
                             <View style={[styles.badge, { backgroundColor: isProfit ? '#4CAF50' : '#F44336' }]}>
                                 <Text style={styles.badgeText}>
-                                    {isProfit ? '+' : ''}{item.pnlPercentage.toFixed(1)}%
+                                    {isProfit ? '+' : ''}{item.dayChangePercentage.toFixed(1)}%
                                 </Text>
                             </View>
 

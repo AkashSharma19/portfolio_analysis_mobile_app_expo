@@ -72,6 +72,13 @@ export default function PortfolioScreen() {
               <View style={styles.dashedDivider} />
 
               <View style={styles.heroRow}>
+                <Text style={styles.heroRowLabel}>1D returns</Text>
+                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (summary.dayChange >= 0 ? '#4CAF50' : '#F44336') }]}>
+                  {isPrivacyMode ? '****' : `${summary.dayChange >= 0 ? '+' : '-'}₹${Math.abs(summary.dayChange).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(summary.dayChangePercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)`}
+                </Text>
+              </View>
+
+              <View style={styles.heroRow}>
                 <Text style={styles.heroRowLabel}>Total returns</Text>
                 <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (summary.profitAmount >= 0 ? '#4CAF50' : '#F44336') }]}>
                   {isPrivacyMode ? '****' : `${summary.profitAmount >= 0 ? '+' : '-'}₹${Math.abs(summary.profitAmount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(summary.profitPercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)`}

@@ -56,10 +56,12 @@ export const usePortfolioStore = create<PortfolioState>()(
             calculateSummary: () => {
                 const { transactions, tickers } = get();
                 if (transactions.length === 0) {
-                    return { totalValue: 0, totalCost: 0, profitAmount: 0, profitPercentage: 0, totalReturn: 0, xirr: 0 };
+                    return { totalValue: 0, totalCost: 0, profitAmount: 0, profitPercentage: 0, totalReturn: 0, xirr: 0, dayChange: 0, dayChangePercentage: 0 };
                 }
 
                 const priceMap = new Map(tickers.map(t => [t.Tickers.toUpperCase(), t['Current Value']]));
+                const closeMap = new Map(tickers.map(t => [t.Tickers.toUpperCase(), t['Yesterday Close']]));
+                const holdingsMap = new Map<string, number>();
 
                 let totalCost = 0;
                 let totalValue = 0;
@@ -83,6 +85,19 @@ export const usePortfolioStore = create<PortfolioState>()(
                         totalValue -= t.quantity * t.price;
                         cashFlows.push({ amount: t.quantity * t.price, date });
                     }
+
+                    const sym = t.symbol.toUpperCase();
+                    const currentQty = holdingsMap.get(sym) || 0;
+                    holdingsMap.set(sym, t.type === 'BUY' ? currentQty + t.quantity : currentQty - t.quantity);
+                });
+
+                let dayChange = 0;
+                holdingsMap.forEach((qty, symbol) => {
+                    if (qty > 0) {
+                        const currentPrice = priceMap.get(symbol) || 0;
+                        const closePrice = closeMap.get(symbol) || currentPrice;
+                        dayChange += (currentPrice - closePrice) * qty;
+                    }
                 });
 
                 cashFlows.push({ amount: totalValue, date: new Date() });
@@ -98,6 +113,8 @@ export const usePortfolioStore = create<PortfolioState>()(
                     profitPercentage,
                     totalReturn: profitAmount,
                     xirr,
+                    dayChange,
+                    dayChangePercentage: (totalValue - dayChange) > 0 ? (dayChange / (totalValue - dayChange)) * 100 : 0,
                 };
             },
             getAllocationData: (dimension) => {
@@ -156,19 +173,6 @@ export const usePortfolioStore = create<PortfolioState>()(
                     totalPortfolioValue += currentValue;
                 });
 
-                if (totalPortfolioValue === 0) return [];
-
-                return Object.entries(groups)
-                    .map(([name, data]) => ({
-                        name,
-                        value: data.value,
-                        totalCost: data.cost,
-                        pnl: data.value - data.cost,
-                        pnlPercentage: data.cost > 0 ? ((data.value - data.cost) / data.cost) * 100 : 0,
-                        percentage: (data.value / totalPortfolioValue) * 100,
-                        quantity: data.quantity
-                    }))
-                    .sort((a, b) => b.value - a.value);
             },
             getHoldingsData: () => {
                 const { transactions, tickers } = get();
@@ -204,9 +208,13 @@ export const usePortfolioStore = create<PortfolioState>()(
 
                     const ticker = tickerMap.get(symbol);
                     const currentPrice = ticker?.['Current Value'] || 0;
+                    const yesterdayClose = ticker?.['Yesterday Close'] || currentPrice;
                     const avgPrice = data.totalCost / data.quantity;
                     const currentValue = data.quantity * (currentPrice || avgPrice);
                     const investedValue = data.totalCost;
+
+                    const dayChange = (currentPrice - yesterdayClose) * data.quantity;
+                    const dayChangePercentage = yesterdayClose > 0 ? ((currentPrice - yesterdayClose) / yesterdayClose) * 100 : 0;
 
                     totalPortfolioValue += currentValue;
 
@@ -220,6 +228,8 @@ export const usePortfolioStore = create<PortfolioState>()(
                         currentValue,
                         pnl: currentValue - investedValue,
                         pnlPercentage: investedValue > 0 ? ((currentValue - investedValue) / investedValue) * 100 : 0,
+                        dayChange,
+                        dayChangePercentage,
                         assetType: ticker?.['Asset Type'] || 'Other',
                         sector: ticker?.['Sector'] || 'Other',
                         broker: transactions.filter(t => t.symbol.toUpperCase() === symbol).reverse()[0]?.broker || 'Unknown'

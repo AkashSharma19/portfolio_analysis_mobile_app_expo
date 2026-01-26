@@ -17,6 +17,7 @@ export interface Ticker {
   'Company Name': string;
   'Asset Type'?: string;
   'Sector'?: string;
+  'Yesterday Close'?: number;
 }
 
 export interface PortfolioSummary {
@@ -26,6 +27,8 @@ export interface PortfolioSummary {
   profitPercentage: number;
   totalReturn: number;
   xirr: number;
+  dayChange: number;
+  dayChangePercentage: number;
 }
 export interface YearlyAnalysis {
   year: number;
@@ -57,6 +60,8 @@ export interface Holding {
   assetType: string;
   sector: string;
   broker: string;
+  dayChange: number;
+  dayChangePercentage: number;
 }
 
 export interface AllocationItem {
