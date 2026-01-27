@@ -49,12 +49,22 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
+  const theme = {
+    ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(colorScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+      background: '#000',
+      card: '#000',
+    },
+  };
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000' }}>
+      <ThemeProvider value={theme}>
+        <Stack screenOptions={{ contentStyle: { backgroundColor: '#000' } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="add-transaction" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="stock-details/[symbol]" options={{ animation: 'slide_from_right', headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

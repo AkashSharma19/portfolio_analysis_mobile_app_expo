@@ -241,6 +241,8 @@ export const usePortfolioStore = create<PortfolioState>()(
                         dayChangePercentage,
                         assetType: ticker?.['Asset Type'] || 'Other',
                         sector: ticker?.['Sector'] || 'Other',
+                        high52: ticker?.High52,
+                        low52: ticker?.Low52,
                         broker: transactions.filter(t => t.symbol.toUpperCase() === symbol).reverse()[0]?.broker || 'Unknown'
                     });
                 });

@@ -15,7 +15,33 @@ export default function StockDetailsScreen() {
 
     const holding = useMemo(() => {
         const holdings = getHoldingsData();
-        return holdings.find((h) => h.symbol === symbol);
+        const foundHolding = holdings.find((h) => h.symbol === symbol);
+        if (foundHolding) return foundHolding;
+
+        // If not in holdings, look up ticker info
+        const ticker = usePortfolioStore.getState().tickers.find(t => t.Tickers === symbol);
+        if (ticker) {
+            return {
+                symbol: ticker.Tickers,
+                companyName: ticker['Company Name'],
+                quantity: 0,
+                avgPrice: 0,
+                currentPrice: ticker['Current Value'],
+                investedValue: 0,
+                currentValue: 0,
+                pnl: 0,
+                pnlPercentage: 0,
+                contributionPercentage: 0,
+                assetType: ticker['Asset Type'] || 'Other',
+                sector: ticker['Sector'] || 'Other',
+                broker: 'N/A',
+                dayChange: ticker['Current Value'] - (ticker['Yesterday Close'] || ticker['Current Value']),
+                dayChangePercentage: ticker['Yesterday Close'] ? ((ticker['Current Value'] - ticker['Yesterday Close']) / ticker['Yesterday Close']) * 100 : 0,
+                high52: ticker.High52,
+                low52: ticker.Low52,
+            };
+        }
+        return null;
     }, [getHoldingsData, symbol]);
 
     const stockTransactions = useMemo(() => {
@@ -34,13 +60,11 @@ export default function StockDetailsScreen() {
                     </TouchableOpacity>
                 </View>
                 <View style={styles.centerContent}>
-                    <Text style={styles.errorText}>Holding not found</Text>
+                    <Text style={styles.errorText}>Company details not found</Text>
                 </View>
             </SafeAreaView>
         );
     }
-
-    const isProfit = holding.pnl >= 0;
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -52,14 +76,12 @@ export default function StockDetailsScreen() {
                     <ArrowLeft size={24} color="#FFF" />
                 </TouchableOpacity>
                 <View style={styles.headerTitle}>
-                    <Text style={styles.companyName} numberOfLines={1}>{holding.companyName}</Text>
-                    <Text style={styles.symbol}>{holding.symbol}</Text>
+                    <Text style={styles.companyName} numberOfLines={2}>{holding.companyName}</Text>
                 </View>
                 <View style={{ width: 40 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* Main Price Card */}
                 {/* Main Price Card */}
                 <View style={styles.priceCard}>
                     <View style={styles.heroHeaderRow}>
@@ -101,38 +123,67 @@ export default function StockDetailsScreen() {
                         <Text style={styles.heroRowValueWhite}>{isPrivacyMode ? '****' : `₹${holding.avgPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
                     </View>
 
-                    <View style={[styles.heroRow, { marginBottom: 0 }]}>
+                    <View style={styles.heroRow}>
                         <Text style={styles.heroRowLabel}>Sector</Text>
                         <Text style={styles.heroRowValueWhite} numberOfLines={1}>{holding.sector}</Text>
                     </View>
                 </View>
 
-
-                {/* Transactions History */}
-                <Text style={styles.sectionTitle}>HISTORY</Text>
-                <View style={styles.historyList}>
-                    {stockTransactions.map((item) => (
-                        <View key={item.id} style={styles.historyItem}>
-                            <View style={[styles.iconContainer, { backgroundColor: item.type === 'BUY' ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 59, 48, 0.15)' }]}>
-                                {item.type === 'BUY' ? (
-                                    <ArrowUpRight size={20} color="#34C759" />
-                                ) : (
-                                    <ArrowDownLeft size={20} color="#FF3B30" />
-                                )}
+                {/* 52 Week Range */}
+                {typeof holding.high52 === 'number' && typeof holding.low52 === 'number' && holding.high52 > 0 && holding.low52 > 0 && holding.assetType !== 'Mutual Fund' && (
+                    <View style={styles.rangeCard}>
+                        <Text style={styles.sectionTitle}>52 WEEK RANGE</Text>
+                        <View style={styles.rangeBarContainer}>
+                            <View style={styles.rangeLabels}>
+                                <Text style={styles.rangeValue}>₹{holding.low52.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</Text>
+                                <Text style={styles.rangeValue}>₹{holding.high52.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</Text>
                             </View>
-                            <View style={styles.historyInfo}>
-                                <Text style={styles.historyType}>{item.type === 'BUY' ? 'Bought' : 'Sold'}</Text>
-                                <Text style={styles.historyDate}>{format(new Date(item.date), 'MMM dd, yyyy')}</Text>
+                            <View style={styles.progressBarBg}>
+                                <View
+                                    style={[
+                                        styles.currentMarker,
+                                        { left: `${Math.min(100, Math.max(0, ((holding.currentPrice - holding.low52) / (holding.high52 - holding.low52)) * 100))}%` }
+                                    ]}
+                                />
                             </View>
-                            <View style={styles.historyAmount}>
-                                <Text style={styles.historyValue}>
-                                    {isPrivacyMode ? '****' : `₹${(item.quantity * item.price).toLocaleString()}`}
-                                </Text>
-                                <Text style={styles.historyDetails}>{item.quantity} @ {isPrivacyMode ? '****' : item.price.toLocaleString()}</Text>
+                            <View style={styles.rangeLabels}>
+                                <Text style={styles.rangeSub}>Low</Text>
+                                <Text style={styles.rangeSub}>High</Text>
                             </View>
                         </View>
-                    ))}
-                </View>
+                    </View>
+                )}
+
+                {/* Hide transactions if none exist */}
+                {stockTransactions.length > 0 && (
+                    <>
+                        {/* Transactions History */}
+                        <Text style={styles.sectionTitle}>HISTORY</Text>
+                        <View style={styles.historyList}>
+                            {stockTransactions.map((item: any) => (
+                                <View key={item.id} style={styles.historyItem}>
+                                    <View style={[styles.iconContainer, { backgroundColor: item.type === 'BUY' ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 59, 48, 0.15)' }]}>
+                                        {item.type === 'BUY' ? (
+                                            <ArrowUpRight size={20} color="#34C759" />
+                                        ) : (
+                                            <ArrowDownLeft size={20} color="#FF3B30" />
+                                        )}
+                                    </View>
+                                    <View style={styles.historyInfo}>
+                                        <Text style={styles.historyType}>{item.type === 'BUY' ? 'Bought' : 'Sold'}</Text>
+                                        <Text style={styles.historyDate}>{format(new Date(item.date), 'MMM dd, yyyy')}</Text>
+                                    </View>
+                                    <View style={styles.historyAmount}>
+                                        <Text style={styles.historyValue}>
+                                            {isPrivacyMode ? '****' : `₹${(item.quantity * item.price).toLocaleString()}`}
+                                        </Text>
+                                        <Text style={styles.historyDetails}>{item.quantity} @ {isPrivacyMode ? '****' : item.price.toLocaleString()}</Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+                    </>
+                )}
 
             </ScrollView>
         </SafeAreaView>
@@ -156,7 +207,9 @@ const styles = StyleSheet.create({
         marginLeft: -8,
     },
     headerTitle: {
+        flex: 1,
         alignItems: 'center',
+        paddingHorizontal: 12,
     },
     symbol: {
         color: '#8E8E93',
@@ -166,6 +219,7 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 16,
         fontWeight: '700',
+        textAlign: 'center',
     },
     scrollContent: {
         padding: 20,
@@ -329,5 +383,50 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '400',
         color: '#FFF',
+    },
+    rangeCard: {
+        backgroundColor: '#1C1C1E',
+        borderRadius: 24,
+        padding: 24,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#2C2C2E',
+    },
+    rangeBarContainer: {
+        marginTop: 8,
+    },
+    rangeLabels: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    rangeValue: {
+        color: '#FFF',
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    rangeSub: {
+        color: '#8E8E93',
+        fontSize: 10,
+        marginTop: 4,
+        textTransform: 'uppercase',
+    },
+    progressBarBg: {
+        height: 4,
+        backgroundColor: '#2C2C2E',
+        borderRadius: 2,
+        position: 'relative',
+        marginVertical: 8,
+    },
+    currentMarker: {
+        position: 'absolute',
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#007AFF',
+        top: -3,
+        marginLeft: -5,
+        borderWidth: 2,
+        borderColor: '#FFF',
     },
 });

@@ -18,6 +18,8 @@ export interface Ticker {
   'Asset Type'?: string;
   'Sector'?: string;
   'Yesterday Close'?: number;
+  High52?: number;
+  Low52?: number;
 }
 
 export interface PortfolioSummary {
@@ -62,6 +64,8 @@ export interface Holding {
   broker: string;
   dayChange: number;
   dayChangePercentage: number;
+  high52?: number;
+  low52?: number;
 }
 
 export interface AllocationItem {
