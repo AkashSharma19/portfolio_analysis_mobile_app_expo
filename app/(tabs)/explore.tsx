@@ -141,6 +141,7 @@ export default function ExploreScreen() {
                         keyExtractor={(item) => item.Tickers}
                         renderItem={renderItem}
                         contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={false}
                         refreshControl={
                             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />
                         }

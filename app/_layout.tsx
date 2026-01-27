@@ -64,6 +64,7 @@ function RootLayoutNav() {
         <Stack screenOptions={{ contentStyle: { backgroundColor: '#000' } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="add-transaction" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="monthly-analysis" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="stock-details/[symbol]" options={{ animation: 'slide_from_right', headerShown: false }} />
         </Stack>
       </ThemeProvider>

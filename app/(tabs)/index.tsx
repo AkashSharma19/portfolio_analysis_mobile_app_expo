@@ -1,9 +1,10 @@
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import TopMovers from '@/components/TopMovers';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
+import { useRouter } from 'expo-router';
 import { ArrowRight, ChevronDown, Eye, EyeOff, TrendingUp } from 'lucide-react-native';
 import React, { useEffect, useMemo } from 'react';
-import { FlatList, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CHART_COLORS = [
@@ -12,6 +13,7 @@ const CHART_COLORS = [
 ];
 
 export default function PortfolioScreen() {
+  const router = useRouter();
   const transactions = usePortfolioStore((state) => state.transactions);
   const calculateSummary = usePortfolioStore((state) => state.calculateSummary);
   const fetchTickers = usePortfolioStore((state) => state.fetchTickers);
@@ -36,7 +38,6 @@ export default function PortfolioScreen() {
 
   const [refreshing, setRefreshing] = React.useState(false);
   const [expandedYear, setExpandedYear] = React.useState<number | null>(null);
-  const [showMonthlyModal, setShowMonthlyModal] = React.useState(false);
 
   const toggleYear = (year: number) => {
     setExpandedYear(expandedYear === year ? null : year);
@@ -172,7 +173,7 @@ export default function PortfolioScreen() {
                 <View style={[styles.headerWithAction]}>
                   <Text style={styles.innerSectionTitle}>MONTHLY ANALYSIS</Text>
                   {monthlyAnalysis.length > 6 && (
-                    <TouchableOpacity onPress={() => setShowMonthlyModal(true)} style={styles.viewMoreButton}>
+                    <TouchableOpacity onPress={() => router.push('/monthly-analysis')} style={styles.viewMoreButton}>
                       <View style={styles.iconCircle}>
                         <ArrowRight size={14} color="#007AFF" />
                       </View>
@@ -203,44 +204,6 @@ export default function PortfolioScreen() {
             )}
           </View>
         </ScrollView>
-
-        {/* FULL LIST MODAL */}
-        <Modal
-          visible={showMonthlyModal}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setShowMonthlyModal(false)}
-        >
-          <SafeAreaView style={styles.modalSafeArea}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Monthly Analysis</Text>
-              <TouchableOpacity onPress={() => setShowMonthlyModal(false)} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>Done</Text>
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={monthlyAnalysis}
-              keyExtractor={(item) => item.monthKey}
-              contentContainerStyle={styles.modalList}
-              renderItem={({ item, index }) => (
-                <View style={[styles.monthlyItem, { paddingHorizontal: 20 }, index === monthlyAnalysis.length - 1 && { borderBottomWidth: 0 }]}>
-                  <View style={styles.headerLeft}>
-                    <Text style={styles.monthText}>{item.month}</Text>
-                    <Text style={styles.subText}>Invested: {isPrivacyMode ? '****' : `₹${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
-                  </View>
-                  {item.percentageIncrease !== 0 && (
-                    <View style={[styles.growthBadge, { backgroundColor: item.percentageIncrease >= 0 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)' }]}>
-                      <TrendingUp size={12} color={item.percentageIncrease >= 0 ? '#4CAF50' : '#F44336'} style={{ transform: [{ rotate: item.percentageIncrease >= 0 ? '0deg' : '180deg' }] }} />
-                      <Text style={[styles.growthText, { color: item.percentageIncrease >= 0 ? '#4CAF50' : '#F44336' }]}>
-                        {Math.abs(item.percentageIncrease).toFixed(1)}%
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              )}
-            />
-          </SafeAreaView>
-        </Modal>
       </View>
     </SafeAreaView>
 
@@ -499,32 +462,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 2,
-  },
-  modalSafeArea: {
-    flex: 1,
-    backgroundColor: '#1C1C1E',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2C2C2E',
-  },
-  modalTitle: {
-    color: '#FFF',
-    fontSize: 17,
-    fontWeight: '400',
-  },
-  closeButton: {
-    padding: 8,
-  },
-  closeButtonText: {
-    color: '#007AFF',
-    fontSize: 17,
-    fontWeight: '400',
   },
   modalList: {
     paddingBottom: 40,

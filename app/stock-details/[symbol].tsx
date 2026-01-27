@@ -1,5 +1,6 @@
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { format } from 'date-fns';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight } from 'lucide-react-native';
 import React, { useMemo } from 'react';
@@ -81,7 +82,11 @@ export default function StockDetailsScreen() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                showsHorizontalScrollIndicator={false}
+            >
                 {/* Main Price Card */}
                 <View style={styles.priceCard}>
                     <View style={styles.heroHeaderRow}>
@@ -151,20 +156,29 @@ export default function StockDetailsScreen() {
                         <Text style={styles.sectionTitle}>52 WEEK RANGE</Text>
                         <View style={styles.rangeBarContainer}>
                             <View style={styles.rangeLabels}>
-                                <Text style={styles.rangeValue}>₹{holding.low52.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</Text>
-                                <Text style={styles.rangeValue}>₹{holding.high52.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</Text>
+                                <Text style={styles.rangeValue}>₹{holding.low52.toLocaleString('en-IN', { maximumFractionDigits: 1 })}</Text>
+                                <Text style={styles.rangeValue}>₹{holding.high52.toLocaleString('en-IN', { maximumFractionDigits: 1 })}</Text>
                             </View>
-                            <View style={styles.progressBarBg}>
+                            <View style={styles.progressBarWrapper}>
+                                <LinearGradient
+                                    colors={['#333', '#555', '#333']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.progressBarTrack}
+                                />
                                 <View
                                     style={[
-                                        styles.currentMarker,
+                                        styles.premiumMarker,
                                         { left: `${Math.min(100, Math.max(0, ((holding.currentPrice - holding.low52) / (holding.high52 - holding.low52)) * 100))}%` }
                                     ]}
-                                />
+                                >
+                                    <View style={styles.markerLine} />
+                                    <View style={styles.markerDot} />
+                                </View>
                             </View>
                             <View style={styles.rangeLabels}>
-                                <Text style={styles.rangeSub}>Low</Text>
-                                <Text style={styles.rangeSub}>High</Text>
+                                <Text style={styles.rangeSub}>52W Low</Text>
+                                <Text style={styles.rangeSub}>52W High</Text>
                             </View>
                         </View>
                     </View>
@@ -418,31 +432,54 @@ const styles = StyleSheet.create({
     },
     rangeValue: {
         color: '#FFF',
-        fontSize: 12,
-        fontWeight: '500',
+        fontSize: 13,
+        fontWeight: '600',
     },
     rangeSub: {
         color: '#8E8E93',
-        fontSize: 10,
-        marginTop: 4,
+        fontSize: 9,
+        fontWeight: '500',
+        marginTop: 6,
         textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
-    progressBarBg: {
-        height: 4,
-        backgroundColor: '#2C2C2E',
-        borderRadius: 2,
-        position: 'relative',
-        marginVertical: 8,
+    progressBarWrapper: {
+        height: 24,
+        justifyContent: 'center',
+        marginVertical: 4,
     },
-    currentMarker: {
+    progressBarTrack: {
+        height: 6,
+        borderRadius: 3,
+        width: '100%',
+    },
+    premiumMarker: {
         position: 'absolute',
+        alignItems: 'center',
+        width: 20,
+        height: 24,
+        marginLeft: -10,
+        zIndex: 10,
+    },
+    markerLine: {
+        width: 2,
+        height: 24,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        borderRadius: 1,
+    },
+    markerDot: {
         width: 10,
         height: 10,
         borderRadius: 5,
         backgroundColor: '#007AFF',
-        top: -3,
-        marginLeft: -5,
         borderWidth: 2,
         borderColor: '#FFF',
+        position: 'absolute',
+        top: 7,
+        shadowColor: '#007AFF',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 4,
+        elevation: 5,
     },
 });
