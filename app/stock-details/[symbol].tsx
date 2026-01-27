@@ -85,43 +85,59 @@ export default function StockDetailsScreen() {
                 {/* Main Price Card */}
                 <View style={styles.priceCard}>
                     <View style={styles.heroHeaderRow}>
-                        <Text style={styles.heroLabel}>CURRENT VALUE</Text>
+                        <Text style={styles.heroLabel}>{holding.quantity > 0 ? 'CURRENT VALUE' : 'CURRENT PRICE'}</Text>
                     </View>
 
                     <Text style={styles.heroValue}>
-                        {isPrivacyMode ? '****' : `₹${holding.currentValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
+                        {isPrivacyMode ? '****' : `₹${(holding.quantity > 0 ? holding.currentValue : holding.currentPrice).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                     </Text>
 
                     <View style={styles.dashedDivider} />
 
                     <View style={styles.heroRow}>
-                        <Text style={styles.heroRowLabel}>1D returns</Text>
+                        <Text style={styles.heroRowLabel}>{holding.quantity > 0 ? '1D returns' : '1D change'}</Text>
                         <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (holding.dayChange >= 0 ? '#4CAF50' : '#F44336') }]}>
-                            {isPrivacyMode ? '****' : `${holding.dayChange >= 0 ? '+' : ''}₹${Math.abs(holding.dayChange).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.dayChangePercentage).toFixed(2)}%)`}
+                            {isPrivacyMode ? '****' : `${holding.dayChange >= 0 ? '+' : ''}₹${Math.abs(holding.quantity > 0 ? holding.dayChange : (holding.dayChange)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.dayChangePercentage).toFixed(2)}%)`}
                         </Text>
                     </View>
 
-                    <View style={styles.heroRow}>
-                        <Text style={styles.heroRowLabel}>Total returns</Text>
-                        <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (holding.pnl >= 0 ? '#4CAF50' : '#F44336') }]}>
-                            {isPrivacyMode ? '****' : `${holding.pnl >= 0 ? '+' : '-'}₹${Math.abs(holding.pnl).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.pnlPercentage).toFixed(2)}%)`}
-                        </Text>
-                    </View>
+                    {holding.quantity > 0 && (
+                        <View style={styles.heroRow}>
+                            <Text style={styles.heroRowLabel}>Total returns</Text>
+                            <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (holding.pnl >= 0 ? '#4CAF50' : '#F44336') }]}>
+                                {isPrivacyMode ? '****' : `${holding.pnl >= 0 ? '+' : '-'}₹${Math.abs(holding.pnl).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.pnlPercentage).toFixed(2)}%)`}
+                            </Text>
+                        </View>
+                    )}
 
-                    <View style={styles.heroRow}>
-                        <Text style={styles.heroRowLabel}>Invested</Text>
-                        <Text style={styles.heroRowValueWhite}>{isPrivacyMode ? '****' : `₹${holding.investedValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
-                    </View>
+                    {holding.quantity > 0 ? (
+                        <>
+                            <View style={styles.heroRow}>
+                                <Text style={styles.heroRowLabel}>Invested</Text>
+                                <Text style={styles.heroRowValueWhite}>{isPrivacyMode ? '****' : `₹${holding.investedValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
+                            </View>
 
-                    <View style={styles.heroRow}>
-                        <Text style={styles.heroRowLabel}>Quantity</Text>
-                        <Text style={styles.heroRowValueWhite}>{holding.quantity}</Text>
-                    </View>
+                            <View style={styles.heroRow}>
+                                <Text style={styles.heroRowLabel}>Quantity</Text>
+                                <Text style={styles.heroRowValueWhite}>{holding.quantity}</Text>
+                            </View>
 
-                    <View style={styles.heroRow}>
-                        <Text style={styles.heroRowLabel}>Avg. Price</Text>
-                        <Text style={styles.heroRowValueWhite}>{isPrivacyMode ? '****' : `₹${holding.avgPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
-                    </View>
+                            <View style={styles.heroRow}>
+                                <Text style={styles.heroRowLabel}>Current Price</Text>
+                                <Text style={styles.heroRowValueWhite}>₹{holding.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
+                            </View>
+
+                            <View style={styles.heroRow}>
+                                <Text style={styles.heroRowLabel}>Avg. Price</Text>
+                                <Text style={styles.heroRowValueWhite}>{isPrivacyMode ? '****' : `₹${holding.avgPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
+                            </View>
+                        </>
+                    ) : (
+                        <View style={styles.heroRow}>
+                            <Text style={styles.heroRowLabel}>Current Price</Text>
+                            <Text style={styles.heroRowValueWhite}>₹{holding.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
+                        </View>
+                    )}
 
                     <View style={styles.heroRow}>
                         <Text style={styles.heroRowLabel}>Sector</Text>
