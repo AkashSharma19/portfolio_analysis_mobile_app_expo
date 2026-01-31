@@ -69,7 +69,7 @@ export default function TopMovers() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.sectionTitle}>TOP PERFORMERS</Text>
+            <Text style={styles.sectionTitle}>TOP MOVERS</Text>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
