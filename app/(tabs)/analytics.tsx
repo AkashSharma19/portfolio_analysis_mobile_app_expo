@@ -6,6 +6,8 @@ import {
     ArrowUp,
     ArrowUpDown,
     ArrowUpRight,
+    Briefcase,
+    Building2,
     Candy,
     Car,
     ChartNoAxesCombined,
@@ -18,6 +20,7 @@ import {
     Hammer,
     Landmark,
     Layers,
+    LayoutGrid,
     Medal,
     Monitor,
     Phone,
@@ -158,11 +161,11 @@ export default function AnalyticsScreen() {
         );
     }
 
-    const dimensions: { id: Dimension; label: string }[] = [
-        { id: 'Sector', label: 'Sector' },
-        { id: 'Company Name', label: 'Company' },
-        { id: 'Asset Type', label: 'Asset Type' },
-        { id: 'Broker', label: 'Broker' },
+    const dimensions: { id: Dimension; label: string; icon: any }[] = [
+        { id: 'Sector', label: 'Sector', icon: LayoutGrid },
+        { id: 'Company Name', label: 'Company', icon: Building2 },
+        { id: 'Asset Type', label: 'Asset Type', icon: Layers },
+        { id: 'Broker', label: 'Broker', icon: Briefcase },
     ];
 
     return (
@@ -171,6 +174,7 @@ export default function AnalyticsScreen() {
                 <View style={styles.selectorBar}>
                     {dimensions.map((dim) => {
                         const isActive = selectedDimension === dim.id;
+                        const Icon = dim.icon;
                         return (
                             <TouchableOpacity
                                 key={dim.id}
@@ -180,6 +184,7 @@ export default function AnalyticsScreen() {
                                     setSelectedDimension(dim.id);
                                 }}
                             >
+                                <Icon size={20} color={isActive ? '#FFF' : '#8E8E93'} style={styles.selectorIcon} />
                                 <Text style={[styles.selectorText, isActive && styles.selectorTextActive]}>
                                     {dim.label}
                                 </Text>
@@ -351,8 +356,8 @@ export default function AnalyticsScreen() {
                     </View>
                 </ScrollView>
 
-            </View>
-        </SafeAreaView>
+            </View >
+        </SafeAreaView >
     );
 }
 
@@ -372,29 +377,38 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#1C1C1E',
         flexDirection: 'row',
-        gap: 8,
+        justifyContent: 'space-between',
+        gap: 10,
     },
     selectorButton: {
         flex: 1,
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         paddingVertical: 8,
-        borderRadius: 20,
+        paddingHorizontal: 4,
+        borderRadius: 12,
         backgroundColor: '#1C1C1E',
         borderWidth: 1,
         borderColor: '#2C2C2E',
-        alignItems: 'center',
-        justifyContent: 'center',
+        gap: 4,
     },
     selectorButtonActive: {
         backgroundColor: '#007AFF',
         borderColor: '#0A84FF',
     },
+    selectorIcon: {
+        marginBottom: 2,
+    },
     selectorText: {
         color: '#8E8E93',
-        fontSize: 11,
-        fontWeight: '400',
+        fontSize: 10,
+        fontWeight: '500',
+        textAlign: 'center',
     },
     selectorTextActive: {
         color: '#FFF',
+        fontWeight: '600',
     },
     scrollContent: {
         padding: 16,
