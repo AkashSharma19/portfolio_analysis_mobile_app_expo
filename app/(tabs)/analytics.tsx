@@ -1,7 +1,27 @@
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react-native';
+import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+    Candy,
+    Car,
+    Coins,
+    CreditCard,
+    Diamond,
+    Droplet,
+    Factory,
+    FlaskConical,
+    Hammer,
+    Landmark,
+    Monitor,
+    Phone,
+    ShoppingBasket,
+    TrendingUp,
+    Wallet,
+    Zap
+} from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dimensions, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { PieChart } from 'react-native-gifted-charts';
@@ -17,6 +37,26 @@ const CHART_COLORS = [
 const GRADIENTS = {
     card: ['#1C1C1E', '#000000'] as const,
     active: ['#007AFF', '#004080'] as const,
+};
+
+const SECTOR_ICONS: Record<string, any> = {
+    'Bank': Landmark,
+    'IT': Monitor,
+    'Refineries': Factory,
+    'Mutual Fund': Wallet,
+    'FMCG': ShoppingBasket,
+    'Automobile': Car,
+    'Gold': Coins,
+    'Communications': Phone,
+    'Steel/ Iron Prducts': Hammer,
+    'Steel/ Iron Products': Hammer,
+    'Oil': Droplet,
+    'NBFC': CreditCard,
+    'Power': Zap,
+    'Jewellery': Diamond,
+    'Trading': TrendingUp,
+    'Petrochemicals': FlaskConical,
+    'Sugar': Candy,
 };
 
 type Dimension = 'Sector' | 'Company Name' | 'Asset Type' | 'Broker';
@@ -217,9 +257,14 @@ export default function AnalyticsScreen() {
                                     <View style={styles.holdingRow}>
                                         <View style={styles.holdingMain}>
                                             <View style={[styles.holdingIcon, { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] + '22' }]}>
-                                                <Text style={[styles.iconLetter, { color: CHART_COLORS[index % CHART_COLORS.length] }]}>
-                                                    {item.name[0]?.toUpperCase() || '?'}
-                                                </Text>
+                                                {selectedDimension === 'Sector' && SECTOR_ICONS[item.name] ? (() => {
+                                                    const Icon = SECTOR_ICONS[item.name];
+                                                    return <Icon size={20} color={CHART_COLORS[index % CHART_COLORS.length]} />;
+                                                })() : (
+                                                    <Text style={[styles.iconLetter, { color: CHART_COLORS[index % CHART_COLORS.length] }]}>
+                                                        {item.name[0]?.toUpperCase() || '?'}
+                                                    </Text>
+                                                )}
                                             </View>
                                             <View style={styles.holdingInfo}>
                                                 <Text style={styles.holdingSymbol} numberOfLines={2} ellipsizeMode="tail">{item.name}</Text>
