@@ -7,6 +7,7 @@ import {
     ActivityIndicator,
     FlatList,
     RefreshControl,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -28,6 +29,9 @@ export default function ExploreScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [filterAssetType, setFilterAssetType] = useState<string | null>(null);
+    const [filterSector, setFilterSector] = useState<string | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
         const init = async () => {
@@ -47,14 +51,22 @@ export default function ExploreScreen() {
     }, [fetchTickers]);
 
     const filteredTickers = useMemo(() => {
-        let result = tickers;
+        let result = [...tickers];
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            result = tickers.filter(
+            result = result.filter(
                 (item) =>
                     item['Company Name'].toLowerCase().includes(query) ||
                     item.Tickers.toLowerCase().includes(query)
             );
+        }
+
+        if (filterAssetType) {
+            result = result.filter(item => item['Asset Type'] === filterAssetType);
+        }
+
+        if (filterSector) {
+            result = result.filter(item => item['Sector'] === filterSector);
         }
 
         // Sort by 1D change percentage (descending)
@@ -69,7 +81,17 @@ export default function ExploreScreen() {
 
             return bChange - aChange;
         });
-    }, [tickers, searchQuery]);
+    }, [tickers, searchQuery, filterAssetType, filterSector]);
+
+    const uniqueAssetTypes = useMemo(() => {
+        const assetTypes = new Set<string>(tickers.map(t => t['Asset Type']).filter((t): t is string => !!t));
+        return Array.from(assetTypes).sort();
+    }, [tickers]);
+
+    const uniqueSectors = useMemo(() => {
+        const sectors = new Set<string>(tickers.map(t => t['Sector']).filter((t): t is string => !!t));
+        return Array.from(sectors).sort();
+    }, [tickers]);
 
     const renderItem = ({ item, index }: { item: any; index: number }) => {
         const currentValue = item['Current Value'] || 0;
@@ -112,23 +134,89 @@ export default function ExploreScreen() {
         <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
             <View style={styles.container}>
                 <View style={styles.header}>
-                    <View style={styles.searchContainer}>
-                        <Ionicons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Search companies or tickers"
-                            placeholderTextColor="#8E8E93"
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                        />
-                        {searchQuery.length > 0 && (
-                            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-                                <Ionicons name="close-circle" size={18} color="#8E8E93" />
-                            </TouchableOpacity>
-                        )}
+                    <View style={styles.headerTop}>
+                        <View style={styles.searchContainer}>
+                            <Ionicons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Search companies or tickers"
+                                placeholderTextColor="#8E8E93"
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                            />
+                            {searchQuery.length > 0 && (
+                                <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+                                    <Ionicons name="close-circle" size={18} color="#8E8E93" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                        <TouchableOpacity
+                            style={styles.filterToggle}
+                            onPress={() => setShowFilters(!showFilters)}
+                        >
+                            <Ionicons name="filter" size={20} color={showFilters ? '#007AFF' : '#FFF'} />
+                        </TouchableOpacity>
                     </View>
+
+                    {showFilters && (
+                        <View style={styles.filtersContainer}>
+                            {uniqueAssetTypes.length > 0 && (
+                                <View style={styles.filterRow}>
+                                    <Text style={styles.filterLabel}>Asset Type</Text>
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
+                                        <TouchableOpacity
+                                            style={[styles.filterChip, filterAssetType === null && styles.filterChipActive]}
+                                            onPress={() => setFilterAssetType(null)}
+                                        >
+                                            <Text style={[styles.filterChipText, filterAssetType === null && styles.filterChipTextActive]}>
+                                                All
+                                            </Text>
+                                        </TouchableOpacity>
+                                        {uniqueAssetTypes.map((at) => (
+                                            <TouchableOpacity
+                                                key={at}
+                                                style={[styles.filterChip, filterAssetType === at && styles.filterChipActive]}
+                                                onPress={() => setFilterAssetType(at)}
+                                            >
+                                                <Text style={[styles.filterChipText, filterAssetType === at && styles.filterChipTextActive]}>
+                                                    {at}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                            )}
+
+                            {uniqueSectors.length > 0 && (
+                                <View style={styles.filterRow}>
+                                    <Text style={styles.filterLabel}>Sector</Text>
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
+                                        <TouchableOpacity
+                                            style={[styles.filterChip, filterSector === null && styles.filterChipActive]}
+                                            onPress={() => setFilterSector(null)}
+                                        >
+                                            <Text style={[styles.filterChipText, filterSector === null && styles.filterChipTextActive]}>
+                                                All
+                                            </Text>
+                                        </TouchableOpacity>
+                                        {uniqueSectors.map((s) => (
+                                            <TouchableOpacity
+                                                key={s}
+                                                style={[styles.filterChip, filterSector === s && styles.filterChipActive]}
+                                                onPress={() => setFilterSector(s)}
+                                            >
+                                                <Text style={[styles.filterChipText, filterSector === s && styles.filterChipTextActive]}>
+                                                    {s}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                            )}
+                        </View>
+                    )}
                 </View>
 
                 {loading && tickers.length === 0 ? (
@@ -173,11 +261,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     header: {
-        paddingHorizontal: 20,
         paddingTop: 20,
         paddingBottom: 15,
+        backgroundColor: '#000',
+    },
+    headerTop: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        gap: 12,
     },
     searchContainer: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#1C1C1E',
@@ -196,6 +291,52 @@ const styles = StyleSheet.create({
     },
     clearButton: {
         padding: 4,
+    },
+    filterToggle: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: '#1C1C1E',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    filtersContainer: {
+        marginTop: 15,
+        paddingBottom: 5,
+    },
+    filterRow: {
+        paddingHorizontal: 20,
+        marginBottom: 15,
+    },
+    filterLabel: {
+        color: '#8E8E93',
+        fontSize: 11,
+        marginBottom: 8,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    filterChip: {
+        backgroundColor: '#1C1C1E',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        marginRight: 10,
+        borderWidth: 1,
+        borderColor: '#2C2C2E',
+    },
+    filterChipActive: {
+        backgroundColor: '#007AFF',
+        borderColor: '#0A84FF',
+    },
+    filterChipText: {
+        color: '#8E8E93',
+        fontSize: 13,
+        fontWeight: '400',
+    },
+    filterChipTextActive: {
+        color: '#FFF',
+        fontWeight: '600',
     },
     listContent: {
         paddingHorizontal: 20,
