@@ -5,8 +5,10 @@ import {
     ArrowDown,
     ArrowUp,
     ArrowUpDown,
+    ArrowUpRight,
     Candy,
     Car,
+    ChartNoAxesCombined,
     Coins,
     CreditCard,
     Diamond,
@@ -15,10 +17,14 @@ import {
     FlaskConical,
     Hammer,
     Landmark,
+    Layers,
+    Medal,
     Monitor,
     Phone,
     ShoppingBasket,
+    Target,
     TrendingUp,
+    Trophy,
     Wallet,
     Zap
 } from 'lucide-react-native';
@@ -57,6 +63,19 @@ const SECTOR_ICONS: Record<string, any> = {
     'Trading': TrendingUp,
     'Petrochemicals': FlaskConical,
     'Sugar': Candy,
+};
+
+const ASSET_TYPE_ICONS: Record<string, any> = {
+    'Large Cap': Trophy,
+    'Mid Cap': Medal,
+    'Small Cap': Target,
+    'ETF': Layers,
+};
+
+const BROKER_ICONS: Record<string, any> = {
+    'Upstox': ArrowUpRight,
+    'Groww': ChartNoAxesCombined,
+    'IND Money': Landmark,
 };
 
 type Dimension = 'Sector' | 'Company Name' | 'Asset Type' | 'Broker';
@@ -259,6 +278,12 @@ export default function AnalyticsScreen() {
                                             <View style={[styles.holdingIcon, { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] + '22' }]}>
                                                 {selectedDimension === 'Sector' && SECTOR_ICONS[item.name] ? (() => {
                                                     const Icon = SECTOR_ICONS[item.name];
+                                                    return <Icon size={20} color={CHART_COLORS[index % CHART_COLORS.length]} />;
+                                                })() : selectedDimension === 'Asset Type' && ASSET_TYPE_ICONS[item.name] ? (() => {
+                                                    const Icon = ASSET_TYPE_ICONS[item.name];
+                                                    return <Icon size={20} color={CHART_COLORS[index % CHART_COLORS.length]} />;
+                                                })() : selectedDimension === 'Broker' && BROKER_ICONS[item.name] ? (() => {
+                                                    const Icon = BROKER_ICONS[item.name];
                                                     return <Icon size={20} color={CHART_COLORS[index % CHART_COLORS.length]} />;
                                                 })() : (
                                                     <Text style={[styles.iconLetter, { color: CHART_COLORS[index % CHART_COLORS.length] }]}>
