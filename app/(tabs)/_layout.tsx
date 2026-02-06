@@ -6,9 +6,11 @@ import React from 'react';
 import { Platform, TouchableOpacity, View } from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme() ?? 'dark';
+  const currColors = Colors[colorScheme];
   const router = useRouter();
 
   const handleHaptic = () => {
@@ -16,11 +18,11 @@ export default function TabLayout() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000' }}>
+    <View style={{ flex: 1, backgroundColor: currColors.background }}>
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: '#007AFF',
-          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
+          tabBarInactiveTintColor: currColors.textSecondary,
           headerShown: false,
           tabBarShowLabel: true,
           tabBarButton: (props) => {
@@ -38,10 +40,10 @@ export default function TabLayout() {
             );
           },
           tabBarStyle: {
-            backgroundColor: '#000',
+            backgroundColor: currColors.background,
             height: Platform.OS === 'ios' ? 90 : 75,
             borderTopWidth: 1,
-            borderTopColor: '#2C2C2E',
+            borderTopColor: currColors.border,
             elevation: 0,
             paddingBottom: Platform.OS === 'ios' ? 30 : 12,
             paddingTop: 8,
@@ -107,7 +109,7 @@ export default function TabLayout() {
         activeOpacity={0.8}
         style={{
           position: 'absolute',
-          right: 20,
+          right: 16,
           bottom: Platform.OS === 'ios' ? 100 : 85,
           width: 56,
           height: 56,
@@ -115,6 +117,11 @@ export default function TabLayout() {
           backgroundColor: '#007AFF',
           justifyContent: 'center',
           alignItems: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4.65,
+          elevation: 8,
         }}
       >
         <Plus size={30} color="#FFF" strokeWidth={2} />

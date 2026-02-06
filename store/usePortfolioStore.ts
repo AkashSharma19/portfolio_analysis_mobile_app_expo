@@ -26,6 +26,8 @@ interface PortfolioState {
     userMobile: string;
     userImage: string | null;
     updateProfile: (profile: { name?: string; email?: string; mobile?: string; image?: string | null }) => void;
+    theme: 'system' | 'light' | 'dark';
+    setTheme: (theme: 'system' | 'light' | 'dark') => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>()(
@@ -544,6 +546,8 @@ export const usePortfolioStore = create<PortfolioState>()(
                 userMobile: profile.mobile !== undefined ? profile.mobile : state.userMobile,
                 userImage: profile.image !== undefined ? profile.image : state.userImage
             })),
+            theme: 'system',
+            setTheme: (theme) => set({ theme }),
         }),
         {
             name: 'portfolio-storage',

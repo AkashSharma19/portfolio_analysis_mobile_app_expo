@@ -1,3 +1,6 @@
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
+import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Transaction } from '@/types';
 import { format, parseISO } from 'date-fns';
 import React, { useMemo } from 'react';
@@ -8,10 +11,10 @@ interface ActivityCalendarProps {
     transactions: Transaction[];
 }
 
-import { usePortfolioStore } from '@/store/usePortfolioStore';
-
 export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
+    const theme = useColorScheme() ?? 'dark';
+    const currColors = Colors[theme];
     // Group transactions by date
     const dailyStats = useMemo(() => {
         const stats: Record<string, { buy: number; sell: number }> = {};
@@ -59,8 +62,9 @@ export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
                 {/* Center: Date */}
                 <Text style={[
                     styles.dayText,
+                    { color: currColors.text },
                     isToday && styles.todayText,
-                    day.state === 'disabled' && styles.disabledText
+                    day.state === 'disabled' && { color: theme === 'dark' ? '#333' : '#D1D1D6' }
                 ]}>
                     {day.day}
                 </Text>
@@ -78,34 +82,39 @@ export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>CALENDAR VIEW</Text>
+        <View style={[styles.container, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
+            <Text style={[styles.title, { color: currColors.textSecondary }]}>CALENDAR VIEW</Text>
             <Calendar
+                key={`calendar-${theme}`}
                 dayComponent={({ date, state }: { date?: DateData; state?: string }) => {
                     if (!date) return <View />;
                     return renderDay({ ...date, state });
                 }}
+                style={{
+                    backgroundColor: currColors.card,
+                    borderRadius: 24,
+                }}
                 theme={{
-                    backgroundColor: '#1C1C1E',
-                    calendarBackground: '#1C1C1E',
-                    textSectionTitleColor: '#8E8E93',
+                    backgroundColor: currColors.card,
+                    calendarBackground: currColors.card,
+                    textSectionTitleColor: currColors.textSecondary,
                     selectedDayBackgroundColor: 'transparent',
-                    selectedDayTextColor: '#ffffff',
+                    selectedDayTextColor: currColors.text,
                     todayTextColor: '#2ac4c7',
-                    dayTextColor: '#ffffff',
-                    textDisabledColor: '#444',
+                    dayTextColor: currColors.text,
+                    textDisabledColor: theme === 'dark' ? '#333' : '#D1D1D6',
                     dotColor: '#00adf5',
-                    selectedDotColor: '#ffffff',
-                    arrowColor: '#8E8E93',
-                    monthTextColor: '#8E8E93',
-                    indicatorColor: 'white',
+                    selectedDotColor: currColors.text,
+                    arrowColor: currColors.textSecondary,
+                    monthTextColor: currColors.text,
+                    indicatorColor: currColors.text,
                     textDayFontWeight: '400',
                     textMonthFontWeight: '600',
                     textDayHeaderFontWeight: '600',
                     textDayFontSize: 14,
                     textMonthFontSize: 16,
                     textDayHeaderFontSize: 11,
-                }}
+                } as any}
                 enableSwipeMonths={true}
                 hideExtraDays={true}
                 firstDay={1}
@@ -116,13 +125,11 @@ export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#1C1C1E',
         borderRadius: 24,
         padding: 16,
         paddingTop: 20,
         marginBottom: 20,
         borderWidth: 1,
-        borderColor: '#2C2C2E',
     },
 
     dayContainer: {
@@ -133,7 +140,6 @@ const styles = StyleSheet.create({
     },
     dayText: {
         fontSize: 14,
-        color: '#FFF',
         fontWeight: '500',
         marginBottom: 0,
     },
@@ -161,7 +167,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     title: {
-        color: '#8E8E93',
         fontSize: 10,
         fontWeight: '700',
         letterSpacing: 1,

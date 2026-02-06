@@ -1,6 +1,8 @@
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import ShareableCard from '@/components/ShareableCard';
 import TopMovers from '@/components/TopMovers';
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -28,6 +30,9 @@ export default function PortfolioScreen() {
   const togglePrivacyMode = usePortfolioStore((state) => state.togglePrivacyMode);
   const getHoldingsData = usePortfolioStore((state) => state.getHoldingsData);
   const userName = usePortfolioStore((state) => state.userName);
+
+  const theme = useColorScheme() ?? 'dark';
+  const currColors = Colors[theme];
 
   const viewShotRef = useRef<any>(null);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -106,84 +111,84 @@ export default function PortfolioScreen() {
   }, [summary, getHoldingsData, userName]);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
+      <View style={[styles.container, { backgroundColor: currColors.background }]}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />}
+          contentContainerStyle={[styles.scrollContent, { backgroundColor: currColors.background }]}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={currColors.text} />}
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
         >
           <View style={styles.header}>
             <TopMovers />
-            <View style={styles.heroCard}>
+            <View style={[styles.heroCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
               <View style={styles.heroHeaderRow}>
-                <Text style={styles.heroLabel}>HOLDINGS ({tickers.length})</Text>
+                <Text style={[styles.heroLabel, { color: currColors.textSecondary }]}>HOLDINGS ({tickers.length})</Text>
                 <View style={styles.heroIcons}>
                   <TouchableOpacity
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       togglePrivacyMode();
                     }}
-                    style={styles.iconButton}
+                    style={[styles.iconButton, { backgroundColor: currColors.cardSecondary }]}
                   >
-                    {isPrivacyMode ? <EyeOff size={16} color="#FFF" /> : <Eye size={16} color="#FFF" />}
+                    {isPrivacyMode ? <EyeOff size={16} color={currColors.text} /> : <Eye size={16} color={currColors.text} />}
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       router.push('/analytics');
                     }}
-                    style={styles.iconButton}
+                    style={[styles.iconButton, { backgroundColor: currColors.cardSecondary }]}
                   >
-                    <PieChart size={16} color="#FFF" />
+                    <PieChart size={16} color={currColors.text} />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={handleShare} style={styles.iconButton}>
-                    <Share2 size={16} color="#FFF" />
+                  <TouchableOpacity onPress={handleShare} style={[styles.iconButton, { backgroundColor: currColors.cardSecondary }]}>
+                    <Share2 size={16} color={currColors.text} />
                   </TouchableOpacity>
                 </View>
               </View>
 
-              <Text style={styles.heroValue}>{isPrivacyMode ? '****' : `₹${summary.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
+              <Text style={[styles.heroValue, { color: currColors.text }]}>{isPrivacyMode ? '****' : `₹${summary.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
 
-              <View style={styles.dashedDivider} />
+              <View style={[styles.dashedDivider, { borderColor: currColors.border }]} />
 
               <View style={styles.heroRow}>
-                <Text style={styles.heroRowLabel}>1D returns</Text>
-                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (summary.dayChange >= 0 ? '#4CAF50' : '#F44336') }]}>
+                <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>1D returns</Text>
+                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (summary.dayChange >= 0 ? '#4CAF50' : '#F44336') }]}>
                   {isPrivacyMode ? '****' : `${summary.dayChange >= 0 ? '+' : '-'}₹${Math.abs(summary.dayChange).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(summary.dayChangePercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)`}
                 </Text>
               </View>
 
               <View style={styles.heroRow}>
-                <Text style={styles.heroRowLabel}>Total returns</Text>
-                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (summary.profitAmount >= 0 ? '#4CAF50' : '#F44336') }]}>
+                <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Total returns</Text>
+                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (summary.profitAmount >= 0 ? '#4CAF50' : '#F44336') }]}>
                   {isPrivacyMode ? '****' : `${summary.profitAmount >= 0 ? '+' : '-'}₹${Math.abs(summary.profitAmount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(summary.profitPercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)`}
                 </Text>
               </View>
 
               <View style={styles.heroRow}>
-                <Text style={styles.heroRowLabel}>Realized returns</Text>
-                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (summary.realizedReturn >= 0 ? '#4CAF50' : '#F44336') }]}>
+                <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Realized returns</Text>
+                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (summary.realizedReturn >= 0 ? '#4CAF50' : '#F44336') }]}>
                   {isPrivacyMode ? '****' : `${summary.realizedReturn >= 0 ? '+' : '-'}₹${Math.abs(summary.realizedReturn).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                 </Text>
               </View>
 
               <View style={styles.heroRow}>
-                <Text style={styles.heroRowLabel}>Unrealized returns</Text>
-                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (summary.unrealizedReturn >= 0 ? '#4CAF50' : '#F44336') }]}>
+                <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Unrealized returns</Text>
+                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (summary.unrealizedReturn >= 0 ? '#4CAF50' : '#F44336') }]}>
                   {isPrivacyMode ? '****' : `${summary.unrealizedReturn >= 0 ? '+' : '-'}₹${Math.abs(summary.unrealizedReturn).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                 </Text>
               </View>
 
               <View style={styles.heroRow}>
-                <Text style={styles.heroRowLabel}>Invested</Text>
-                <Text style={styles.heroRowValueWhite}>{isPrivacyMode ? '****' : `₹${summary.totalCost.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
+                <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Invested</Text>
+                <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{isPrivacyMode ? '****' : `₹${summary.totalCost.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
               </View>
 
               <View style={[styles.heroRow, { marginBottom: 0 }]}>
-                <Text style={styles.heroRowLabel}>XIRR</Text>
-                <Text style={styles.heroRowValueWhite}>{isPrivacyMode ? '****' : `${summary.xirr.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`}</Text>
+                <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>XIRR</Text>
+                <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{isPrivacyMode ? '****' : `${summary.xirr.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`}</Text>
               </View>
             </View>
           </View>
@@ -196,22 +201,22 @@ export default function PortfolioScreen() {
 
 
 
-          <View style={[styles.section, { marginBottom: 20 }]}>
+          <View style={[styles.section, { marginBottom: 16 }]}>
             {yearlyAnalysis.length > 0 ? (
-              <View style={styles.accordionContainer}>
-                <Text style={styles.innerSectionTitle}>YEARLY ANALYSIS</Text>
+              <View style={[styles.accordionContainer, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
+                <Text style={[styles.innerSectionTitle, { color: currColors.textSecondary }]}>YEARLY ANALYSIS</Text>
                 {yearlyAnalysis.map((item, index) => {
                   const isExpanded = expandedYear === item.year;
                   return (
-                    <View key={item.year} style={styles.accordionItem}>
+                    <View key={item.year} style={[styles.accordionItem, { borderBottomColor: currColors.border }]}>
                       <TouchableOpacity
-                        style={[styles.accordionHeader, isExpanded && styles.accordionHeaderActive]}
+                        style={[styles.accordionHeader, { backgroundColor: currColors.card }, isExpanded && { backgroundColor: currColors.cardSecondary }]}
                         onPress={() => toggleYear(item.year)}
                         activeOpacity={0.7}
                       >
                         <View style={styles.headerLeft}>
-                          <Text style={styles.yearText}>{item.year}</Text>
-                          <Text style={styles.subText}>Avg. Inv: {isPrivacyMode ? '****' : `₹${item.averageMonthlyInvestment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
+                          <Text style={[styles.yearText, { color: currColors.text }]}>{item.year}</Text>
+                          <Text style={[styles.subText, { color: currColors.textSecondary }]}>Avg. Inv: {isPrivacyMode ? '****' : `₹${item.averageMonthlyInvestment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
                         </View>
 
                         <View style={styles.headerRight}>
@@ -224,22 +229,22 @@ export default function PortfolioScreen() {
                             </View>
                           )}
                           <View style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }], marginLeft: 8 }}>
-                            <ChevronDown size={20} color="#666" />
+                            <ChevronDown size={20} color={currColors.textSecondary} />
                           </View>
                         </View>
                       </TouchableOpacity>
 
                       {isExpanded && (
-                        <View style={styles.accordionBody}>
-                          <View style={styles.separator} />
+                        <View style={[styles.accordionBody, { backgroundColor: currColors.card }]}>
+                          <View style={[styles.separator, { backgroundColor: currColors.border }]} />
                           <View style={styles.assetsGrid}>
                             {item.assetDistribution.map((asset, i) => (
                               <View key={i} style={styles.assetItem}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                   <View style={[styles.dot, { backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }]} />
-                                  <Text style={styles.assetName} numberOfLines={1}>{asset.name}</Text>
+                                  <Text style={[styles.assetName, { color: currColors.textSecondary }]} numberOfLines={1}>{asset.name}</Text>
                                 </View>
-                                <Text style={styles.assetValue}>{isPrivacyMode ? '****' : `₹${asset.value.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
+                                <Text style={[styles.assetValue, { color: currColors.text }]}>{isPrivacyMode ? '****' : `₹${asset.value.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
                               </View>
                             ))}
                           </View>
@@ -250,8 +255,8 @@ export default function PortfolioScreen() {
                 })}
               </View>
             ) : (
-              <View style={styles.emptyCard}>
-                <Text style={styles.placeholderText}>Not enough data for yearly analysis</Text>
+              <View style={[styles.emptyCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
+                <Text style={[styles.placeholderText, { color: currColors.textSecondary }]}>Not enough data for yearly analysis</Text>
               </View>
             )}
           </View>
@@ -259,22 +264,22 @@ export default function PortfolioScreen() {
           {/* Monthly Analysis Section */}
           <View style={[styles.section, { marginBottom: 40 }]}>
             {monthlyAnalysis.length > 0 ? (
-              <View style={styles.accordionContainer}>
+              <View style={[styles.accordionContainer, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                 <View style={[styles.headerWithAction]}>
-                  <Text style={styles.innerSectionTitle}>MONTHLY ANALYSIS</Text>
+                  <Text style={[styles.innerSectionTitle, { color: currColors.textSecondary }]}>MONTHLY ANALYSIS</Text>
                   {monthlyAnalysis.length > 6 && (
                     <TouchableOpacity onPress={() => router.push('/monthly-analysis')} style={styles.viewMoreButton}>
-                      <View style={styles.iconCircle}>
-                        <ArrowRight size={14} color="#007AFF" />
+                      <View style={[styles.iconCircle, { backgroundColor: currColors.cardSecondary }]}>
+                        <ArrowRight size={14} color={currColors.tint} />
                       </View>
                     </TouchableOpacity>
                   )}
                 </View>
                 {previewMonthlyAnalysis.map((item, index) => (
-                  <View key={item.monthKey} style={[styles.monthlyItem, index === previewMonthlyAnalysis.length - 1 && { borderBottomWidth: 0 }]}>
+                  <View key={item.monthKey} style={[styles.monthlyItem, { backgroundColor: currColors.card, borderBottomColor: currColors.border }, index === previewMonthlyAnalysis.length - 1 && { borderBottomWidth: 0 }]}>
                     <View style={styles.headerLeft}>
-                      <Text style={styles.monthText}>{item.month}</Text>
-                      <Text style={styles.subText}>Invested: {isPrivacyMode ? '****' : `₹${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
+                      <Text style={[styles.monthText, { color: currColors.text }]}>{item.month}</Text>
+                      <Text style={[styles.subText, { color: currColors.textSecondary }]}>Invested: {isPrivacyMode ? '****' : `₹${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
                     </View>
                     {item.percentageIncrease !== 0 && (
                       <View style={[styles.growthBadge, { backgroundColor: item.percentageIncrease >= 0 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)' }]}>
@@ -288,8 +293,8 @@ export default function PortfolioScreen() {
                 ))}
               </View>
             ) : (
-              <View style={styles.emptyCard}>
-                <Text style={styles.placeholderText}>Not enough data for monthly analysis</Text>
+              <View style={[styles.emptyCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
+                <Text style={[styles.placeholderText, { color: currColors.textSecondary }]}>Not enough data for monthly analysis</Text>
               </View>
             )}
           </View>
@@ -312,28 +317,23 @@ export default function PortfolioScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#000',
   },
   container: {
     flex: 1,
-    backgroundColor: '#000',
   },
   scrollContent: {
-    padding: 20,
+    paddingHorizontal: 16,
     paddingBottom: 40,
-    backgroundColor: '#000',
   },
   header: {
     marginTop: 10,
-    marginBottom: 20,
+    marginBottom: 16,
     backgroundColor: 'transparent',
   },
   heroCard: {
-    backgroundColor: '#1C1C1E',
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#2C2C2E',
   },
   heroHeaderRow: {
     flexDirection: 'row',
@@ -356,20 +356,17 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#2C2C2E',
     justifyContent: 'center',
     alignItems: 'center',
   },
   heroValue: {
     fontSize: 24,
     fontWeight: '400',
-    color: '#FFF',
     marginBottom: 16,
   },
   dashedDivider: {
     height: 1,
     borderWidth: 1,
-    borderColor: '#333',
     borderStyle: 'dashed',
     borderRadius: 1,
     marginBottom: 16,
@@ -391,7 +388,6 @@ const styles = StyleSheet.create({
   heroRowValueWhite: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#FFF',
   },
 
   section: {
@@ -402,16 +398,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '400',
     marginBottom: 16,
-    color: '#FFF',
   },
   chartPlaceholder: {
     height: 180,
-    backgroundColor: '#1C1C1E',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#333',
     borderStyle: 'dashed',
   },
   placeholderText: {
@@ -423,9 +416,7 @@ const styles = StyleSheet.create({
   accordionContainer: {
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#1C1C1E',
     borderWidth: 1,
-    borderColor: '#2C2C2E',
     paddingTop: 16,
   },
   innerSectionTitle: {
@@ -452,23 +443,17 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#2C2C2E',
     justifyContent: 'center',
     alignItems: 'center',
   },
   accordionItem: {
     borderBottomWidth: 1,
-    borderBottomColor: '#2C2C2E',
   },
   accordionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#1C1C1E',
-  },
-  accordionHeaderActive: {
-    backgroundColor: '#222',
   },
   headerLeft: {
     justifyContent: 'center',
@@ -478,7 +463,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   yearText: {
-    color: '#FFF',
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 2,
@@ -505,13 +489,11 @@ const styles = StyleSheet.create({
     // For now we do a simple rotation animation wrapper in JSX
   },
   accordionBody: {
-    backgroundColor: '#151515',
     padding: 16,
     paddingTop: 0,
   },
   separator: {
     height: 1,
-    backgroundColor: '#2C2C2E',
     marginBottom: 12,
   },
   assetsGrid: {
@@ -533,18 +515,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   assetValue: {
-    color: '#FFF',
     fontSize: 12,
     fontWeight: '400',
   },
   emptyCard: {
     height: 150,
-    backgroundColor: '#1C1C1E',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#333',
     borderStyle: 'dashed',
   },
   monthlyItem: {
@@ -552,12 +531,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#1C1C1E',
     borderBottomWidth: 1,
-    borderBottomColor: '#2C2C2E',
   },
   monthText: {
-    color: '#FFF',
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 2,

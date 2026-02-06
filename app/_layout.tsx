@@ -3,12 +3,14 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { registerBackgroundFetchAsync } from '../tasks/backgroundFetch';
 
 export {
@@ -52,21 +54,25 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme() ?? 'dark';
+  const currColors = Colors[colorScheme];
 
   const theme = {
     ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme),
     colors: {
       ...(colorScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
-      background: '#000',
-      card: '#000',
+      background: currColors.background,
+      card: currColors.card,
     },
   };
 
+  const backgroundColor = currColors.background;
+
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000' }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor }}>
       <ThemeProvider value={theme}>
-        <Stack screenOptions={{ contentStyle: { backgroundColor: '#000' } }}>
+        <StatusBar style={colorScheme === 'light' ? 'dark' : 'light'} />
+        <Stack screenOptions={{ contentStyle: { backgroundColor } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="add-transaction" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="monthly-analysis" options={{ presentation: 'modal', headerShown: false }} />

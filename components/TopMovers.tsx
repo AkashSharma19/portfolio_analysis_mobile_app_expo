@@ -1,3 +1,5 @@
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,6 +15,9 @@ export default function TopMovers() {
     const transactions = usePortfolioStore((state) => state.transactions);
     const tickers = usePortfolioStore((state) => state.tickers);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
+
+    const theme = useColorScheme() ?? 'dark';
+    const currColors = Colors[theme];
 
     const stories = useMemo(() => {
         const holdings = getHoldingsData();
@@ -73,7 +78,7 @@ export default function TopMovers() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.sectionTitle}>TOP MOVERS</Text>
+            <Text style={[styles.sectionTitle, { color: currColors.textSecondary }]}>TOP MOVERS</Text>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -90,26 +95,25 @@ export default function TopMovers() {
                             router.push(item.route as any);
                         }}
                     >
-                        <View style={[styles.glowContainer, { shadowColor: item.shadowColor }]}>
+                        <View style={[styles.glowContainer, { shadowColor: item.shadowColor, shadowOpacity: theme === 'light' ? 0.3 : 0.6 }]}>
                             <LinearGradient
                                 colors={item.color as any}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 1 }}
                                 style={styles.storyRing}
                             >
-                                <View style={styles.storyInner}>
-                                    <Text style={styles.symbolText}>{item.symbol}</Text>
+                                <View style={[styles.storyInner, { backgroundColor: currColors.card, borderColor: currColors.card }]}>
+                                    <Text style={[styles.symbolText, { color: currColors.text }]}>{item.symbol}</Text>
                                 </View>
                             </LinearGradient>
+                            {item.value && (
+                                <View style={[styles.badge, { backgroundColor: item.color[0], borderColor: currColors.card }]}>
+                                    <Text style={styles.badgeText}>{item.value}</Text>
+                                </View>
+                            )}
                         </View>
 
-                        {item.value && (
-                            <View style={[styles.badge, { backgroundColor: item.color[0] }]}>
-                                <Text style={styles.badgeText}>{item.value}</Text>
-                            </View>
-                        )}
-
-                        <Text style={styles.labelText} numberOfLines={1}>{item.label}</Text>
+                        <Text style={[styles.labelText, { color: currColors.textSecondary }]} numberOfLines={1}>{item.label}</Text>
                     </TouchableOpacity>
                 ))}
             </ScrollView>
@@ -121,6 +125,7 @@ const styles = StyleSheet.create({
     container: {
         marginVertical: 16,
         paddingBottom: 4,
+        marginHorizontal: -16,
     },
     sectionTitle: {
         color: '#8E8E93',
@@ -129,25 +134,24 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
         textTransform: 'uppercase',
         marginBottom: 12,
-        paddingHorizontal: 0,
-        marginLeft: 16, // Align with list content padding
+        marginLeft: 16, // Match list content padding
     },
     listContent: {
         paddingHorizontal: 16,
-        paddingRight: 24,
         paddingVertical: 12, // Add space for shadow/glow
-        gap: 16,
+        gap: 8,
     },
     storyWrapper: {
         alignItems: 'center',
-        width: 64,
+        width: 72,
     },
     glowContainer: {
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.6,
-        shadowRadius: 8,
+        width: 60,
+        height: 60,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 10,
         marginBottom: 8,
-        elevation: 10,
+        elevation: 5,
     },
     storyRing: {
         width: 60,
@@ -158,30 +162,29 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     storyInner: {
-        backgroundColor: '#000',
         width: '100%',
         height: '100%',
         borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#000',
     },
     symbolText: {
-        color: '#FFF',
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: '800',
         letterSpacing: 0.5,
     },
     badge: {
         position: 'absolute',
-        bottom: 20, // Positioned relative to wrapper
+        bottom: -4,
+        alignSelf: 'center',
         borderRadius: 10,
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderWidth: 2,
-        borderColor: '#000',
         zIndex: 10,
+        minWidth: 40,
+        alignItems: 'center',
     },
     badgeText: {
         color: '#FFF',
@@ -189,10 +192,10 @@ const styles = StyleSheet.create({
         fontWeight: '800',
     },
     labelText: {
-        color: '#EBEBF5',
         fontSize: 10,
         fontWeight: '500',
         textAlign: 'center',
         marginTop: 2,
+        width: 72,
     },
 });

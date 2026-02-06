@@ -1,3 +1,5 @@
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -93,6 +95,14 @@ export default function AnalyticsScreen() {
     const tickers = usePortfolioStore((state) => state.tickers);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
 
+    const colorScheme = useColorScheme() ?? 'dark';
+    const currColors = Colors[colorScheme];
+
+    const gradients = {
+        card: colorScheme === 'dark' ? ['#1C1C1E', '#000000'] as const : ['#FFFFFF', '#F2F2F7'] as const,
+        active: ['#007AFF', '#004080'] as const,
+    };
+
     const [refreshing, setRefreshing] = useState(false);
     const [selectedDimension, setSelectedDimension] = useState<Dimension>('Sector');
     const [holdingsViewMode, setHoldingsViewMode] = useState<'Current' | 'Returns' | 'Contribution'>('Current');
@@ -155,21 +165,21 @@ export default function AnalyticsScreen() {
 
     if (transactions.length === 0) {
         return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.container}>
-                    <View style={styles.header}>
+            <SafeAreaView style={[styles.safeArea, { backgroundColor: currColors.background }]}>
+                <View style={[styles.container, { backgroundColor: currColors.background }]}>
+                    <View style={[styles.header, { backgroundColor: currColors.background }]}>
                         <TouchableOpacity
                             onPress={() => router.back()}
-                            style={styles.backButton}
+                            style={[styles.backButton, { backgroundColor: currColors.card }]}
                         >
-                            <ArrowLeft size={24} color="#FFF" />
+                            <ArrowLeft size={24} color={currColors.text} />
                         </TouchableOpacity>
-                        <Text style={styles.headerTitle}>Analytics</Text>
+                        <Text style={[styles.headerTitle, { color: currColors.text }]}>Analytics</Text>
                         <View style={{ width: 40 }} />
                     </View>
                     <View style={styles.emptyState}>
-                        <Text style={styles.emptyText}>No data available yet.</Text>
-                        <Text style={styles.emptySubtext}>Add some transactions to see your portfolio analytics.</Text>
+                        <Text style={[styles.emptyText, { color: currColors.text }]}>No data available yet.</Text>
+                        <Text style={[styles.emptySubtext, { color: currColors.textSecondary }]}>Add some transactions to see your portfolio analytics.</Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -184,37 +194,37 @@ export default function AnalyticsScreen() {
     ];
 
     return (
-        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-            <View style={styles.container}>
-                <View style={styles.header}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
+            <View style={[styles.container, { backgroundColor: currColors.background }]}>
+                <View style={[styles.header, { backgroundColor: currColors.background }]}>
                     <TouchableOpacity
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             router.back();
                         }}
-                        style={styles.backButton}
+                        style={[styles.backButton, { backgroundColor: currColors.card }]}
                     >
-                        <ArrowLeft size={24} color="#FFF" />
+                        <ArrowLeft size={24} color={currColors.text} />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Analytics</Text>
+                    <Text style={[styles.headerTitle, { color: currColors.text }]}>Analytics</Text>
                     <View style={{ width: 40 }} />
                 </View>
 
-                <View style={styles.selectorBar}>
+                <View style={[styles.selectorBar, { backgroundColor: currColors.background, borderBottomColor: currColors.border }]}>
                     {dimensions.map((dim) => {
                         const isActive = selectedDimension === dim.id;
                         const Icon = dim.icon;
                         return (
                             <TouchableOpacity
                                 key={dim.id}
-                                style={[styles.selectorButton, isActive && styles.selectorButtonActive]}
+                                style={[styles.selectorButton, { backgroundColor: currColors.card, borderColor: currColors.border }, isActive && styles.selectorButtonActive]}
                                 onPress={() => {
                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     setSelectedDimension(dim.id);
                                 }}
                             >
-                                <Icon size={20} color={isActive ? '#FFF' : '#8E8E93'} style={styles.selectorIcon} />
-                                <Text style={[styles.selectorText, isActive && styles.selectorTextActive]}>
+                                <Icon size={20} color={isActive ? '#FFF' : currColors.textSecondary} style={styles.selectorIcon} />
+                                <Text style={[styles.selectorText, { color: currColors.textSecondary }, isActive && styles.selectorTextActive]}>
                                     {dim.label}
                                 </Text>
                             </TouchableOpacity>
@@ -223,16 +233,16 @@ export default function AnalyticsScreen() {
                 </View>
 
                 <ScrollView
-                    contentContainerStyle={styles.scrollContent}
+                    contentContainerStyle={[styles.scrollContent, { backgroundColor: currColors.background }]}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={currColors.text} />
                     }
                     showsVerticalScrollIndicator={false}
                     showsHorizontalScrollIndicator={false}
                 >
                     <LinearGradient
-                        colors={GRADIENTS.card}
-                        style={styles.chartContainer}
+                        colors={gradients.card}
+                        style={[styles.chartContainer, { borderColor: currColors.border }]}
                     >
                         <View style={styles.pieWrapper}>
                             {allocation.length > 0 ? (
@@ -242,41 +252,41 @@ export default function AnalyticsScreen() {
                                     sectionAutoFocus
                                     radius={SCREEN_WIDTH * 0.22}
                                     innerRadius={SCREEN_WIDTH * 0.15}
-                                    innerCircleColor={'#1C1C1E'}
+                                    innerCircleColor={currColors.card}
                                     centerLabelComponent={() => (
                                         <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                                            <Text style={{ fontSize: 20, color: 'white' }}>
+                                            <Text style={{ fontSize: 20, color: currColors.text }}>
                                                 {allocation.length}
                                             </Text>
-                                            <Text style={{ fontSize: 8, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1 }}>
+                                            <Text style={{ fontSize: 8, color: currColors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 }}>
                                                 {selectedDimension.split(' ')[0]}s
                                             </Text>
                                         </View>
                                     )}
                                 />
                             ) : (
-                                <Text style={styles.noDataText}>Data unavailable</Text>
+                                <Text style={[styles.noDataText, { color: currColors.textSecondary }]}>Data unavailable</Text>
                             )}
                         </View>
                     </LinearGradient>
 
                     <View style={styles.holdingsHeader}>
                         <TouchableOpacity
-                            style={styles.actionIconButton}
+                            style={[styles.actionIconButton, { backgroundColor: currColors.card, borderColor: currColors.border }]}
                             onPress={() => {
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                 setSortDirection(prev => prev === 'DESC' ? 'ASC' : 'DESC');
                             }}
                         >
                             {sortDirection === 'DESC' ? (
-                                <ArrowDown size={14} color="#FFF" />
+                                <ArrowDown size={14} color={currColors.text} />
                             ) : (
-                                <ArrowUp size={14} color="#FFF" />
+                                <ArrowUp size={14} color={currColors.text} />
                             )}
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={styles.viewModeToggle}
+                            style={[styles.viewModeToggle, { backgroundColor: currColors.card, borderColor: currColors.border }]}
                             onPress={() => {
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                 if (holdingsViewMode === 'Current') setHoldingsViewMode('Returns');
@@ -284,8 +294,8 @@ export default function AnalyticsScreen() {
                                 else setHoldingsViewMode('Current');
                             }}
                         >
-                            <ArrowUpDown size={14} color="#FFF" />
-                            <Text style={styles.viewModeText}>
+                            <ArrowUpDown size={14} color={currColors.text} />
+                            <Text style={[styles.viewModeText, { color: currColors.text }]}>
                                 {holdingsViewMode === 'Current' ? 'Current (Invested)' :
                                     holdingsViewMode === 'Returns' ? 'Returns (%)' :
                                         'Contribution (Current)'}
@@ -293,7 +303,7 @@ export default function AnalyticsScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.holdingsList}>
+                    <View style={[styles.holdingsList, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                         {filteredAllocation.map((item, index) => {
                             const isLast = index === filteredAllocation.length - 1;
                             const isLink = selectedDimension === 'Company Name';
@@ -303,7 +313,7 @@ export default function AnalyticsScreen() {
                                     key={item.name}
                                     style={[
                                         styles.holdingItem,
-                                        !isLast && styles.holdingItemBorder
+                                        !isLast && [styles.holdingItemBorder, { borderBottomColor: currColors.border }]
                                     ]}
                                     disabled={!isLink}
                                     onPress={() => {
@@ -334,9 +344,9 @@ export default function AnalyticsScreen() {
                                                 )}
                                             </View>
                                             <View style={styles.holdingInfo}>
-                                                <Text style={styles.holdingSymbol} numberOfLines={2} ellipsizeMode="tail">{item.name}</Text>
+                                                <Text style={[styles.holdingSymbol, { color: currColors.text }]} numberOfLines={2} ellipsizeMode="tail">{item.name}</Text>
                                                 {selectedDimension === 'Company Name' && (
-                                                    <Text style={styles.holdingSub} numberOfLines={1}>
+                                                    <Text style={[styles.holdingSub, { color: currColors.textSecondary }]} numberOfLines={1}>
                                                         Qty {item.quantity.toLocaleString()}
                                                     </Text>
                                                 )}
@@ -346,10 +356,10 @@ export default function AnalyticsScreen() {
                                         <View style={styles.holdingValues}>
                                             {holdingsViewMode === 'Current' && (
                                                 <>
-                                                    <Text style={styles.primaryValue}>
+                                                    <Text style={[styles.primaryValue, { color: currColors.text }]}>
                                                         {isPrivacyMode ? '****' : `₹${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                                                     </Text>
-                                                    <Text style={styles.secondaryValue}>
+                                                    <Text style={[styles.secondaryValue, { color: currColors.textSecondary }]}>
                                                         {isPrivacyMode ? '****' : `₹${item.totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                                                     </Text>
                                                 </>
@@ -366,10 +376,10 @@ export default function AnalyticsScreen() {
                                             )}
                                             {holdingsViewMode === 'Contribution' && (
                                                 <>
-                                                    <Text style={styles.primaryValue}>
+                                                    <Text style={[styles.primaryValue, { color: currColors.text }]}>
                                                         {isPrivacyMode ? '****' : `${item.percentage.toFixed(2)}%`}
                                                     </Text>
-                                                    <Text style={styles.secondaryValue}>
+                                                    <Text style={[styles.secondaryValue, { color: currColors.textSecondary }]}>
                                                         {isPrivacyMode ? '****' : `₹${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                                                     </Text>
                                                 </>
@@ -377,7 +387,7 @@ export default function AnalyticsScreen() {
                                         </View>
                                     </View>
                                     {holdingsViewMode === 'Contribution' && (
-                                        <View style={styles.contributionProgressBarContainer}>
+                                        <View style={[styles.contributionProgressBarContainer, { backgroundColor: currColors.cardSecondary }]}>
                                             <View style={[
                                                 styles.contributionProgressBarFill,
                                                 {
@@ -470,11 +480,11 @@ const styles = StyleSheet.create({
     scrollContent: {
         padding: 16,
         paddingBottom: 40,
-        gap: 20,
+        gap: 16,
     },
     chartContainer: {
-        borderRadius: 24,
-        padding: 20,
+        borderRadius: 16,
+        padding: 16,
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#2C2C2E',

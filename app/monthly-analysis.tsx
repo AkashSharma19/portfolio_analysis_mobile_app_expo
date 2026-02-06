@@ -1,3 +1,5 @@
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { useRouter } from 'expo-router';
 import { TrendingUp } from 'lucide-react-native';
@@ -12,26 +14,37 @@ export default function MonthlyAnalysisScreen() {
     const getMonthlyAnalysis = usePortfolioStore((state) => state.getMonthlyAnalysis);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
 
+    const colorScheme = useColorScheme() ?? 'dark';
+    const currColors = Colors[colorScheme];
+
     const monthlyAnalysis = useMemo(() => getMonthlyAnalysis(), [transactions, getMonthlyAnalysis, tickers]);
 
     return (
-        <SafeAreaView style={styles.modalSafeArea}>
-            <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Monthly Analysis</Text>
+        <SafeAreaView style={[styles.modalSafeArea, { backgroundColor: currColors.card }]}>
+            <View style={[styles.modalHeader, { backgroundColor: currColors.card, borderBottomColor: currColors.border }]}>
+                <Text style={[styles.modalTitle, { color: currColors.text }]}>Monthly Analysis</Text>
                 <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
-                    <Text style={styles.closeButtonText}>Done</Text>
+                    <Text style={[styles.closeButtonText, { color: currColors.tint }]}>Done</Text>
                 </TouchableOpacity>
             </View>
             <FlatList
                 data={monthlyAnalysis}
                 keyExtractor={(item) => item.monthKey}
-                contentContainerStyle={styles.modalList}
+                contentContainerStyle={[styles.modalList, { backgroundColor: currColors.card }]}
                 showsVerticalScrollIndicator={false}
                 renderItem={({ item, index }) => (
-                    <View style={[styles.monthlyItem, { paddingHorizontal: 20 }, index === monthlyAnalysis.length - 1 && { borderBottomWidth: 0 }]}>
+                    <View style={[
+                        styles.monthlyItem,
+                        {
+                            paddingHorizontal: 16,
+                            backgroundColor: currColors.card,
+                            borderBottomColor: currColors.border
+                        },
+                        index === monthlyAnalysis.length - 1 && { borderBottomWidth: 0 }
+                    ]}>
                         <View style={styles.headerLeft}>
-                            <Text style={styles.monthText}>{item.month}</Text>
-                            <Text style={styles.subText}>Invested: {isPrivacyMode ? '****' : `₹${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
+                            <Text style={[styles.monthText, { color: currColors.text }]}>{item.month}</Text>
+                            <Text style={[styles.subText, { color: currColors.textSecondary }]}>Invested: {isPrivacyMode ? '****' : `₹${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
                         </View>
                         {item.percentageIncrease !== 0 && (
                             <View style={[styles.growthBadge, { backgroundColor: item.percentageIncrease >= 0 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)' }]}>
@@ -51,19 +64,16 @@ export default function MonthlyAnalysisScreen() {
 const styles = StyleSheet.create({
     modalSafeArea: {
         flex: 1,
-        backgroundColor: '#1C1C1E',
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
         paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#2C2C2E',
     },
     modalTitle: {
-        color: '#FFF',
         fontSize: 17,
         fontWeight: '400',
     },
@@ -71,7 +81,6 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     closeButtonText: {
-        color: '#007AFF',
         fontSize: 17,
         fontWeight: '400',
     },
@@ -80,12 +89,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 16,
-        backgroundColor: '#1C1C1E',
         borderBottomWidth: 1,
-        borderBottomColor: '#2C2C2E',
     },
     monthText: {
-        color: '#FFF',
         fontSize: 14,
         fontWeight: '400',
         marginBottom: 2,
@@ -94,7 +100,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     subText: {
-        color: '#8E8E93',
         fontSize: 11,
     },
     growthBadge: {

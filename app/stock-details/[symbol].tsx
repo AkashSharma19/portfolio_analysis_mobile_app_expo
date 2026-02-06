@@ -1,8 +1,11 @@
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { format } from 'date-fns';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight } from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -15,6 +18,9 @@ export default function StockDetailsScreen() {
     const getHoldingsData = usePortfolioStore((state) => state.getHoldingsData);
     const transactions = usePortfolioStore((state) => state.transactions);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
+
+    const colorScheme = useColorScheme() ?? 'dark';
+    const currColors = Colors[colorScheme];
 
     const holding = useMemo(() => {
         const holdings = getHoldingsData();
@@ -89,43 +95,45 @@ export default function StockDetailsScreen() {
 
     if (!holding) {
         return (
-            <SafeAreaView style={styles.container}>
+            <SafeAreaView style={[styles.container, { backgroundColor: currColors.background }]}>
                 <Stack.Screen options={{ headerShown: false }} />
-                <View style={styles.header}>
+                <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                <View style={[styles.header, { backgroundColor: currColors.background }]}>
                     <TouchableOpacity
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             router.back();
                         }}
-                        style={styles.backButton}
+                        style={[styles.backButton, { backgroundColor: currColors.card }]}
                     >
-                        <ArrowLeft size={24} color="#FFF" />
+                        <ArrowLeft size={24} color={currColors.text} />
                     </TouchableOpacity>
                 </View>
-                <View style={styles.centerContent}>
-                    <Text style={styles.errorText}>Company details not found</Text>
+                <View style={[styles.centerContent, { backgroundColor: currColors.background }]}>
+                    <Text style={[styles.errorText, { color: currColors.text }]}>Company details not found</Text>
                 </View>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
             <Stack.Screen options={{ headerShown: false }} />
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
 
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { backgroundColor: currColors.background }]}>
                 <TouchableOpacity
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         router.back();
                     }}
-                    style={styles.backButton}
+                    style={[styles.backButton, { backgroundColor: currColors.card }]}
                 >
-                    <ArrowLeft size={24} color="#FFF" />
+                    <ArrowLeft size={24} color={currColors.text} />
                 </TouchableOpacity>
                 <View style={styles.headerTitle}>
-                    <Text style={styles.companyName} numberOfLines={2}>{holding.companyName}</Text>
+                    <Text style={[styles.companyName, { color: currColors.text }]} numberOfLines={2}>{holding.companyName}</Text>
                 </View>
                 <View style={{ width: 40 }} />
             </View>
@@ -141,7 +149,7 @@ export default function StockDetailsScreen() {
 
 
                 {/* Main Price Card */}
-                <View style={[styles.priceCard, { overflow: 'hidden' }]}>
+                <View style={[styles.priceCard, { overflow: 'hidden', backgroundColor: currColors.card, borderColor: currColors.border }]}>
                     {/* Background Chart */}
                     {chartData.length > 2 && (
                         <View style={{ position: 'absolute', bottom: 0, left: -30, right: -30, top: 0, overflow: 'hidden' }}>
@@ -168,26 +176,26 @@ export default function StockDetailsScreen() {
                     )}
                     <View style={{ padding: 24 }}>
                         <View style={styles.heroHeaderRow}>
-                            <Text style={styles.heroLabel}>{holding.quantity > 0 ? 'CURRENT VALUE' : 'CURRENT PRICE'}</Text>
+                            <Text style={[styles.heroLabel, { color: currColors.textSecondary }]}>{holding.quantity > 0 ? 'CURRENT VALUE' : 'CURRENT PRICE'}</Text>
                         </View>
 
-                        <Text style={styles.heroValue}>
+                        <Text style={[styles.heroValue, { color: currColors.text }]}>
                             {isPrivacyMode ? '****' : `₹${(holding.quantity > 0 ? holding.currentValue : holding.currentPrice).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                         </Text>
 
-                        <View style={styles.dashedDivider} />
+                        <View style={[styles.dashedDivider, { borderColor: currColors.border }]} />
 
                         <View style={styles.heroRow}>
-                            <Text style={styles.heroRowLabel}>{holding.quantity > 0 ? '1D returns' : '1D change'}</Text>
-                            <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (holding.dayChange >= 0 ? '#4CAF50' : '#F44336') }]}>
+                            <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>{holding.quantity > 0 ? '1D returns' : '1D change'}</Text>
+                            <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (holding.dayChange >= 0 ? '#4CAF50' : '#F44336') }]}>
                                 {isPrivacyMode ? '****' : `${holding.dayChange >= 0 ? '+' : ''}₹${Math.abs(holding.quantity > 0 ? holding.dayChange : (holding.dayChange)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.dayChangePercentage).toFixed(2)}%)`}
                             </Text>
                         </View>
 
                         {holding.quantity > 0 && (
                             <View style={styles.heroRow}>
-                                <Text style={styles.heroRowLabel}>Total returns</Text>
-                                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? '#FFF' : (holding.pnl >= 0 ? '#4CAF50' : '#F44336') }]}>
+                                <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Total returns</Text>
+                                <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (holding.pnl >= 0 ? '#4CAF50' : '#F44336') }]}>
                                     {isPrivacyMode ? '****' : `${holding.pnl >= 0 ? '+' : '-'}₹${Math.abs(holding.pnl).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.pnlPercentage).toFixed(2)}%)`}
                                 </Text>
                             </View>
@@ -196,35 +204,35 @@ export default function StockDetailsScreen() {
                         {holding.quantity > 0 ? (
                             <>
                                 <View style={styles.heroRow}>
-                                    <Text style={styles.heroRowLabel}>Invested</Text>
-                                    <Text style={styles.heroRowValueWhite}>{isPrivacyMode ? '****' : `₹${holding.investedValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
+                                    <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Invested</Text>
+                                    <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{isPrivacyMode ? '****' : `₹${holding.investedValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
                                 </View>
 
                                 <View style={styles.heroRow}>
-                                    <Text style={styles.heroRowLabel}>Quantity</Text>
-                                    <Text style={styles.heroRowValueWhite}>{holding.quantity}</Text>
+                                    <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Quantity</Text>
+                                    <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{holding.quantity}</Text>
                                 </View>
 
                                 <View style={styles.heroRow}>
-                                    <Text style={styles.heroRowLabel}>Current Price</Text>
-                                    <Text style={styles.heroRowValueWhite}>₹{holding.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
+                                    <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Current Price</Text>
+                                    <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>₹{holding.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
                                 </View>
 
                                 <View style={styles.heroRow}>
-                                    <Text style={styles.heroRowLabel}>Avg. Price</Text>
-                                    <Text style={styles.heroRowValueWhite}>{isPrivacyMode ? '****' : `₹${holding.avgPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
+                                    <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Avg. Price</Text>
+                                    <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{isPrivacyMode ? '****' : `₹${holding.avgPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
                                 </View>
                             </>
                         ) : (
                             <View style={styles.heroRow}>
-                                <Text style={styles.heroRowLabel}>Current Price</Text>
-                                <Text style={styles.heroRowValueWhite}>₹{holding.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
+                                <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Current Price</Text>
+                                <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>₹{holding.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
                             </View>
                         )}
 
                         <View style={styles.heroRow}>
-                            <Text style={styles.heroRowLabel}>Sector</Text>
-                            <Text style={styles.heroRowValueWhite} numberOfLines={1}>{holding.sector}</Text>
+                            <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Sector</Text>
+                            <Text style={[styles.heroRowValueWhite, { color: currColors.text }]} numberOfLines={1}>{holding.sector}</Text>
                         </View>
                     </View>
                 </View>
@@ -233,16 +241,16 @@ export default function StockDetailsScreen() {
 
                 {/* 52 Week Range */}
                 {typeof holding.high52 === 'number' && typeof holding.low52 === 'number' && holding.high52 > 0 && holding.low52 > 0 && holding.assetType !== 'Mutual Fund' && (
-                    <View style={styles.rangeCard}>
-                        <Text style={styles.sectionTitle}>52 WEEK RANGE</Text>
+                    <View style={[styles.rangeCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
+                        <Text style={[styles.sectionTitle, { color: currColors.textSecondary }]}>52 WEEK RANGE</Text>
                         <View style={styles.rangeBarContainer}>
                             <View style={styles.rangeLabels}>
-                                <Text style={styles.rangeValue}>₹{holding.low52.toLocaleString('en-IN', { maximumFractionDigits: 1 })}</Text>
-                                <Text style={styles.rangeValue}>₹{holding.high52.toLocaleString('en-IN', { maximumFractionDigits: 1 })}</Text>
+                                <Text style={[styles.rangeValue, { color: currColors.text }]}>₹{holding.low52.toLocaleString('en-IN', { maximumFractionDigits: 1 })}</Text>
+                                <Text style={[styles.rangeValue, { color: currColors.text }]}>₹{holding.high52.toLocaleString('en-IN', { maximumFractionDigits: 1 })}</Text>
                             </View>
                             <View style={styles.progressBarWrapper}>
                                 <LinearGradient
-                                    colors={['#333', '#555', '#333']}
+                                    colors={colorScheme === 'dark' ? ['#333', '#555', '#333'] : ['#E5E5EA', '#D1D1D6', '#E5E5EA']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
                                     style={styles.progressBarTrack}
@@ -253,13 +261,13 @@ export default function StockDetailsScreen() {
                                         { left: `${Math.min(100, Math.max(0, ((holding.currentPrice - holding.low52) / (holding.high52 - holding.low52)) * 100))}%` }
                                     ]}
                                 >
-                                    <View style={styles.markerLine} />
-                                    <View style={styles.markerDot} />
+                                    <View style={[styles.markerLine, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.1)' }]} />
+                                    <View style={[styles.markerDot, { borderColor: currColors.card }]} />
                                 </View>
                             </View>
                             <View style={styles.rangeLabels}>
-                                <Text style={styles.rangeSub}>52W Low</Text>
-                                <Text style={styles.rangeSub}>52W High</Text>
+                                <Text style={[styles.rangeSub, { color: currColors.textSecondary }]}>52W Low</Text>
+                                <Text style={[styles.rangeSub, { color: currColors.textSecondary }]}>52W High</Text>
                             </View>
                         </View>
                     </View>
@@ -269,10 +277,10 @@ export default function StockDetailsScreen() {
                 {stockTransactions.length > 0 && (
                     <>
                         {/* Transactions History */}
-                        <Text style={styles.sectionTitle}>HISTORY</Text>
-                        <View style={styles.historyList}>
+                        <Text style={[styles.sectionTitle, { color: currColors.textSecondary }]}>HISTORY</Text>
+                        <View style={[styles.historyList, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                             {stockTransactions.map((item: any) => (
-                                <View key={item.id} style={styles.historyItem}>
+                                <View key={item.id} style={[styles.historyItem, { borderBottomColor: currColors.border }]}>
                                     <View style={[styles.iconContainer, { backgroundColor: item.type === 'BUY' ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 59, 48, 0.15)' }]}>
                                         {item.type === 'BUY' ? (
                                             <ArrowUpRight size={20} color="#34C759" />
@@ -281,14 +289,14 @@ export default function StockDetailsScreen() {
                                         )}
                                     </View>
                                     <View style={styles.historyInfo}>
-                                        <Text style={styles.historyType}>{item.type === 'BUY' ? 'Bought' : 'Sold'}</Text>
-                                        <Text style={styles.historyDate}>{format(new Date(item.date), 'MMM dd, yyyy')}</Text>
+                                        <Text style={[styles.historyType, { color: currColors.text }]}>{item.type === 'BUY' ? 'Bought' : 'Sold'}</Text>
+                                        <Text style={[styles.historyDate, { color: currColors.textSecondary }]}>{format(new Date(item.date), 'MMM dd, yyyy')}</Text>
                                     </View>
                                     <View style={styles.historyAmount}>
-                                        <Text style={styles.historyValue}>
+                                        <Text style={[styles.historyValue, { color: currColors.text }]}>
                                             {isPrivacyMode ? '****' : `₹${(item.quantity * item.price).toLocaleString()}`}
                                         </Text>
-                                        <Text style={styles.historyDetails}>{item.quantity} @ {isPrivacyMode ? '****' : item.price.toLocaleString()}</Text>
+                                        <Text style={[styles.historyDetails, { color: currColors.textSecondary }]}>{item.quantity} @ {isPrivacyMode ? '****' : item.price.toLocaleString()}</Text>
                                     </View>
                                 </View>
                             ))}
@@ -337,7 +345,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     scrollContent: {
-        padding: 20,
+        padding: 16,
         paddingBottom: 40,
     },
     centerContent: {
@@ -352,7 +360,7 @@ const styles = StyleSheet.create({
     priceCard: {
         backgroundColor: '#1C1C1E',
         borderRadius: 24,
-        marginBottom: 24,
+        marginBottom: 16,
         borderWidth: 1,
         borderColor: '#2C2C2E',
     },
@@ -502,7 +510,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#1C1C1E',
         borderRadius: 24,
         padding: 24,
-        marginBottom: 24,
+        marginBottom: 16,
         borderWidth: 1,
         borderColor: '#2C2C2E',
     },
@@ -568,8 +576,8 @@ const styles = StyleSheet.create({
     },
 
     heroChartContainer: {
-        marginBottom: 20,
-        marginHorizontal: -20, // Negative margin to hit edges
+        marginBottom: 16,
+        marginHorizontal: -16, // Negative margin to hit edges
         overflow: 'hidden',
     },
 });

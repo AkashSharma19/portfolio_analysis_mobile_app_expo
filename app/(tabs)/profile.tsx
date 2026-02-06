@@ -1,3 +1,5 @@
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -5,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
-import { Database, Download, Edit2, FileText, Mail, Phone, Upload, User, X } from 'lucide-react-native';
+import { Database, Download, Edit2, FileText, Mail, Monitor, Moon, Phone, Sun, Upload, User, X } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,18 +15,21 @@ import * as XLSX from 'xlsx';
 
 export default function ProfileScreen() {
     const router = useRouter();
-    const {
-        transactions,
-        tickers,
-        importTransactions,
-        isPrivacyMode,
-        calculateSummary,
-        userName,
-        userEmail,
-        userMobile,
-        userImage,
-        updateProfile
-    } = usePortfolioStore();
+    const transactions = usePortfolioStore((state) => state.transactions);
+    const tickers = usePortfolioStore((state) => state.tickers);
+    const importTransactions = usePortfolioStore((state) => state.importTransactions);
+    const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
+    const calculateSummary = usePortfolioStore((state) => state.calculateSummary);
+    const userName = usePortfolioStore((state) => state.userName);
+    const userEmail = usePortfolioStore((state) => state.userEmail);
+    const userMobile = usePortfolioStore((state) => state.userMobile);
+    const userImage = usePortfolioStore((state) => state.userImage);
+    const updateProfile = usePortfolioStore((state) => state.updateProfile);
+    const theme = usePortfolioStore((state) => state.theme);
+    const setTheme = usePortfolioStore((state) => state.setTheme);
+
+    const colorScheme = useColorScheme() ?? 'dark';
+    const currColors = Colors[colorScheme];
 
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
 
@@ -287,76 +292,124 @@ export default function ProfileScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-            <View style={styles.container}>
-                <StatusBar style="light" />
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
+            <View style={[styles.container, { backgroundColor: currColors.background }]}>
+                <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
 
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    bounces={false}
+                    overScrollMode="never"
+                >
                     {/* Consolidated User Info & Stats Box */}
-                    <View style={styles.userInfoContainer}>
+                    <View style={[styles.userInfoContainer, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                         <View style={styles.profileRow}>
-                            <View style={styles.avatarContainer}>
+                            <View style={[styles.avatarContainer, { backgroundColor: currColors.card }]}>
                                 <Image
                                     source={{ uri: userImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userName || 'User'}` }}
                                     style={styles.avatar}
                                 />
                             </View>
                             <View style={styles.nameContainer}>
-                                <Text style={styles.nameText}>{userName || 'Set up your profile'}</Text>
+                                <Text style={[styles.nameText, { color: currColors.text }]}>{userName || 'Set up your profile'}</Text>
                                 {userEmail ? (
-                                    <Text style={styles.emailText} numberOfLines={1}>{userEmail}</Text>
+                                    <Text style={[styles.emailText, { color: currColors.textSecondary }]} numberOfLines={1}>{userEmail}</Text>
                                 ) : (
-                                    <Text style={styles.emailText}>Tap the edit icon to get started</Text>
+                                    <Text style={[styles.emailText, { color: currColors.textSecondary }]}>Tap the edit icon to get started</Text>
                                 )}
                             </View>
-                            <TouchableOpacity style={styles.mainEditIcon} onPress={handleOpenEditModal}>
-                                <Edit2 size={20} color="#007AFF" />
+                            <TouchableOpacity style={[styles.mainEditIcon, { backgroundColor: currColors.cardSecondary }]} onPress={handleOpenEditModal}>
+                                <Edit2 size={20} color={currColors.tint} />
                             </TouchableOpacity>
                         </View>
 
                         <View style={styles.statsBar}>
                             <View style={styles.statItem}>
-                                <Text style={styles.statValue}>{isPrivacyMode ? '****' : transactions.length}</Text>
-                                <Text style={styles.statLabel}>Transactions</Text>
+                                <Text style={[styles.statValue, { color: currColors.text }]}>{isPrivacyMode ? '****' : transactions.length}</Text>
+                                <Text style={[styles.statLabel, { color: currColors.textSecondary }]}>Transactions</Text>
                             </View>
                             <View style={styles.statItem}>
-                                <Text style={styles.statValue}>
+                                <Text style={[styles.statValue, { color: currColors.text }]}>
                                     {isPrivacyMode ? '****' : `₹${summary.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}
                                 </Text>
-                                <Text style={styles.statLabel}>Net assets</Text>
+                                <Text style={[styles.statLabel, { color: currColors.textSecondary }]}>Net assets</Text>
                             </View>
                         </View>
                     </View>
 
                     {/* Action Grid */}
-                    <View style={styles.actionGridContainer}>
+                    <View style={[styles.actionGridContainer, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                         <View style={styles.gridRow}>
                             <TouchableOpacity style={styles.gridButton} onPress={handleDownloadSample}>
-                                <View style={[styles.gridIconBox, { backgroundColor: '#2C2C2E' }]}>
-                                    <FileText size={24} color="#007AFF" />
+                                <View style={[styles.gridIconBox, { backgroundColor: currColors.cardSecondary }]}>
+                                    <FileText size={24} color={currColors.tint} />
                                 </View>
-                                <Text style={styles.gridLabel}>Sample</Text>
+                                <Text style={[styles.gridLabel, { color: currColors.text }]}>Sample</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.gridButton} onPress={handleImport}>
-                                <View style={[styles.gridIconBox, { backgroundColor: '#2C2C2E' }]}>
-                                    <Upload size={24} color="#007AFF" />
+                                <View style={[styles.gridIconBox, { backgroundColor: currColors.cardSecondary }]}>
+                                    <Upload size={24} color={currColors.tint} />
                                 </View>
-                                <Text style={styles.gridLabel}>Import</Text>
+                                <Text style={[styles.gridLabel, { color: currColors.text }]}>Import</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.gridButton} onPress={handleBackup}>
-                                <View style={[styles.gridIconBox, { backgroundColor: '#2C2C2E' }]}>
-                                    <Database size={24} color="#007AFF" />
+                                <View style={[styles.gridIconBox, { backgroundColor: currColors.cardSecondary }]}>
+                                    <Database size={24} color={currColors.tint} />
                                 </View>
-                                <Text style={styles.gridLabel}>Backup</Text>
+                                <Text style={[styles.gridLabel, { color: currColors.text }]}>Backup</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.gridButton} onPress={handleExport}>
-                                <View style={[styles.gridIconBox, { backgroundColor: '#2C2C2E' }]}>
-                                    <Download size={24} color="#007AFF" />
+                                <View style={[styles.gridIconBox, { backgroundColor: currColors.cardSecondary }]}>
+                                    <Download size={24} color={currColors.tint} />
                                 </View>
-                                <Text style={styles.gridLabel}>Export</Text>
+                                <Text style={[styles.gridLabel, { color: currColors.text }]}>Export</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* Theme Selection */}
+                    <View style={[styles.themeContainer, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
+                        <Text style={[styles.sectionTitle, { color: currColors.textSecondary }]}>Appearance</Text>
+                        <View style={styles.themeOptions}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.themeOption,
+                                    { backgroundColor: currColors.cardSecondary, borderColor: currColors.border },
+                                    theme === 'system' && { backgroundColor: '#007AFF', borderColor: '#007AFF' }
+                                ]}
+                                activeOpacity={0.8}
+                                onPress={() => setTheme('system')}
+                            >
+                                <Monitor size={18} color={theme === 'system' ? '#FFF' : currColors.textSecondary} />
+                                <Text style={[styles.themeText, { color: currColors.textSecondary }, theme === 'system' && styles.themeTextActive]}>System</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.themeOption,
+                                    { backgroundColor: currColors.cardSecondary, borderColor: currColors.border },
+                                    theme === 'light' && { backgroundColor: '#007AFF', borderColor: '#007AFF' }
+                                ]}
+                                activeOpacity={0.8}
+                                onPress={() => setTheme('light')}
+                            >
+                                <Sun size={18} color={theme === 'light' ? '#FFF' : currColors.textSecondary} />
+                                <Text style={[styles.themeText, { color: currColors.textSecondary }, theme === 'light' && styles.themeTextActive]}>Light</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.themeOption,
+                                    { backgroundColor: currColors.cardSecondary, borderColor: currColors.border },
+                                    theme === 'dark' && { backgroundColor: '#007AFF', borderColor: '#007AFF' }
+                                ]}
+                                activeOpacity={0.8}
+                                onPress={() => setTheme('dark')}
+                            >
+                                <Moon size={18} color={theme === 'dark' ? '#FFF' : currColors.textSecondary} />
+                                <Text style={[styles.themeText, { color: currColors.textSecondary }, theme === 'dark' && styles.themeTextActive]}>Dark</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -371,13 +424,13 @@ export default function ProfileScreen() {
                 >
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        style={styles.modalOverlay}
+                        style={[styles.modalOverlay, { backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.4)' }]}
                     >
-                        <View style={styles.modalContent}>
-                            <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>Edit Profile</Text>
+                        <View style={[styles.modalContent, { backgroundColor: currColors.card }]}>
+                            <View style={[styles.modalHeader, { borderBottomColor: currColors.border }]}>
+                                <Text style={[styles.modalTitle, { color: currColors.text }]}>Edit Profile</Text>
                                 <TouchableOpacity onPress={() => setIsEditModalVisible(false)} style={styles.closeButton}>
-                                    <X size={24} color="#FFF" />
+                                    <X size={24} color={currColors.text} />
                                 </TouchableOpacity>
                             </View>
 
@@ -392,44 +445,44 @@ export default function ProfileScreen() {
                                     </View>
                                 </TouchableOpacity>
 
-                                <View style={styles.inputGroup}>
+                                <View style={[styles.inputGroup, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                                     <View style={styles.inputIcon}>
-                                        <User size={20} color="#666" />
+                                        <User size={20} color={currColors.textSecondary} />
                                     </View>
                                     <TextInput
-                                        style={styles.modalInput}
+                                        style={[styles.modalInput, { color: currColors.text }]}
                                         value={editName}
                                         onChangeText={setEditName}
                                         placeholder="Name"
-                                        placeholderTextColor="#666"
+                                        placeholderTextColor={currColors.textSecondary}
                                     />
                                 </View>
 
-                                <View style={styles.inputGroup}>
+                                <View style={[styles.inputGroup, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                                     <View style={styles.inputIcon}>
-                                        <Mail size={20} color="#666" />
+                                        <Mail size={20} color={currColors.textSecondary} />
                                     </View>
                                     <TextInput
-                                        style={styles.modalInput}
+                                        style={[styles.modalInput, { color: currColors.text }]}
                                         value={editEmail}
                                         onChangeText={setEditEmail}
                                         placeholder="Email"
-                                        placeholderTextColor="#666"
+                                        placeholderTextColor={currColors.textSecondary}
                                         keyboardType="email-address"
                                         autoCapitalize="none"
                                     />
                                 </View>
 
-                                <View style={styles.inputGroup}>
+                                <View style={[styles.inputGroup, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                                     <View style={styles.inputIcon}>
-                                        <Phone size={20} color="#666" />
+                                        <Phone size={20} color={currColors.textSecondary} />
                                     </View>
                                     <TextInput
-                                        style={styles.modalInput}
+                                        style={[styles.modalInput, { color: currColors.text }]}
                                         value={editMobile}
                                         onChangeText={setEditMobile}
                                         placeholder="Mobile"
-                                        placeholderTextColor="#666"
+                                        placeholderTextColor={currColors.textSecondary}
                                         keyboardType="phone-pad"
                                     />
                                 </View>
@@ -449,11 +502,9 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#000',
     },
     container: {
         flex: 1,
-        backgroundColor: '#000',
     },
     header: {
         flexDirection: 'row',
@@ -475,17 +526,14 @@ const styles = StyleSheet.create({
         padding: 4,
     },
     scrollContent: {
-        paddingHorizontal: 16,
+        padding: 16,
         paddingBottom: 40,
     },
     userInfoContainer: {
-        backgroundColor: '#1C1C1E',
         borderRadius: 24,
         padding: 20,
-        marginBottom: 20,
-        marginTop: 10,
+        marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#2C2C2E',
     },
     profileRow: {
         flexDirection: 'row',
@@ -498,7 +546,6 @@ const styles = StyleSheet.create({
         height: 60,
         borderRadius: 30,
         overflow: 'hidden',
-        backgroundColor: '#1C1C1E',
         marginRight: 16,
     },
     avatar: {
@@ -523,7 +570,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#2C2C2E',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -546,17 +592,15 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
     },
     actionGridContainer: {
-        backgroundColor: '#1C1C1E',
         borderRadius: 24,
         padding: 20,
-        marginBottom: 20,
+        marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#2C2C2E',
     },
     gridRow: {
         flexDirection: 'row',
         justifyContent: 'flex-start',
-        gap: 20,
+        gap: 16,
     },
     gridButton: {
         alignItems: 'center',
@@ -569,7 +613,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
-        backgroundColor: '#2C2C2E'
     },
     gridLabel: {
         fontSize: 12,
@@ -583,7 +626,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#1C1C1E',
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
         paddingBottom: Platform.OS === 'ios' ? 40 : 20,
@@ -595,7 +637,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 24,
         borderBottomWidth: 1,
-        borderBottomColor: '#1C1C1E',
     },
     modalTitle: {
         fontSize: 20,
@@ -637,14 +678,12 @@ const styles = StyleSheet.create({
     inputGroup: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#1C1C1E',
         borderRadius: 12,
         marginBottom: 16,
         width: '100%',
         paddingHorizontal: 16,
         height: 56,
         borderWidth: 1,
-        borderColor: '#333',
     },
     inputIcon: {
         marginRight: 12,
@@ -661,11 +700,51 @@ const styles = StyleSheet.create({
         width: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 20,
+        marginTop: 16,
     },
     saveButtonText: {
         color: '#FFF',
         fontSize: 16,
         fontWeight: '600',
-    }
+    },
+    themeContainer: {
+        borderRadius: 24,
+        padding: 20,
+        marginBottom: 16,
+        borderWidth: 1,
+    },
+    sectionTitle: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#8E8E93',
+        marginBottom: 16,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
+    themeOptions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    themeOption: {
+        flex: 1,
+        borderRadius: 16,
+        paddingVertical: 12,
+        alignItems: 'center',
+        gap: 8,
+        borderWidth: 1,
+    },
+    themeOptionActive: {
+        backgroundColor: '#007AFF',
+        borderColor: '#0A84FF',
+    },
+    themeText: {
+        fontSize: 12,
+        color: '#8E8E93',
+        fontWeight: '500',
+    },
+    themeTextActive: {
+        color: '#FFF',
+        fontWeight: '600',
+    },
 });

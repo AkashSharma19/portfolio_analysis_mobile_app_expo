@@ -1,7 +1,8 @@
-import { Text, View } from '@/components/Themed';
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { TrendingDown, TrendingUp } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface SummaryCardProps {
     label: string;
@@ -12,14 +13,15 @@ interface SummaryCardProps {
 
 export const SummaryCard = ({ label, value, trend, prefix = '$' }: SummaryCardProps) => {
     const isPositive = trend !== undefined && trend >= 0;
-    const isZero = trend === 0;
     const isPercentage = label.includes('%') || label === 'XIRR';
-    const displayValue = isPercentage ? `${value}%` : `${prefix}${value}`;
+
+    const theme = useColorScheme() ?? 'dark';
+    const currColors = Colors[theme];
 
     return (
-        <View style={styles.card}>
-            <Text style={styles.label}>{label}</Text>
-            <Text style={styles.value}>{isPercentage ? '' : '₹'}{value}{isPercentage ? '%' : ''}</Text>
+        <View style={[styles.card, { backgroundColor: currColors.card }]}>
+            <Text style={[styles.label, { color: currColors.textSecondary }]}>{label}</Text>
+            <Text style={[styles.value, { color: currColors.text }]}>{isPercentage ? '' : '₹'}{value}{isPercentage ? '%' : ''}</Text>
             {trend !== undefined && (
                 <View style={styles.trendContainer}>
                     {isPositive ? (
@@ -38,7 +40,6 @@ export const SummaryCard = ({ label, value, trend, prefix = '$' }: SummaryCardPr
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: '#1C1C1E',
         borderRadius: 12,
         padding: 16,
         width: '48%',
@@ -46,20 +47,17 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 12,
-        color: '#8E8E93',
         marginBottom: 8,
     },
     value: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#FFF',
     },
     trendContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 8,
         gap: 4,
-        backgroundColor: 'transparent',
     },
     trendText: {
         fontSize: 12,

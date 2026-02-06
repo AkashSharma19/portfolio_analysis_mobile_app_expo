@@ -1,3 +1,5 @@
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -29,6 +31,9 @@ export default function ExploreScreen() {
     const fetchTickers = usePortfolioStore((state) => state.fetchTickers);
     const tickers = usePortfolioStore((state) => state.tickers);
     const router = useRouter();
+
+    const colorScheme = useColorScheme() ?? 'dark';
+    const currColors = Colors[colorScheme];
 
     const [searchQuery, setSearchQuery] = useState('');
     const [refreshing, setRefreshing] = useState(false);
@@ -115,7 +120,7 @@ export default function ExploreScreen() {
 
         return (
             <TouchableOpacity
-                style={styles.companyItem}
+                style={[styles.companyItem, { borderBottomColor: currColors.border }]}
                 activeOpacity={0.7}
                 onPress={() => router.push(`/stock-details/${item.Tickers}`)}
             >
@@ -126,11 +131,11 @@ export default function ExploreScreen() {
                         </Text>
                     </View>
                     <View style={styles.infoCol}>
-                        <Text style={styles.companyName} numberOfLines={2}>{companyName}</Text>
+                        <Text style={[styles.companyName, { color: currColors.text }]} numberOfLines={2}>{companyName}</Text>
                     </View>
                 </View>
                 <View style={styles.itemRight}>
-                    <Text style={styles.currentPrice}>₹{currentValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                    <Text style={[styles.currentPrice, { color: currColors.text }]}>₹{currentValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                     <View style={[styles.changeBadge, { backgroundColor: isPositive ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)' }]}>
                         <TrendingUp size={12} color={isPositive ? '#4CAF50' : '#F44336'} style={{ transform: [{ rotate: isPositive ? '0deg' : '180deg' }] }} />
                         <Text style={[styles.changeText, { color: isPositive ? '#4CAF50' : '#F44336' }]}>
@@ -185,9 +190,9 @@ export default function ExploreScreen() {
             const isPositive = change >= 0;
 
             return (
-                <View key={index} style={styles.tickerItem}>
-                    <Text style={styles.tickerLabel}>{item.label}</Text>
-                    <Text style={styles.tickerPrice}>
+                <View key={index} style={[styles.tickerItem, { backgroundColor: currColors.card }]}>
+                    <Text style={[styles.tickerLabel, { color: currColors.text }]}>{item.label}</Text>
+                    <Text style={[styles.tickerPrice, { color: currColors.text }]}>
                         {currentValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     </Text>
                     <View style={styles.tickerChangeContainer}>
@@ -210,16 +215,16 @@ export default function ExploreScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-            <View style={styles.container}>
-                <View style={styles.header}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
+            <View style={[styles.container, { backgroundColor: currColors.background }]}>
+                <View style={[styles.header, { backgroundColor: currColors.background }]}>
                     <View style={styles.headerTop}>
-                        <View style={styles.searchContainer}>
-                            <Ionicons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
+                        <View style={[styles.searchContainer, { backgroundColor: currColors.card }]}>
+                            <Ionicons name="search" size={20} color={currColors.textSecondary} style={styles.searchIcon} />
                             <TextInput
-                                style={styles.searchInput}
+                                style={[styles.searchInput, { color: currColors.text }]}
                                 placeholder="Search companies or tickers"
-                                placeholderTextColor="#8E8E93"
+                                placeholderTextColor={currColors.textSecondary}
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
                                 autoCapitalize="none"
@@ -227,15 +232,15 @@ export default function ExploreScreen() {
                             />
                             {searchQuery.length > 0 && (
                                 <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-                                    <Ionicons name="close-circle" size={18} color="#8E8E93" />
+                                    <Ionicons name="close-circle" size={18} color={currColors.textSecondary} />
                                 </TouchableOpacity>
                             )}
                         </View>
                         <TouchableOpacity
-                            style={styles.filterToggle}
+                            style={[styles.filterToggle, { backgroundColor: currColors.card }]}
                             onPress={() => setShowFilters(!showFilters)}
                         >
-                            <Ionicons name="filter" size={20} color={showFilters ? '#007AFF' : '#FFF'} />
+                            <Ionicons name="filter" size={20} color={showFilters ? currColors.tint : currColors.text} />
                         </TouchableOpacity>
                     </View>
 
@@ -243,23 +248,23 @@ export default function ExploreScreen() {
                         <View style={styles.filtersContainer}>
                             {uniqueAssetTypes.length > 0 && (
                                 <View style={styles.filterRow}>
-                                    <Text style={styles.filterLabel}>Asset Type</Text>
+                                    <Text style={[styles.filterLabel, { color: currColors.textSecondary }]}>Asset Type</Text>
                                     <ScrollView horizontal showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
                                         <TouchableOpacity
-                                            style={[styles.filterChip, filterAssetType === null && styles.filterChipActive]}
+                                            style={[styles.filterChip, { backgroundColor: currColors.card, borderColor: currColors.border }, filterAssetType === null && styles.filterChipActive]}
                                             onPress={() => setFilterAssetType(null)}
                                         >
-                                            <Text style={[styles.filterChipText, filterAssetType === null && styles.filterChipTextActive]}>
+                                            <Text style={[styles.filterChipText, { color: currColors.textSecondary }, filterAssetType === null && styles.filterChipTextActive]}>
                                                 All
                                             </Text>
                                         </TouchableOpacity>
                                         {uniqueAssetTypes.map((at) => (
                                             <TouchableOpacity
                                                 key={at}
-                                                style={[styles.filterChip, filterAssetType === at && styles.filterChipActive]}
+                                                style={[styles.filterChip, { backgroundColor: currColors.card, borderColor: currColors.border }, filterAssetType === at && styles.filterChipActive]}
                                                 onPress={() => setFilterAssetType(at)}
                                             >
-                                                <Text style={[styles.filterChipText, filterAssetType === at && styles.filterChipTextActive]}>
+                                                <Text style={[styles.filterChipText, { color: currColors.textSecondary }, filterAssetType === at && styles.filterChipTextActive]}>
                                                     {at}
                                                 </Text>
                                             </TouchableOpacity>
@@ -270,23 +275,23 @@ export default function ExploreScreen() {
 
                             {uniqueSectors.length > 0 && (
                                 <View style={styles.filterRow}>
-                                    <Text style={styles.filterLabel}>Sector</Text>
+                                    <Text style={[styles.filterLabel, { color: currColors.textSecondary }]}>Sector</Text>
                                     <ScrollView horizontal showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
                                         <TouchableOpacity
-                                            style={[styles.filterChip, filterSector === null && styles.filterChipActive]}
+                                            style={[styles.filterChip, { backgroundColor: currColors.card, borderColor: currColors.border }, filterSector === null && styles.filterChipActive]}
                                             onPress={() => setFilterSector(null)}
                                         >
-                                            <Text style={[styles.filterChipText, filterSector === null && styles.filterChipTextActive]}>
+                                            <Text style={[styles.filterChipText, { color: currColors.textSecondary }, filterSector === null && styles.filterChipTextActive]}>
                                                 All
                                             </Text>
                                         </TouchableOpacity>
                                         {uniqueSectors.map((s) => (
                                             <TouchableOpacity
                                                 key={s}
-                                                style={[styles.filterChip, filterSector === s && styles.filterChipActive]}
+                                                style={[styles.filterChip, { backgroundColor: currColors.card, borderColor: currColors.border }, filterSector === s && styles.filterChipActive]}
                                                 onPress={() => setFilterSector(s)}
                                             >
-                                                <Text style={[styles.filterChipText, filterSector === s && styles.filterChipTextActive]}>
+                                                <Text style={[styles.filterChipText, { color: currColors.textSecondary }, filterSector === s && styles.filterChipTextActive]}>
                                                     {s}
                                                 </Text>
                                             </TouchableOpacity>
@@ -299,8 +304,8 @@ export default function ExploreScreen() {
                 </View>
 
                 {loading && tickers.length === 0 ? (
-                    <View style={styles.centered}>
-                        <ActivityIndicator size="large" color="#007AFF" />
+                    <View style={[styles.centered, { backgroundColor: currColors.background }]}>
+                        <ActivityIndicator size="large" color={currColors.tint} />
                     </View>
                 ) : (
                     <FlatList
@@ -308,14 +313,14 @@ export default function ExploreScreen() {
                         keyExtractor={(item) => item.Tickers}
                         renderItem={renderItem}
                         ListHeaderComponent={renderTickerRibbon}
-                        contentContainerStyle={styles.listContent}
+                        contentContainerStyle={[styles.listContent, { backgroundColor: currColors.background }]}
                         showsVerticalScrollIndicator={false}
                         refreshControl={
-                            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />
+                            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={currColors.text} />
                         }
                         ListEmptyComponent={
                             <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>
+                                <Text style={[styles.emptyText, { color: currColors.textSecondary }]}>
                                     {searchQuery ? 'No companies found' : 'Loading companies...'}
                                 </Text>
                             </View>
@@ -330,7 +335,6 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#000',
     },
     container: {
         flex: 1,
@@ -343,19 +347,17 @@ const styles = StyleSheet.create({
     header: {
         paddingTop: 20,
         paddingBottom: 15,
-        backgroundColor: '#000',
     },
     headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
         gap: 12,
     },
     searchContainer: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#1C1C1E',
         borderRadius: 12,
         paddingHorizontal: 12,
         height: 44,
@@ -365,7 +367,6 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         flex: 1,
-        color: '#FFF',
         fontSize: 16,
         height: '100%',
     },
@@ -376,7 +377,6 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 12,
-        backgroundColor: '#1C1C1E',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
         paddingBottom: 5,
     },
     filterRow: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
         marginBottom: 15,
     },
     filterLabel: {
@@ -397,13 +397,11 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     filterChip: {
-        backgroundColor: '#1C1C1E',
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
         marginRight: 10,
         borderWidth: 1,
-        borderColor: '#2C2C2E',
     },
     filterChipActive: {
         backgroundColor: '#007AFF',
@@ -419,7 +417,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     listContent: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
         paddingBottom: 20,
     },
     companyItem: {
@@ -428,7 +426,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 15,
         borderBottomWidth: 1,
-        borderBottomColor: '#1C1C1E',
     },
     itemLeft: {
         flex: 1,
@@ -441,7 +438,6 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 14,
-        backgroundColor: '#2C2C2E',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -456,7 +452,6 @@ const styles = StyleSheet.create({
     companyName: {
         fontSize: 14,
         fontWeight: '400',
-        color: '#FFF',
     },
     itemRight: {
         alignItems: 'flex-end',
@@ -464,7 +459,6 @@ const styles = StyleSheet.create({
     currentPrice: {
         fontSize: 14,
         fontWeight: '400',
-        color: '#FFF',
         marginBottom: 4,
     },
     changeBadge: {
@@ -491,14 +485,15 @@ const styles = StyleSheet.create({
     ribbonContainer: {
         height: 50,
         backgroundColor: 'transparent',
-        marginBottom: 20,
+        marginBottom: 16,
+        marginHorizontal: -16, // Bleed to edges
         overflow: 'hidden',
         justifyContent: 'center',
     },
     ribbonContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
+        paddingHorizontal: 16,
     },
     tickerItem: {
         flexDirection: 'row',
@@ -508,7 +503,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 8,
-        backgroundColor: '#2C2C2E',
         borderRadius: 20,
     },
     tickerLabel: {

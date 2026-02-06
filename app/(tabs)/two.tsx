@@ -1,3 +1,5 @@
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Transaction } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function HistoryScreen() {
   const router = useRouter();
   const { transactions, tickers, removeTransaction, isPrivacyMode } = usePortfolioStore();
+
+  const colorScheme = useColorScheme() ?? 'dark';
+  const currColors = Colors[colorScheme];
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -66,7 +71,7 @@ export default function HistoryScreen() {
         friction={2}
         rightThreshold={40}
       >
-        <View style={styles.transactionItem}>
+        <View style={[styles.transactionItem, { backgroundColor: currColors.background, borderBottomColor: currColors.border }]}>
           <View style={[styles.iconContainer, { backgroundColor: isBuy ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 59, 48, 0.15)' }]}>
             {isBuy ? (
               <ArrowUpRight size={20} color="#34C759" />
@@ -76,23 +81,23 @@ export default function HistoryScreen() {
           </View>
 
           <View style={styles.infoCol}>
-            <Text style={styles.symbol} numberOfLines={2} ellipsizeMode="tail">{displayName}</Text>
+            <Text style={[styles.symbol, { color: currColors.text }]} numberOfLines={2} ellipsizeMode="tail">{displayName}</Text>
             <View style={styles.dateRow}>
-              <Text style={styles.date}>{format(new Date(item.date), 'MMM dd')}</Text>
+              <Text style={[styles.date, { color: currColors.textSecondary }]}>{format(new Date(item.date), 'MMM dd')}</Text>
               {item.broker && (
                 <>
-                  <Text style={styles.dot}>•</Text>
-                  <Text style={styles.broker}>{item.broker}</Text>
+                  <Text style={[styles.dot, { color: currColors.border }]}>•</Text>
+                  <Text style={[styles.broker, { color: currColors.textSecondary }]}>{item.broker}</Text>
                 </>
               )}
             </View>
           </View>
 
           <View style={styles.rightCol}>
-            <Text style={[styles.amountValue, { color: isBuy ? '#FFF' : '#FFF' }]}>
+            <Text style={[styles.amountValue, { color: currColors.text }]}>
               {isPrivacyMode ? '****' : `${item.currency === 'USD' ? '$' : '₹'}${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             </Text>
-            <Text style={styles.quantityDetails}>
+            <Text style={[styles.quantityDetails, { color: currColors.textSecondary }]}>
               {item.quantity} @ {isPrivacyMode ? '****' : item.price.toLocaleString()}
             </Text>
           </View>
@@ -102,15 +107,15 @@ export default function HistoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
+      <View style={[styles.container, { backgroundColor: currColors.background }]}>
+        <View style={[styles.header, { backgroundColor: currColors.background }]}>
+          <View style={[styles.searchContainer, { backgroundColor: currColors.card }]}>
+            <Ionicons name="search" size={20} color={currColors.textSecondary} style={styles.searchIcon} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: currColors.text }]}
               placeholder="Search companies or tickers"
-              placeholderTextColor="#8E8E93"
+              placeholderTextColor={currColors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoCapitalize="none"
@@ -118,7 +123,7 @@ export default function HistoryScreen() {
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-                <Ionicons name="close-circle" size={18} color="#8E8E93" />
+                <Ionicons name="close-circle" size={18} color={currColors.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
@@ -126,8 +131,8 @@ export default function HistoryScreen() {
 
 
         {filteredAndSortedTransactions.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No transactions found.</Text>
+          <View style={[styles.emptyState, { backgroundColor: currColors.background }]}>
+            <Text style={[styles.emptyText, { color: currColors.textSecondary }]}>No transactions found.</Text>
           </View>
         ) : (
           <FlatList
@@ -137,6 +142,8 @@ export default function HistoryScreen() {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
+            bounces={false}
+            overScrollMode="never"
           />
         )}
       </View>
@@ -147,21 +154,18 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#000',
   },
   container: {
     flex: 1,
-    backgroundColor: '#000',
   },
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 20,
     paddingBottom: 15,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 44,
@@ -171,7 +175,6 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: '#FFF',
     fontSize: 16,
     height: '100%',
   },
@@ -197,8 +200,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1C1C1E',
-    backgroundColor: '#000',
   },
   iconContainer: {
     width: 40,
@@ -218,7 +219,6 @@ const styles = StyleSheet.create({
   },
   symbol: {
     fontSize: 14,
-    color: '#FFF',
     marginBottom: 4,
   },
   dateRow: {
