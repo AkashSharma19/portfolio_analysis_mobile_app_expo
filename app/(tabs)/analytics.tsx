@@ -207,7 +207,6 @@ export default function AnalyticsScreen() {
                         colors={GRADIENTS.card}
                         style={styles.chartContainer}
                     >
-                        <Text style={styles.cardTitle}>{selectedDimension} Distribution</Text>
                         <View style={styles.pieWrapper}>
                             {allocation.length > 0 ? (
                                 <PieChart
