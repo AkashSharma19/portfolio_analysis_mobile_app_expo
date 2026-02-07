@@ -19,23 +19,31 @@ export default function HistoryScreen() {
   const currColors = Colors[colorScheme];
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterType, setFilterType] = useState<'ALL' | 'BUY' | 'SELL'>('ALL');
 
   const tickerMap = useMemo(() => {
     return new Map(tickers.map(t => [t.Tickers.toUpperCase(), t]));
   }, [tickers]);
 
+  const sortedTransactions = useMemo(() => {
+    return [...transactions].sort((a, b) => b.date.localeCompare(a.date));
+  }, [transactions]);
+
   const filteredAndSortedTransactions = useMemo(() => {
-    let result = [...transactions];
+    let result = sortedTransactions;
 
     if (searchQuery) {
-      result = result.filter(t => t.symbol.toLowerCase().includes(searchQuery.toLowerCase()));
+      const query = searchQuery.toLowerCase();
+      result = result.filter(t => t.symbol.toLowerCase().includes(query));
     }
 
-    // Default sort by date descending
-    result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    if (filterType !== 'ALL') {
+      result = result.filter(t => t.type === filterType);
+    }
 
     return result;
-  }, [transactions, searchQuery]);
+  }, [sortedTransactions, searchQuery, filterType]);
 
 
   const renderRightActions = (id: string) => {
@@ -110,23 +118,61 @@ export default function HistoryScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
       <View style={[styles.container, { backgroundColor: currColors.background }]}>
         <View style={[styles.header, { backgroundColor: currColors.background }]}>
-          <View style={[styles.searchContainer, { backgroundColor: currColors.card }]}>
-            <Ionicons name="search" size={20} color={currColors.textSecondary} style={styles.searchIcon} />
-            <TextInput
-              style={[styles.searchInput, { color: currColors.text }]}
-              placeholder="Search companies or tickers"
-              placeholderTextColor={currColors.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-                <Ionicons name="close-circle" size={18} color={currColors.textSecondary} />
-              </TouchableOpacity>
-            )}
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={[styles.searchContainer, { backgroundColor: currColors.card }]}>
+              <Ionicons name="search" size={20} color={currColors.textSecondary} style={styles.searchIcon} />
+              <TextInput
+                style={[styles.searchInput, { color: currColors.text }]}
+                placeholder="Search companies or tickers"
+                placeholderTextColor={currColors.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+                  <Ionicons name="close-circle" size={18} color={currColors.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+            <TouchableOpacity
+              style={[styles.filterToggle, { backgroundColor: currColors.card }]}
+              onPress={() => setShowFilters(!showFilters)}
+            >
+              <Ionicons name="filter" size={20} color={showFilters ? currColors.tint : currColors.text} />
+            </TouchableOpacity>
           </View>
+
+          {showFilters && (
+            <View style={styles.filtersContainer}>
+              <View style={styles.filterRow}>
+                <Text style={[styles.filterLabel, { color: currColors.textSecondary }]}>Transaction Type</Text>
+                <View style={{ flexDirection: 'row' }}>
+                  {(['ALL', 'BUY', 'SELL'] as const).map((type) => (
+                    <TouchableOpacity
+                      key={type}
+                      style={[
+                        styles.filterChip,
+                        { backgroundColor: currColors.card, borderColor: currColors.border },
+                        filterType === type && styles.filterChipActive
+                      ]}
+                      onPress={() => setFilterType(type)}
+                    >
+                      <Text style={[
+                        styles.filterChipText,
+                        { color: currColors.textSecondary },
+                        filterType === type && styles.filterChipTextActive
+                      ]}>
+                        {type === 'ALL' ? 'All' : type === 'BUY' ? 'Buy' : 'Sell'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </View>
+          )}
+
         </View>
 
 
@@ -164,6 +210,7 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
   },
   searchContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
@@ -265,5 +312,47 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 11,
     marginTop: 4,
+  },
+  filterToggle: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filtersContainer: {
+    marginTop: 15,
+    paddingBottom: 5,
+  },
+  filterRow: {
+    marginBottom: 8,
+  },
+  filterLabel: {
+    color: '#8E8E93',
+    fontSize: 11,
+    marginBottom: 8,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 10,
+    borderWidth: 1,
+  },
+  filterChipActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#0A84FF',
+  },
+  filterChipText: {
+    color: '#8E8E93',
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  filterChipTextActive: {
+    color: '#FFF',
+    fontWeight: '600',
   },
 });

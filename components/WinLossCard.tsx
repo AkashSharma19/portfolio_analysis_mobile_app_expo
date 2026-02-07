@@ -18,9 +18,14 @@ export default function WinLossCard() {
         const total = holdings.length;
         const winRate = total > 0 ? (winners.length / total) * 100 : 0;
 
+        const winnersProfit = winners.reduce((acc, curr) => acc + curr.pnl, 0);
+        const losersLoss = losers.reduce((acc, curr) => acc + curr.pnl, 0);
+
         return {
             winners: winners.length,
             losers: losers.length,
+            winnersProfit,
+            losersLoss,
             total,
             winRate
         };
@@ -50,18 +55,28 @@ export default function WinLossCard() {
                 {/* Stats Row */}
                 <View style={styles.statsRow}>
                     <View style={styles.statItem}>
-                        <Text style={[styles.statLabel, { color: currColors.textSecondary }]}>Profitable</Text>
-                        <View style={[styles.statBadge, { backgroundColor: 'rgba(76, 175, 80, 0.1)' }]}>
-                            <ArrowUpRight size={14} color="#4CAF50" />
-                            <Text style={[styles.statValue, { color: '#4CAF50' }]}>{stats.winners}</Text>
+                        <Text style={[styles.statLabel, { color: currColors.textSecondary }]}>Winners</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <View style={[styles.statBadge, { backgroundColor: 'rgba(76, 175, 80, 0.1)' }]}>
+                                <ArrowUpRight size={14} color="#4CAF50" />
+                                <Text style={[styles.statValue, { color: '#4CAF50' }]}>{stats.winners}</Text>
+                            </View>
+                            <Text style={[styles.statAmount, { color: '#4CAF50', marginTop: 0 }]} numberOfLines={1} adjustsFontSizeToFit>
+                                +₹{stats.winnersProfit.toLocaleString('en-IN', { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}
+                            </Text>
                         </View>
                     </View>
 
                     <View style={styles.statItem}>
-                        <Text style={[styles.statLabel, { color: currColors.textSecondary }]}>Loss-making</Text>
-                        <View style={[styles.statBadge, { backgroundColor: 'rgba(244, 67, 54, 0.1)' }]}>
-                            <ArrowDownRight size={14} color="#F44336" />
-                            <Text style={[styles.statValue, { color: '#F44336' }]}>{stats.losers}</Text>
+                        <Text style={[styles.statLabel, { color: currColors.textSecondary }]}>Losers</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <View style={[styles.statBadge, { backgroundColor: 'rgba(244, 67, 54, 0.1)' }]}>
+                                <ArrowDownRight size={14} color="#F44336" />
+                                <Text style={[styles.statValue, { color: '#F44336' }]}>{stats.losers}</Text>
+                            </View>
+                            <Text style={[styles.statAmount, { color: '#F44336', marginTop: 0 }]} numberOfLines={1} adjustsFontSizeToFit>
+                                -₹{Math.abs(stats.losersLoss).toLocaleString('en-IN', { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}
+                            </Text>
                         </View>
                     </View>
                 </View>
@@ -106,9 +121,9 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     rateValue: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: '400',
-        lineHeight: 28,
+        lineHeight: 24,
     },
     rateLabel: {
         fontSize: 11,
@@ -149,11 +164,24 @@ const styles = StyleSheet.create({
         borderRadius: 6,
     },
     statValue: {
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
     },
     statLabel: {
         fontSize: 11,
         fontWeight: '500',
+    },
+    statValueContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    statAmount: {
+        fontSize: 10,
+        fontWeight: '500',
+        marginTop: 0,
+        flexShrink: 1,
     },
 });

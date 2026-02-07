@@ -100,6 +100,9 @@ export default function PortfolioScreen() {
         profit: h.pnl
       }));
 
+    const winners = holdings.filter(h => h.pnl >= 0);
+    const winRate = holdings.length > 0 ? (winners.length / holdings.length) * 100 : 0;
+
     return {
       totalValue: summary.totalValue,
       profitAmount: summary.profitAmount,
@@ -108,7 +111,9 @@ export default function PortfolioScreen() {
       dayChangePercentage: summary.dayChangePercentage,
       xirr: summary.xirr,
       topWinners,
-      userName: userName
+      userName: userName,
+      holdingsCount: holdings.length,
+      winRate
     };
   }, [summary, holdings, userName]);
 
