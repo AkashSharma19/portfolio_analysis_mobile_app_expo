@@ -43,7 +43,8 @@ export default function PortfolioScreen() {
   const yearlyAnalysis = useMemo(() => getYearlyAnalysis(), [transactions, getYearlyAnalysis, tickers]);
   const monthlyAnalysis = useMemo(() => getMonthlyAnalysis(), [transactions, getMonthlyAnalysis, tickers]);
 
-  const previewMonthlyAnalysis = useMemo(() => monthlyAnalysis.slice(0, 6), [monthlyAnalysis]);
+  const previewMonthlyAnalysis = useMemo(() => monthlyAnalysis.slice(0, 3), [monthlyAnalysis]);
+  const previewYearlyAnalysis = useMemo(() => yearlyAnalysis.slice(0, 3), [yearlyAnalysis]);
 
   const holdings = useMemo(() => getHoldingsData(), [getHoldingsData, transactions, tickers]);
 
@@ -214,8 +215,17 @@ export default function PortfolioScreen() {
           <View style={[styles.section, { marginBottom: 16 }]}>
             {yearlyAnalysis.length > 0 ? (
               <View style={[styles.accordionContainer, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
-                <Text style={[styles.innerSectionTitle, { color: currColors.textSecondary }]}>YEARLY ANALYSIS</Text>
-                {yearlyAnalysis.map((item, index) => {
+                <View style={[styles.headerWithAction]}>
+                  <Text style={[styles.innerSectionTitle, { color: currColors.textSecondary }]}>YEARLY ANALYSIS</Text>
+                  {yearlyAnalysis.length > 3 && (
+                    <TouchableOpacity onPress={() => router.push('/yearly-analysis')} style={styles.viewMoreButton}>
+                      <View style={[styles.iconCircle, { backgroundColor: currColors.cardSecondary }]}>
+                        <ArrowRight size={14} color={currColors.tint} />
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {previewYearlyAnalysis.map((item, index) => {
                   const isExpanded = expandedYear === item.year;
                   return (
                     <View key={item.year} style={[styles.accordionItem, { borderBottomColor: currColors.border }]}>
@@ -277,7 +287,7 @@ export default function PortfolioScreen() {
               <View style={[styles.accordionContainer, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                 <View style={[styles.headerWithAction]}>
                   <Text style={[styles.innerSectionTitle, { color: currColors.textSecondary }]}>MONTHLY ANALYSIS</Text>
-                  {monthlyAnalysis.length > 6 && (
+                  {monthlyAnalysis.length > 3 && (
                     <TouchableOpacity onPress={() => router.push('/monthly-analysis')} style={styles.viewMoreButton}>
                       <View style={[styles.iconCircle, { backgroundColor: currColors.cardSecondary }]}>
                         <ArrowRight size={14} color={currColors.tint} />

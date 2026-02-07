@@ -374,22 +374,24 @@ export const usePortfolioStore = create<PortfolioState>()(
                     });
 
                     const assetValueMap = new Map<string, number>();
-                    let totalYearInvestmentValue = 0;
+                    let yearInvestmentValue = 0;
 
                     yearTransactions.forEach(t => {
                         const ticker = tickerMap.get(t.symbol.toUpperCase());
                         const assetType = (ticker && ticker['Asset Type']) || 'Other';
                         const value = t.quantity * t.price;
+                        const netValue = t.type === 'BUY' ? value : -value;
 
-                        totalYearInvestmentValue += value;
-                        assetValueMap.set(assetType, (assetValueMap.get(assetType) || 0) + value);
+                        yearInvestmentValue += netValue;
+                        assetValueMap.set(assetType, (assetValueMap.get(assetType) || 0) + netValue);
                     });
 
                     const assetDistribution = Array.from(assetValueMap.entries())
+                        .filter(([_, value]) => value !== 0)
                         .map(([name, value]) => ({
                             name,
                             value,
-                            percentage: totalYearInvestmentValue > 0 ? (value / totalYearInvestmentValue) * 100 : 0
+                            percentage: yearInvestmentValue !== 0 ? (value / Math.abs(yearInvestmentValue)) * 100 : 0
                         }))
                         .sort((a, b) => b.value - a.value);
 
@@ -476,32 +478,24 @@ export const usePortfolioStore = create<PortfolioState>()(
                     });
 
                     const assetValueMap = new Map<string, number>();
-                    let totalMonthEndValue = 0;
+                    let monthInvestmentValue = 0;
 
-                    cumulativeHoldings.forEach((quantity, symbol) => {
-                        if (quantity <= 0) return;
-                        const ticker = tickerMap.get(symbol.toUpperCase());
-
-                        const lastTransaction = [...sortedTransactions]
-                            .filter(t => {
-                                const d = new Date(t.date);
-                                const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                                return k <= key && t.symbol.toUpperCase() === symbol.toUpperCase();
-                            })
-                            .reverse()[0];
-
-                        const price = (ticker && ticker['Current Value']) ? ticker['Current Value'] : (lastTransaction ? lastTransaction.price : 0);
+                    monthTransactions.forEach(t => {
+                        const ticker = tickerMap.get(t.symbol.toUpperCase());
                         const assetType = (ticker && ticker['Asset Type']) || 'Other';
-                        const value = quantity * price;
-                        totalMonthEndValue += value;
-                        assetValueMap.set(assetType, (assetValueMap.get(assetType) || 0) + value);
+                        const value = t.quantity * t.price;
+                        const netValue = t.type === 'BUY' ? value : -value;
+
+                        monthInvestmentValue += netValue;
+                        assetValueMap.set(assetType, (assetValueMap.get(assetType) || 0) + netValue);
                     });
 
                     const assetDistribution = Array.from(assetValueMap.entries())
+                        .filter(([_, value]) => value !== 0)
                         .map(([name, value]) => ({
                             name,
                             value,
-                            percentage: totalMonthEndValue > 0 ? (value / totalMonthEndValue) * 100 : 0
+                            percentage: monthInvestmentValue !== 0 ? (value / Math.abs(monthInvestmentValue)) * 100 : 0
                         }))
                         .sort((a, b) => b.value - a.value);
 

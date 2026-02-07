@@ -4,40 +4,40 @@ import { usePortfolioStore } from '@/store/usePortfolioStore';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, ChevronDown, TrendingUp } from 'lucide-react-native';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function MonthlyAnalysisScreen() {
+const CHART_COLORS = [
+    '#007AFF', '#5856D6', '#AF52DE', '#FF2D55', '#FF9500',
+    '#FFCC00', '#34C759', '#5AC8FA', '#8E8E93', '#2C2C2E'
+];
+
+export default function YearlyAnalysisScreen() {
     const router = useRouter();
     const transactions = usePortfolioStore((state) => state.transactions);
     const tickers = usePortfolioStore((state) => state.tickers);
-    const getMonthlyAnalysis = usePortfolioStore((state) => state.getMonthlyAnalysis);
+    const getYearlyAnalysis = usePortfolioStore((state) => state.getYearlyAnalysis);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
     const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
 
     const colorScheme = useColorScheme() ?? 'dark';
     const currColors = Colors[colorScheme];
 
-    const monthlyAnalysis = useMemo(() => getMonthlyAnalysis(), [transactions, getMonthlyAnalysis, tickers]);
-    const [expandedMonths, setExpandedMonths] = React.useState<Set<string>>(new Set());
+    const yearlyAnalysis = useMemo(() => getYearlyAnalysis(), [transactions, getYearlyAnalysis, tickers]);
+    const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
 
-    const toggleMonth = (key: string) => {
-        setExpandedMonths(prev => {
+    const toggleYear = (year: number) => {
+        setExpandedYears(prev => {
             const next = new Set(prev);
-            if (next.has(key)) {
-                next.delete(key);
+            if (next.has(year)) {
+                next.delete(year);
             } else {
-                next.add(key);
+                next.add(year);
             }
             return next;
         });
     };
-
-    const CHART_COLORS = [
-        '#007AFF', '#5856D6', '#AF52DE', '#FF2D55', '#FF9500',
-        '#FFCC00', '#34C759', '#5AC8FA', '#8E8E93', '#2C2C2E'
-    ];
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
@@ -52,35 +52,32 @@ export default function MonthlyAnalysisScreen() {
                     >
                         <ArrowLeft size={24} color={currColors.text} />
                     </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: currColors.text }]}>Monthly Analysis</Text>
+                    <Text style={[styles.headerTitle, { color: currColors.text }]}>Yearly Analysis</Text>
                     <View style={{ width: 40 }} />
                 </View>
                 <FlatList
-                    data={monthlyAnalysis}
-                    keyExtractor={(item) => item.monthKey}
+                    data={yearlyAnalysis}
+                    keyExtractor={(item) => item.year.toString()}
                     contentContainerStyle={[styles.modalList, { backgroundColor: 'transparent' }]}
                     showsVerticalScrollIndicator={false}
                     renderItem={({ item, index }) => {
-                        const isExpanded = expandedMonths.has(item.monthKey);
+                        const isExpanded = expandedYears.has(item.year);
                         return (
                             <View style={[
-                                styles.monthlyItemContainer,
+                                styles.accordionItem,
                                 { borderBottomColor: currColors.border },
-                                index === monthlyAnalysis.length - 1 && { borderBottomWidth: 0 }
+                                index === yearlyAnalysis.length - 1 && { borderBottomWidth: 0 }
                             ]}>
                                 <TouchableOpacity
-                                    style={[
-                                        styles.monthlyHeader,
-                                        { backgroundColor: currColors.card },
-                                        isExpanded && { backgroundColor: currColors.cardSecondary }
-                                    ]}
-                                    onPress={() => toggleMonth(item.monthKey)}
+                                    style={[styles.accordionHeader, { backgroundColor: currColors.card }, isExpanded && { backgroundColor: currColors.cardSecondary }]}
+                                    onPress={() => toggleYear(item.year)}
                                     activeOpacity={0.7}
                                 >
                                     <View style={styles.headerLeft}>
-                                        <Text style={[styles.monthText, { color: currColors.text }]}>{item.month}</Text>
-                                        <Text style={[styles.subText, { color: currColors.textSecondary }]}>Invested: {isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
+                                        <Text style={[styles.yearText, { color: currColors.text }]}>{item.year}</Text>
+                                        <Text style={[styles.subText, { color: currColors.textSecondary }]}>Avg. Inv: {isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${item.averageMonthlyInvestment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
                                     </View>
+
                                     <View style={styles.headerRight}>
                                         {item.percentageIncrease !== 0 && (
                                             <View style={[styles.growthBadge, { backgroundColor: item.percentageIncrease >= 0 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)' }]}>
@@ -146,20 +143,18 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    monthlyItemContainer: {
+    modalList: {
+        paddingBottom: 40,
+    },
+    accordionItem: {
         borderBottomWidth: 1,
     },
-    monthlyHeader: {
+    accordionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 16,
         paddingHorizontal: 16,
-    },
-    monthText: {
-        fontSize: 14,
-        fontWeight: '400',
-        marginBottom: 2,
     },
     headerLeft: {
         flex: 1,
@@ -167,6 +162,11 @@ const styles = StyleSheet.create({
     headerRight: {
         flexDirection: 'row',
         alignItems: 'center',
+    },
+    yearText: {
+        fontSize: 14,
+        fontWeight: '400',
+        marginBottom: 2,
     },
     subText: {
         fontSize: 11,
@@ -212,8 +212,5 @@ const styles = StyleSheet.create({
     assetValue: {
         fontSize: 12,
         fontWeight: '400',
-    },
-    modalList: {
-        paddingBottom: 40,
     },
 });
