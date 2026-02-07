@@ -31,6 +31,7 @@ export default function PortfolioScreen() {
   const togglePrivacyMode = usePortfolioStore((state) => state.togglePrivacyMode);
   const getHoldingsData = usePortfolioStore((state) => state.getHoldingsData);
   const userName = usePortfolioStore((state) => state.userName);
+  const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
 
   const theme = useColorScheme() ?? 'dark';
   const currColors = Colors[theme];
@@ -156,41 +157,41 @@ export default function PortfolioScreen() {
                 </View>
               </View>
 
-              <Text style={[styles.heroValue, { color: currColors.text }]}>{isPrivacyMode ? '****' : `₹${summary.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
+              <Text style={[styles.heroValue, { color: currColors.text }]}>{isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${summary.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
 
               <View style={[styles.dashedDivider, { borderColor: currColors.border }]} />
 
               <View style={styles.heroRow}>
                 <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>1D returns</Text>
                 <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (summary.dayChange >= 0 ? '#4CAF50' : '#F44336') }]}>
-                  {isPrivacyMode ? '****' : `${summary.dayChange >= 0 ? '+' : '-'}₹${Math.abs(summary.dayChange).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(summary.dayChangePercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)`}
+                  {isPrivacyMode ? '****' : `${summary.dayChange >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(summary.dayChange).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(summary.dayChangePercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)`}
                 </Text>
               </View>
 
               <View style={styles.heroRow}>
                 <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Total returns</Text>
                 <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (summary.profitAmount >= 0 ? '#4CAF50' : '#F44336') }]}>
-                  {isPrivacyMode ? '****' : `${summary.profitAmount >= 0 ? '+' : '-'}₹${Math.abs(summary.profitAmount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(summary.profitPercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)`}
+                  {isPrivacyMode ? '****' : `${summary.profitAmount >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(summary.profitAmount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(summary.profitPercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)`}
                 </Text>
               </View>
 
               <View style={styles.heroRow}>
                 <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Realized returns</Text>
                 <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (summary.realizedReturn >= 0 ? '#4CAF50' : '#F44336') }]}>
-                  {isPrivacyMode ? '****' : `${summary.realizedReturn >= 0 ? '+' : '-'}₹${Math.abs(summary.realizedReturn).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
+                  {isPrivacyMode ? '****' : `${summary.realizedReturn >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(summary.realizedReturn).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                 </Text>
               </View>
 
               <View style={styles.heroRow}>
                 <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Unrealized returns</Text>
                 <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (summary.unrealizedReturn >= 0 ? '#4CAF50' : '#F44336') }]}>
-                  {isPrivacyMode ? '****' : `${summary.unrealizedReturn >= 0 ? '+' : '-'}₹${Math.abs(summary.unrealizedReturn).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
+                  {isPrivacyMode ? '****' : `${summary.unrealizedReturn >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(summary.unrealizedReturn).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                 </Text>
               </View>
 
               <View style={styles.heroRow}>
                 <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Invested</Text>
-                <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{isPrivacyMode ? '****' : `₹${summary.totalCost.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
+                <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${summary.totalCost.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
               </View>
 
               <View style={[styles.heroRow, { marginBottom: 0 }]}>
@@ -225,7 +226,7 @@ export default function PortfolioScreen() {
                       >
                         <View style={styles.headerLeft}>
                           <Text style={[styles.yearText, { color: currColors.text }]}>{item.year}</Text>
-                          <Text style={[styles.subText, { color: currColors.textSecondary }]}>Avg. Inv: {isPrivacyMode ? '****' : `₹${item.averageMonthlyInvestment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
+                          <Text style={[styles.subText, { color: currColors.textSecondary }]}>Avg. Inv: {isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${item.averageMonthlyInvestment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
                         </View>
 
                         <View style={styles.headerRight}>
@@ -253,7 +254,7 @@ export default function PortfolioScreen() {
                                   <View style={[styles.dot, { backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }]} />
                                   <Text style={[styles.assetName, { color: currColors.textSecondary }]} numberOfLines={1}>{asset.name}</Text>
                                 </View>
-                                <Text style={[styles.assetValue, { color: currColors.text }]}>{isPrivacyMode ? '****' : `₹${asset.value.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
+                                <Text style={[styles.assetValue, { color: currColors.text }]}>{isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${asset.value.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
                               </View>
                             ))}
                           </View>
@@ -288,7 +289,7 @@ export default function PortfolioScreen() {
                   <View key={item.monthKey} style={[styles.monthlyItem, { backgroundColor: currColors.card, borderBottomColor: currColors.border }, index === previewMonthlyAnalysis.length - 1 && { borderBottomWidth: 0 }]}>
                     <View style={styles.headerLeft}>
                       <Text style={[styles.monthText, { color: currColors.text }]}>{item.month}</Text>
-                      <Text style={[styles.subText, { color: currColors.textSecondary }]}>Invested: {isPrivacyMode ? '****' : `₹${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
+                      <Text style={[styles.subText, { color: currColors.textSecondary }]}>Invested: {isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
                     </View>
                     {item.percentageIncrease !== 0 && (
                       <View style={[styles.growthBadge, { backgroundColor: item.percentageIncrease >= 0 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)' }]}>

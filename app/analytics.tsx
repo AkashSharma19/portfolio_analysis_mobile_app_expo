@@ -94,6 +94,7 @@ export default function AnalyticsScreen() {
     const transactions = usePortfolioStore((state) => state.transactions);
     const tickers = usePortfolioStore((state) => state.tickers);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
+    const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
 
     const colorScheme = useColorScheme() ?? 'dark';
     const currColors = Colors[colorScheme];
@@ -357,17 +358,17 @@ export default function AnalyticsScreen() {
                                             {holdingsViewMode === 'Current' && (
                                                 <>
                                                     <Text style={[styles.primaryValue, { color: currColors.text }]}>
-                                                        {isPrivacyMode ? '****' : `₹${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                                                        {isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                                                     </Text>
                                                     <Text style={[styles.secondaryValue, { color: currColors.textSecondary }]}>
-                                                        {isPrivacyMode ? '****' : `₹${item.totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                                                        {isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${item.totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                                                     </Text>
                                                 </>
                                             )}
                                             {holdingsViewMode === 'Returns' && (
                                                 <>
                                                     <Text style={[styles.primaryValue, { color: item.pnl >= 0 ? '#30D158' : '#FF453A' }]}>
-                                                        {isPrivacyMode ? '****' : `${item.pnl >= 0 ? '+' : '-'}₹${Math.abs(item.pnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                                                        {isPrivacyMode ? '****' : `${item.pnl >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(item.pnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                                                     </Text>
                                                     <Text style={[styles.secondaryValue, { color: item.pnl >= 0 ? '#30D158' : '#FF453A' }]}>
                                                         {isPrivacyMode ? '****' : `${item.pnl >= 0 ? '+' : ''}${item.pnlPercentage.toFixed(2)}%`}
@@ -380,7 +381,7 @@ export default function AnalyticsScreen() {
                                                         {isPrivacyMode ? '****' : `${item.percentage.toFixed(2)}%`}
                                                     </Text>
                                                     <Text style={[styles.secondaryValue, { color: currColors.textSecondary }]}>
-                                                        {isPrivacyMode ? '****' : `₹${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                                                        {isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                                                     </Text>
                                                 </>
                                             )}

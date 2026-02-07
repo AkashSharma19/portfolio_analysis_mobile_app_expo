@@ -30,6 +30,7 @@ const CHART_COLORS = [
 export default function ExploreScreen() {
     const fetchTickers = usePortfolioStore((state) => state.fetchTickers);
     const tickers = usePortfolioStore((state) => state.tickers);
+    const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
     const router = useRouter();
 
     const colorScheme = useColorScheme() ?? 'dark';
@@ -135,7 +136,7 @@ export default function ExploreScreen() {
                     </View>
                 </View>
                 <View style={styles.itemRight}>
-                    <Text style={[styles.currentPrice, { color: currColors.text }]}>₹{currentValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                    <Text style={[styles.currentPrice, { color: currColors.text }]}>{showCurrencySymbol ? '₹' : ''}{currentValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                     <View style={[styles.changeBadge, { backgroundColor: isPositive ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)' }]}>
                         <TrendingUp size={12} color={isPositive ? '#4CAF50' : '#F44336'} style={{ transform: [{ rotate: isPositive ? '0deg' : '180deg' }] }} />
                         <Text style={[styles.changeText, { color: isPositive ? '#4CAF50' : '#F44336' }]}>

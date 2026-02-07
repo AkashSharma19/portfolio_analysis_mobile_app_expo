@@ -13,6 +13,7 @@ export default function MonthlyAnalysisScreen() {
     const tickers = usePortfolioStore((state) => state.tickers);
     const getMonthlyAnalysis = usePortfolioStore((state) => state.getMonthlyAnalysis);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
+    const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
 
     const colorScheme = useColorScheme() ?? 'dark';
     const currColors = Colors[colorScheme];
@@ -44,7 +45,7 @@ export default function MonthlyAnalysisScreen() {
                     ]}>
                         <View style={styles.headerLeft}>
                             <Text style={[styles.monthText, { color: currColors.text }]}>{item.month}</Text>
-                            <Text style={[styles.subText, { color: currColors.textSecondary }]}>Invested: {isPrivacyMode ? '****' : `₹${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
+                            <Text style={[styles.subText, { color: currColors.textSecondary }]}>Invested: {isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}</Text>
                         </View>
                         {item.percentageIncrease !== 0 && (
                             <View style={[styles.growthBadge, { backgroundColor: item.percentageIncrease >= 0 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)' }]}>

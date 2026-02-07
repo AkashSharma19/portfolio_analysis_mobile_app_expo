@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
+import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { TrendingDown, TrendingUp } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -17,11 +18,12 @@ export const SummaryCard = ({ label, value, trend, prefix = '$' }: SummaryCardPr
 
     const theme = useColorScheme() ?? 'dark';
     const currColors = Colors[theme];
+    const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
 
     return (
         <View style={[styles.card, { backgroundColor: currColors.card }]}>
             <Text style={[styles.label, { color: currColors.textSecondary }]}>{label}</Text>
-            <Text style={[styles.value, { color: currColors.text }]}>{isPercentage ? '' : '₹'}{value}{isPercentage ? '%' : ''}</Text>
+            <Text style={[styles.value, { color: currColors.text }]}>{isPercentage ? '' : (showCurrencySymbol ? '₹' : '')}{value}{isPercentage ? '%' : ''}</Text>
             {trend !== undefined && (
                 <View style={styles.trendContainer}>
                     {isPositive ? (

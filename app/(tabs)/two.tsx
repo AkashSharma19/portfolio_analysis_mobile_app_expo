@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const { transactions, tickers, removeTransaction, isPrivacyMode } = usePortfolioStore();
+  const { transactions, tickers, removeTransaction, isPrivacyMode, showCurrencySymbol } = usePortfolioStore();
 
   const colorScheme = useColorScheme() ?? 'dark';
   const currColors = Colors[colorScheme];
@@ -103,7 +103,7 @@ export default function HistoryScreen() {
 
           <View style={styles.rightCol}>
             <Text style={[styles.amountValue, { color: currColors.text }]}>
-              {isPrivacyMode ? '****' : `${item.currency === 'USD' ? '$' : '₹'}${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              {isPrivacyMode ? '****' : `${item.currency === 'USD' ? '$' : (showCurrencySymbol ? '₹' : '')}${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             </Text>
             <Text style={[styles.quantityDetails, { color: currColors.textSecondary }]}>
               {item.quantity} @ {isPrivacyMode ? '****' : item.price.toLocaleString()}

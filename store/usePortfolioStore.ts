@@ -28,6 +28,8 @@ interface PortfolioState {
     updateProfile: (profile: { name?: string; email?: string; mobile?: string; image?: string | null }) => void;
     theme: 'system' | 'light' | 'dark';
     setTheme: (theme: 'system' | 'light' | 'dark') => void;
+    showCurrencySymbol: boolean;
+    toggleCurrencySymbol: () => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>()(
@@ -540,6 +542,8 @@ export const usePortfolioStore = create<PortfolioState>()(
             })),
             theme: 'system',
             setTheme: (theme) => set({ theme }),
+            showCurrencySymbol: true,
+            toggleCurrencySymbol: () => set((state) => ({ showCurrencySymbol: !state.showCurrencySymbol })),
         }),
         {
             name: 'portfolio-storage',

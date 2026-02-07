@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
-import { Database, Download, Edit2, FileText, Mail, Monitor, Moon, Phone, Sun, Upload, User, X } from 'lucide-react-native';
+import { ChevronRight, Database, Download, Edit2, FileText, Mail, Phone, Upload, User, X } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +27,7 @@ export default function ProfileScreen() {
     const updateProfile = usePortfolioStore((state) => state.updateProfile);
     const theme = usePortfolioStore((state) => state.theme);
     const setTheme = usePortfolioStore((state) => state.setTheme);
+    const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
 
     const colorScheme = useColorScheme() ?? 'dark';
     const currColors = Colors[colorScheme];
@@ -294,6 +295,8 @@ export default function ProfileScreen() {
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
             <View style={[styles.container, { backgroundColor: currColors.background }]}>
+
+
                 <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
 
                 <ScrollView
@@ -331,7 +334,7 @@ export default function ProfileScreen() {
                             </View>
                             <View style={styles.statItem}>
                                 <Text style={[styles.statValue, { color: currColors.text }]}>
-                                    {isPrivacyMode ? '****' : `₹${summary.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}
+                                    {isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${summary.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}
                                 </Text>
                                 <Text style={[styles.statLabel, { color: currColors.textSecondary }]}>Net assets</Text>
                             </View>
@@ -371,48 +374,18 @@ export default function ProfileScreen() {
                         </View>
                     </View>
 
-                    {/* Theme Selection */}
-                    <View style={[styles.themeContainer, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
-                        <Text style={[styles.sectionTitle, { color: currColors.textSecondary }]}>Appearance</Text>
-                        <View style={styles.themeOptions}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.themeOption,
-                                    { backgroundColor: currColors.cardSecondary, borderColor: currColors.border },
-                                    theme === 'system' && { backgroundColor: '#007AFF', borderColor: '#007AFF' }
-                                ]}
-                                activeOpacity={0.8}
-                                onPress={() => setTheme('system')}
-                            >
-                                <Monitor size={18} color={theme === 'system' ? '#FFF' : currColors.textSecondary} />
-                                <Text style={[styles.themeText, { color: currColors.textSecondary }, theme === 'system' && styles.themeTextActive]}>System</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.themeOption,
-                                    { backgroundColor: currColors.cardSecondary, borderColor: currColors.border },
-                                    theme === 'light' && { backgroundColor: '#007AFF', borderColor: '#007AFF' }
-                                ]}
-                                activeOpacity={0.8}
-                                onPress={() => setTheme('light')}
-                            >
-                                <Sun size={18} color={theme === 'light' ? '#FFF' : currColors.textSecondary} />
-                                <Text style={[styles.themeText, { color: currColors.textSecondary }, theme === 'light' && styles.themeTextActive]}>Light</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.themeOption,
-                                    { backgroundColor: currColors.cardSecondary, borderColor: currColors.border },
-                                    theme === 'dark' && { backgroundColor: '#007AFF', borderColor: '#007AFF' }
-                                ]}
-                                activeOpacity={0.8}
-                                onPress={() => setTheme('dark')}
-                            >
-                                <Moon size={18} color={theme === 'dark' ? '#FFF' : currColors.textSecondary} />
-                                <Text style={[styles.themeText, { color: currColors.textSecondary }, theme === 'dark' && styles.themeTextActive]}>Dark</Text>
-                            </TouchableOpacity>
+
+                    {/* Settings Action */}
+                    <TouchableOpacity
+                        style={[styles.settingsCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}
+                        onPress={() => router.push('/settings')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.settingsLeft}>
+                            <Text style={[styles.settingsLabel, { color: currColors.text }]}>Settings</Text>
                         </View>
-                    </View>
+                        <ChevronRight size={20} color={currColors.textSecondary} />
+                    </TouchableOpacity>
                 </ScrollView>
 
                 {/* Edit Profile Modal */}
@@ -494,6 +467,7 @@ export default function ProfileScreen() {
                         </View>
                     </KeyboardAvoidingView>
                 </Modal>
+
             </View>
         </SafeAreaView>
     );
@@ -514,8 +488,8 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
     },
     headerText: {
-        fontSize: 22,
-        fontWeight: '400',
+        fontSize: 28,
+        fontWeight: '600',
         color: '#FFF',
     },
     headerIcons: {
@@ -707,44 +681,22 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-    themeContainer: {
+    settingsCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         borderRadius: 24,
-        padding: 20,
+        padding: 16,
         marginBottom: 16,
         borderWidth: 1,
     },
-    sectionTitle: {
-        fontSize: 10,
-        fontWeight: '700',
-        color: '#8E8E93',
-        marginBottom: 16,
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-    },
-    themeOptions: {
+    settingsLeft: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        alignItems: 'center',
         gap: 12,
     },
-    themeOption: {
-        flex: 1,
-        borderRadius: 16,
-        paddingVertical: 12,
-        alignItems: 'center',
-        gap: 8,
-        borderWidth: 1,
-    },
-    themeOptionActive: {
-        backgroundColor: '#007AFF',
-        borderColor: '#0A84FF',
-    },
-    themeText: {
-        fontSize: 12,
-        color: '#8E8E93',
+    settingsLabel: {
+        fontSize: 16,
         fontWeight: '500',
-    },
-    themeTextActive: {
-        color: '#FFF',
-        fontWeight: '600',
     },
 });

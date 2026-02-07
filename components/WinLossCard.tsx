@@ -7,6 +7,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 export default function WinLossCard() {
     const getHoldingsData = usePortfolioStore((state) => state.getHoldingsData);
+    const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
     const holdings = getHoldingsData();
 
     const theme = useColorScheme() ?? 'dark';
@@ -62,7 +63,7 @@ export default function WinLossCard() {
                                 <Text style={[styles.statValue, { color: '#4CAF50' }]}>{stats.winners}</Text>
                             </View>
                             <Text style={[styles.statAmount, { color: '#4CAF50', marginTop: 0 }]} numberOfLines={1} adjustsFontSizeToFit>
-                                +₹{stats.winnersProfit.toLocaleString('en-IN', { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}
+                                +{showCurrencySymbol ? '₹' : ''}{stats.winnersProfit.toLocaleString('en-IN', { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}
                             </Text>
                         </View>
                     </View>
@@ -75,7 +76,7 @@ export default function WinLossCard() {
                                 <Text style={[styles.statValue, { color: '#F44336' }]}>{stats.losers}</Text>
                             </View>
                             <Text style={[styles.statAmount, { color: '#F44336', marginTop: 0 }]} numberOfLines={1} adjustsFontSizeToFit>
-                                -₹{Math.abs(stats.losersLoss).toLocaleString('en-IN', { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}
+                                -{showCurrencySymbol ? '₹' : ''}{Math.abs(stats.losersLoss).toLocaleString('en-IN', { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}
                             </Text>
                         </View>
                     </View>

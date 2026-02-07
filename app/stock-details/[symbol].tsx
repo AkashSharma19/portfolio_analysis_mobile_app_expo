@@ -28,6 +28,7 @@ export default function StockDetailsScreen() {
     const transactions = usePortfolioStore((state) => state.transactions);
     const tickers = usePortfolioStore((state) => state.tickers);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
+    const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
 
     const colorScheme = useColorScheme() ?? 'dark';
     const currColors = Colors[colorScheme];
@@ -240,7 +241,7 @@ export default function StockDetailsScreen() {
                         </View>
 
                         <Text style={[styles.heroValue, { color: currColors.text }]}>
-                            {isPrivacyMode ? '****' : `₹${(holding.quantity > 0 ? holding.currentValue : holding.currentPrice).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
+                            {isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${(holding.quantity > 0 ? holding.currentValue : holding.currentPrice).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                         </Text>
 
                         <View style={[styles.dashedDivider, { borderColor: currColors.border }]} />
@@ -248,7 +249,7 @@ export default function StockDetailsScreen() {
                         <View style={styles.heroRow}>
                             <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>{holding.quantity > 0 ? '1D returns' : '1D change'}</Text>
                             <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (holding.dayChange >= 0 ? '#4CAF50' : '#F44336') }]}>
-                                {isPrivacyMode ? '****' : `${holding.dayChange >= 0 ? '+' : ''}₹${Math.abs(holding.quantity > 0 ? holding.dayChange : (holding.dayChange)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.dayChangePercentage).toFixed(2)}%)`}
+                                {isPrivacyMode ? '****' : `${holding.dayChange >= 0 ? '+' : ''}${showCurrencySymbol ? '₹' : ''}${Math.abs(holding.quantity > 0 ? holding.dayChange : (holding.dayChange)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.dayChangePercentage).toFixed(2)}%)`}
                             </Text>
                         </View>
 
@@ -256,7 +257,7 @@ export default function StockDetailsScreen() {
                             <View style={styles.heroRow}>
                                 <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Total returns</Text>
                                 <Text style={[styles.heroRowValue, { color: isPrivacyMode ? currColors.text : (holding.pnl >= 0 ? '#4CAF50' : '#F44336') }]}>
-                                    {isPrivacyMode ? '****' : `${holding.pnl >= 0 ? '+' : '-'}₹${Math.abs(holding.pnl).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.pnlPercentage).toFixed(2)}%)`}
+                                    {isPrivacyMode ? '****' : `${holding.pnl >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(holding.pnl).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.pnlPercentage).toFixed(2)}%)`}
                                 </Text>
                             </View>
                         )}
@@ -265,7 +266,7 @@ export default function StockDetailsScreen() {
                             <>
                                 <View style={styles.heroRow}>
                                     <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Invested</Text>
-                                    <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{isPrivacyMode ? '****' : `₹${holding.investedValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
+                                    <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${holding.investedValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
                                 </View>
 
                                 <View style={styles.heroRow}>
@@ -275,18 +276,18 @@ export default function StockDetailsScreen() {
 
                                 <View style={styles.heroRow}>
                                     <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Current Price</Text>
-                                    <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>₹{holding.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
+                                    <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{showCurrencySymbol ? '₹' : ''}{holding.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
                                 </View>
 
                                 <View style={styles.heroRow}>
                                     <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Avg. Price</Text>
-                                    <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{isPrivacyMode ? '****' : `₹${holding.avgPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
+                                    <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${holding.avgPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
                                 </View>
                             </>
                         ) : (
                             <View style={styles.heroRow}>
                                 <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>Current Price</Text>
-                                <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>₹{holding.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
+                                <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{showCurrencySymbol ? '₹' : ''}{holding.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
                             </View>
                         )}
 
@@ -307,7 +308,7 @@ export default function StockDetailsScreen() {
                         <View style={styles.rangeRowContainer}>
                             <View>
                                 <Text style={[styles.rangeLabel, { color: currColors.textSecondary }]}>Low</Text>
-                                <Text style={[styles.rangeValueCompact, { color: currColors.text }]}>₹{holding.low52.toLocaleString('en-IN')}</Text>
+                                <Text style={[styles.rangeValueCompact, { color: currColors.text }]}>{showCurrencySymbol ? '₹' : ''}{holding.low52.toLocaleString('en-IN')}</Text>
                             </View>
 
                             <View style={styles.rangeBarContainer}>
@@ -336,7 +337,7 @@ export default function StockDetailsScreen() {
 
                             <View style={{ alignItems: 'flex-end' }}>
                                 <Text style={[styles.rangeLabel, { color: currColors.textSecondary }]}>High</Text>
-                                <Text style={[styles.rangeValueCompact, { color: currColors.text }]}>₹{holding.high52.toLocaleString('en-IN')}</Text>
+                                <Text style={[styles.rangeValueCompact, { color: currColors.text }]}>{showCurrencySymbol ? '₹' : ''}{holding.high52.toLocaleString('en-IN')}</Text>
                             </View>
                         </View>
                     </View>
@@ -363,7 +364,7 @@ export default function StockDetailsScreen() {
                                     </View>
                                     <View style={styles.historyAmount}>
                                         <Text style={[styles.historyValue, { color: currColors.text }]}>
-                                            {isPrivacyMode ? '****' : `₹${(item.quantity * item.price).toLocaleString()}`}
+                                            {isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${(item.quantity * item.price).toLocaleString()}`}
                                         </Text>
                                         <Text style={[styles.historyDetails, { color: currColors.textSecondary }]}>{item.quantity} @ {isPrivacyMode ? '****' : item.price.toLocaleString()}</Text>
                                     </View>

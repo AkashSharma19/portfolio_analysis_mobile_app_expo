@@ -25,7 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function AddTransactionScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { addTransaction, updateTransaction, transactions, tickers, fetchTickers } = usePortfolioStore();
+  const { addTransaction, updateTransaction, transactions, tickers, fetchTickers, showCurrencySymbol } = usePortfolioStore();
 
   const colorScheme = useColorScheme() ?? 'dark';
   const currColors = Colors[colorScheme];
@@ -197,9 +197,9 @@ export default function AddTransactionScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
                   <TextInput
                     style={[styles.input, { color: currColors.text }]}
-                    placeholder="₹ 0.00"
+                    placeholder={showCurrencySymbol ? "₹ 0.00" : "0.00"}
                     placeholderTextColor={currColors.textSecondary}
-                    value={price ? `₹ ${price}` : ''}
+                    value={price ? (showCurrencySymbol ? `₹ ${price}` : price) : ''}
                     onChangeText={(text) => setPrice(text.replace(/[^0-9.]/g, ''))}
                     keyboardType="decimal-pad"
                     textAlign="right"
@@ -313,7 +313,7 @@ export default function AddTransactionScreen() {
                   <Text style={[styles.companyNameList, { color: currColors.textSecondary }]}>{item['Company Name']}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.tickerPrice, { color: currColors.text }]}>₹{item['Current Value']}</Text>
+                  <Text style={[styles.tickerPrice, { color: currColors.text }]}>{showCurrencySymbol ? '₹' : ''}{item['Current Value']}</Text>
                   {symbol === item.Tickers && <Check size={16} color={currColors.tint} style={{ marginTop: 4 }} />}
                 </View>
               </TouchableOpacity>

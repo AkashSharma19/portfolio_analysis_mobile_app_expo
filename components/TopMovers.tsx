@@ -12,6 +12,7 @@ export default function TopMovers() {
     const getHoldingsData = usePortfolioStore((state) => state.getHoldingsData);
     const transactions = usePortfolioStore((state) => state.transactions);
     const tickers = usePortfolioStore((state) => state.tickers);
+    const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
 
     const theme = useColorScheme() ?? 'dark';
     const currColors = Colors[theme];
@@ -57,7 +58,7 @@ export default function TopMovers() {
                 label: h.companyName || h.symbol,
                 symbol: h.symbol,
                 value: `${isProfit ? '+' : ''}${(h.dayChangePercentage || 0).toFixed(2)}%`,
-                price: `₹${h.currentPrice.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+                price: `${showCurrencySymbol ? '₹' : ''}${h.currentPrice.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
                 isProfit,
                 route: `/stock-details/${h.symbol}`
             });
@@ -77,7 +78,7 @@ export default function TopMovers() {
         }
 
         return items;
-    }, [getHoldingsData, transactions, tickers]);
+    }, [getHoldingsData, transactions, tickers, showCurrencySymbol]);
 
     return (
         <View style={styles.container}>
