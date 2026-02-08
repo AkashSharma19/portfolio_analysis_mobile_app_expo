@@ -192,15 +192,6 @@ export default function StockDetailsScreen() {
                     <ArrowLeft size={24} color={currColors.text} />
                 </TouchableOpacity>
                 <View style={styles.headerTitle}>
-                    {holding.logo ? (
-                        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 8, padding: 2, marginRight: 8 }}>
-                            <Image
-                                source={{ uri: holding.logo }}
-                                style={{ width: 20, height: 20, borderRadius: 6 }} // Adjusted size
-                                resizeMode="contain"
-                            />
-                        </View>
-                    ) : null}
                     <Text style={[styles.companyName, { color: currColors.text }]} numberOfLines={2}>{holding.companyName}</Text>
                 </View>
                 <View style={{ width: 40 }} />
@@ -248,6 +239,16 @@ export default function StockDetailsScreen() {
                     <View style={{ padding: 24 }}>
                         <View style={styles.heroHeaderRow}>
                             <Text style={[styles.heroLabel, { color: currColors.textSecondary }]}>{holding.quantity > 0 ? 'CURRENT VALUE' : 'CURRENT PRICE'}</Text>
+                            {/* Brand Highlight in Price Card */}
+                            {holding.logo && (
+                                <View style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 4 }}>
+                                    <Image
+                                        source={{ uri: holding.logo }}
+                                        style={{ width: 40, height: 40, borderRadius: 8 }} // Prominent 40x40 logo
+                                        resizeMode="contain"
+                                    />
+                                </View>
+                            )}
                         </View>
 
                         <Text style={[styles.heroValue, { color: currColors.text }]}>
