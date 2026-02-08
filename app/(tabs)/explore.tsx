@@ -915,7 +915,7 @@ const styles = StyleSheet.create({
     tickerLabel: {
         color: '#FFF',
         fontSize: 12,
-        fontWeight: '700',
+        fontWeight: '500',
     },
     tickerPrice: {
         color: '#FFF',
@@ -928,7 +928,7 @@ const styles = StyleSheet.create({
     },
     tickerChange: {
         fontSize: 11,
-        fontWeight: '600',
+        fontWeight: '500',
     },
     focusView: {
         flex: 1,
