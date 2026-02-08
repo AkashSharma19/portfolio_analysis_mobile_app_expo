@@ -107,11 +107,13 @@ export default function TopMovers() {
                                 ) : item.type === 'insight' ? (
                                     <Activity size={16} color={currColors.tint} />
                                 ) : item.logo ? (
-                                    <Image
-                                        source={{ uri: item.logo }}
-                                        style={{ width: 32, height: 32, borderRadius: 16 }}
-                                        resizeMode="contain"
-                                    />
+                                    <View style={{ backgroundColor: '#FFFFFF', borderRadius: 10, padding: 3 }}>
+                                        <Image
+                                            source={{ uri: item.logo }}
+                                            style={{ width: 32, height: 32, borderRadius: 8 }}
+                                            resizeMode="contain"
+                                        />
+                                    </View>
                                 ) : (
                                     <Text style={[styles.symbolText, { color: currColors.text }]}>{item.label.substring(0, 2).toUpperCase()}</Text>
                                 )}

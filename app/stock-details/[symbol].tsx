@@ -193,11 +193,13 @@ export default function StockDetailsScreen() {
                 </TouchableOpacity>
                 <View style={styles.headerTitle}>
                     {holding.logo ? (
-                        <Image
-                            source={{ uri: holding.logo }}
-                            style={{ width: 24, height: 24, borderRadius: 12, marginRight: 8 }}
-                            resizeMode="contain"
-                        />
+                        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 8, padding: 2, marginRight: 8 }}>
+                            <Image
+                                source={{ uri: holding.logo }}
+                                style={{ width: 20, height: 20, borderRadius: 6 }} // Adjusted size
+                                resizeMode="contain"
+                            />
+                        </View>
                     ) : null}
                     <Text style={[styles.companyName, { color: currColors.text }]} numberOfLines={2}>{holding.companyName}</Text>
                 </View>

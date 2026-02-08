@@ -159,11 +159,13 @@ export default function ExploreScreen() {
                 <View style={styles.itemLeft}>
                     <View style={[styles.holdingIcon, { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] + '22' }]}>
                         {item.Logo ? (
-                            <Image
-                                source={{ uri: item.Logo }}
-                                style={{ width: 32, height: 32, borderRadius: 10 }}
-                                resizeMode="contain"
-                            />
+                            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 2 }}>
+                                <Image
+                                    source={{ uri: item.Logo }}
+                                    style={{ width: 40, height: 40, borderRadius: 10 }} // Adjusted to match Analytics
+                                    resizeMode="contain"
+                                />
+                            </View>
                         ) : (
                             <Text style={[styles.iconLetter, { color: CHART_COLORS[index % CHART_COLORS.length] }]}>
                                 {companyName[0]?.toUpperCase() || '?'}
@@ -192,7 +194,7 @@ export default function ExploreScreen() {
                         </Text>
                     </View>
                 </View>
-            </TouchableOpacity>
+            </TouchableOpacity >
         );
     };
 
@@ -236,11 +238,13 @@ export default function ExploreScreen() {
                                 <View style={styles.moverHeader}>
                                     <View style={[styles.moverIcon, { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] + '22' }]}>
                                         {item.Logo ? (
-                                            <Image
-                                                source={{ uri: item.Logo }}
-                                                style={{ width: 24, height: 24, borderRadius: 8 }}
-                                                resizeMode="contain"
-                                            />
+                                            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 8, padding: 2 }}>
+                                                <Image
+                                                    source={{ uri: item.Logo }}
+                                                    style={{ width: 24, height: 24, borderRadius: 6 }} // Increased size
+                                                    resizeMode="contain"
+                                                />
+                                            </View>
                                         ) : (
                                             <Text style={[styles.moverIconText, { color: CHART_COLORS[index % CHART_COLORS.length] }]}>
                                                 {item['Company Name']?.[0] || '?'}

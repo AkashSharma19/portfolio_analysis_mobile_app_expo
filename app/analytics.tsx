@@ -329,12 +329,14 @@ export default function AnalyticsScreen() {
                                     <View style={styles.holdingRow}>
                                         <View style={styles.holdingMain}>
                                             <View style={[styles.holdingIcon, { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] + '22' }]}>
-                                                {item.logo ? (
-                                                    <Image
-                                                        source={{ uri: item.logo }}
-                                                        style={{ width: 44, height: 44, borderRadius: 14 }}
-                                                        resizeMode="contain"
-                                                    />
+                                                {selectedDimension === 'Company Name' && item.logo ? (
+                                                    <View style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 2 }}>
+                                                        <Image
+                                                            source={{ uri: item.logo }}
+                                                            style={{ width: 40, height: 40, borderRadius: 10 }} // Adjusted size for padding
+                                                            resizeMode="contain"
+                                                        />
+                                                    </View>
                                                 ) : selectedDimension === 'Sector' && SECTOR_ICONS[item.name] ? (() => {
                                                     const Icon = SECTOR_ICONS[item.name];
                                                     return <Icon size={20} color={CHART_COLORS[index % CHART_COLORS.length]} />;

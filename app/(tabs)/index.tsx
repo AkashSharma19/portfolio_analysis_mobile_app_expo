@@ -141,7 +141,7 @@ export default function PortfolioScreen() {
                   }
                 }}
                 activeOpacity={0.7}
-                style={styles.logoContainer}
+                style={[styles.logoContainer, { backgroundColor: '#FFFFFF', borderRadius: 8, padding: 4 }]} // Added background for visibility
               >
                 <Image
                   source={{ uri: headerLogo }}
