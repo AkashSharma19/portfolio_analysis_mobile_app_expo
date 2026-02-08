@@ -9,7 +9,10 @@ export default function WinLossCard() {
     const getHoldingsData = usePortfolioStore((state) => state.getHoldingsData);
     const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
-    const holdings = getHoldingsData();
+    const transactions = usePortfolioStore((state) => state.transactions);
+    const tickers = usePortfolioStore((state) => state.tickers);
+
+    const holdings = useMemo(() => getHoldingsData(), [getHoldingsData, transactions, tickers]);
 
     const theme = useColorScheme() ?? 'dark';
     const currColors = Colors[theme];

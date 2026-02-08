@@ -1,4 +1,5 @@
 import { ActivityCalendar } from '@/components/ActivityCalendar';
+import { ForecastCard } from '@/components/ForecastCard';
 import ShareableCard from '@/components/ShareableCard';
 import TopMovers from '@/components/TopMovers';
 import WinLossCard from '@/components/WinLossCard';
@@ -60,6 +61,7 @@ export default function PortfolioScreen() {
 
   const [refreshing, setRefreshing] = React.useState(false);
   const [expandedYear, setExpandedYear] = React.useState<number | null>(null);
+  const forecastYears = usePortfolioStore((state) => state.forecastYears);
 
   const toggleYear = (year: number) => {
     setExpandedYear(expandedYear === year ? null : year);
@@ -227,13 +229,23 @@ export default function PortfolioScreen() {
 
           <WinLossCard />
 
-          <View style={styles.section}>
+          <ForecastCard
+            years={forecastYears}
+            summary={summary}
+            yearlyAnalysis={yearlyAnalysis}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/forecast-details');
+            }}
+          />
+
+          <View style={[styles.section, { marginBottom: 4 }]}>
             <ActivityCalendar transactions={transactions} />
           </View>
 
 
 
-          <View style={[styles.section, { marginBottom: 16 }]}>
+          <View style={[styles.section, { marginBottom: 24 }]}>
             {yearlyAnalysis.length > 0 ? (
               <View style={[styles.accordionContainer, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                 <View style={[styles.headerWithAction]}>
@@ -596,5 +608,42 @@ const styles = StyleSheet.create({
     left: -1000, // Off-screen
     top: 0,
     opacity: 0,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  bottomSheet: {
+    padding: 24,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  sheetSubtitle: {
+    fontSize: 14,
+    marginBottom: 24,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

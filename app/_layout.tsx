@@ -79,6 +79,7 @@ function RootLayoutNav() {
           <Stack.Screen name="yearly-analysis" options={{ animation: 'slide_from_right', headerShown: false }} />
           <Stack.Screen name="stock-details/[symbol]" options={{ animation: 'slide_from_right', headerShown: false }} />
           <Stack.Screen name="analytics" options={{ animation: 'slide_from_right', headerShown: false }} />
+          <Stack.Screen name="forecast-details" options={{ animation: 'slide_from_right', headerShown: false }} />
           <Stack.Screen name="settings" options={{ animation: 'slide_from_right', headerShown: false }} />
         </Stack>
       </ThemeProvider>

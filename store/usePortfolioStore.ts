@@ -37,6 +37,8 @@ interface PortfolioState {
     headerLink: string | null;
     watchlist: string[];
     toggleWatchlist: (ticker: string) => void;
+    forecastYears: number;
+    setForecastYears: (years: number) => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>()(
@@ -450,6 +452,8 @@ export const usePortfolioStore = create<PortfolioState>()(
                     return { watchlist: [...state.watchlist, ticker] };
                 }
             }),
+            forecastYears: 15,
+            setForecastYears: (years) => set({ forecastYears: years }),
         }),
         {
             name: 'portfolio-storage',
