@@ -886,8 +886,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     sectorName: {
-        fontSize: 10,
-        fontWeight: '600',
+        fontSize: 9,
+        fontWeight: '500',
         textAlign: 'center',
     },
     ribbonContainer: {
