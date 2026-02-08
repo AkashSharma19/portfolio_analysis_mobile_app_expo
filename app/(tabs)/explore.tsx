@@ -534,22 +534,21 @@ const MarketRibbon = ({ indicesData, isVisible, currColors }: { indicesData: any
         return [...indices, ...indices, ...indices, ...indices];
     }, [indices, isVisible]);
 
+    const [contentWidth, setContentWidth] = useState(0);
     const translateX = useSharedValue(0);
-    const itemWidth = 240;
-    const totalWidth = indices.length * itemWidth;
 
     useEffect(() => {
-        if (!isVisible || indices.length === 0) return;
+        if (!isVisible || indices.length === 0 || contentWidth === 0) return;
         translateX.value = 0;
         translateX.value = withRepeat(
-            withTiming(-totalWidth, {
-                duration: 15000,
+            withTiming(-contentWidth, {
+                duration: contentWidth * 50, // Consistent speed: 50ms per pixel
                 easing: Easing.linear,
             }),
             -1,
             false
         );
-    }, [totalWidth, isVisible, indices.length]);
+    }, [contentWidth, isVisible, indices.length]);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: translateX.value }],
@@ -557,20 +556,26 @@ const MarketRibbon = ({ indicesData, isVisible, currColors }: { indicesData: any
 
     if (!isVisible || indices.length === 0) return null;
 
-    return (
-        <View style={styles.ribbonContainer}>
-            <Animated.View style={[styles.ribbonContent, animatedStyle]}>
-                {duplicatedIndices.map((item, index) => {
-                    const data = item.data;
-                    const currentValue = data?.['Current Value'] ?? 0;
-                    const yesterdayClose = data?.['Yesterday Close'] ?? currentValue;
-                    const change = currentValue - yesterdayClose;
-                    const changePercentage = yesterdayClose !== 0 ? (change / yesterdayClose) * 100 : 0;
-                    const isPositive = change >= 0;
+    const renderIndices = (keyPrefix: string, onLayout?: (event: any) => void) => (
+        <View
+            key={keyPrefix}
+            style={{ flexDirection: 'row', alignItems: 'center' }}
+            onLayout={onLayout}
+        >
+            {indices.map((item, index) => {
+                const data = item.data;
+                const currentValue = data?.['Current Value'] ?? 0;
+                const yesterdayClose = data?.['Yesterday Close'] ?? currentValue;
+                const change = currentValue - yesterdayClose;
+                const changePercentage = yesterdayClose !== 0 ? (change / yesterdayClose) * 100 : 0;
+                const isPositive = change >= 0;
 
-                    return (
-                        <View key={`${item.label}-${index}`} style={[styles.tickerItem, { backgroundColor: currColors.card }]}>
-                            <Text style={[styles.tickerLabel, { color: currColors.text }]}>{data?.Tickers?.split(':').pop() || item.label}</Text>
+                return (
+                    <View key={`${keyPrefix}-${item.label}-${index}`} style={[styles.tickerItem, { backgroundColor: currColors.card }]}>
+                        <Text style={[styles.tickerLabel, { color: currColors.text, marginRight: 8 }]} numberOfLines={1} ellipsizeMode="tail">
+                            {data?.['Company Name'] || item.label}
+                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             <Text style={[styles.tickerPrice, { color: currColors.text }]}>
                                 {currentValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                             </Text>
@@ -581,8 +586,19 @@ const MarketRibbon = ({ indicesData, isVisible, currColors }: { indicesData: any
                                 </Text>
                             </View>
                         </View>
-                    );
-                })}
+                    </View>
+                );
+            })}
+        </View>
+    );
+
+    return (
+        <View style={styles.ribbonContainer}>
+            <Animated.View style={[styles.ribbonContent, animatedStyle]}>
+                {renderIndices('original', (e) => setContentWidth(e.nativeEvent.layout.width))}
+                {renderIndices('copy1')}
+                {renderIndices('copy2')}
+                {renderIndices('copy3')}
             </Animated.View>
         </View>
     );
@@ -872,7 +888,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginRight: 12,
-        width: 228, // Matches itemWidth (240) - margin (12)
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 8,
