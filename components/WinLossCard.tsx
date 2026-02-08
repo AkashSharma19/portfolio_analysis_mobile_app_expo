@@ -8,6 +8,7 @@ import { StyleSheet, Text, View } from 'react-native';
 export default function WinLossCard() {
     const getHoldingsData = usePortfolioStore((state) => state.getHoldingsData);
     const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
+    const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
     const holdings = getHoldingsData();
 
     const theme = useColorScheme() ?? 'dark';
@@ -42,7 +43,7 @@ export default function WinLossCard() {
                         <Text style={[styles.title, { color: currColors.textSecondary }]}>WIN / LOSS RATIO</Text>
                     </View>
                     <View style={styles.rateContainer}>
-                        <Text style={[styles.rateValue, { color: currColors.text }]}>{stats.winRate.toFixed(0)}%</Text>
+                        <Text style={[styles.rateValue, { color: currColors.text }]}>{isPrivacyMode ? '****' : `${stats.winRate.toFixed(0)}%`}</Text>
                         <Text style={[styles.rateLabel, { color: currColors.textSecondary }]}>Win Rate</Text>
                     </View>
                 </View>
@@ -60,10 +61,10 @@ export default function WinLossCard() {
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                             <View style={[styles.statBadge, { backgroundColor: 'rgba(76, 175, 80, 0.1)' }]}>
                                 <ArrowUpRight size={14} color="#4CAF50" />
-                                <Text style={[styles.statValue, { color: '#4CAF50' }]}>{stats.winners}</Text>
+                                <Text style={[styles.statValue, { color: '#4CAF50' }]}>{isPrivacyMode ? '****' : stats.winners}</Text>
                             </View>
                             <Text style={[styles.statAmount, { color: '#4CAF50', marginTop: 0 }]} numberOfLines={1} adjustsFontSizeToFit>
-                                +{showCurrencySymbol ? '₹' : ''}{stats.winnersProfit.toLocaleString('en-IN', { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}
+                                {isPrivacyMode ? '****' : `+${showCurrencySymbol ? '₹' : ''}${stats.winnersProfit.toLocaleString('en-IN', { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}
                             </Text>
                         </View>
                     </View>
@@ -73,10 +74,10 @@ export default function WinLossCard() {
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                             <View style={[styles.statBadge, { backgroundColor: 'rgba(244, 67, 54, 0.1)' }]}>
                                 <ArrowDownRight size={14} color="#F44336" />
-                                <Text style={[styles.statValue, { color: '#F44336' }]}>{stats.losers}</Text>
+                                <Text style={[styles.statValue, { color: '#F44336' }]}>{isPrivacyMode ? '****' : stats.losers}</Text>
                             </View>
                             <Text style={[styles.statAmount, { color: '#F44336', marginTop: 0 }]} numberOfLines={1} adjustsFontSizeToFit>
-                                -{showCurrencySymbol ? '₹' : ''}{Math.abs(stats.losersLoss).toLocaleString('en-IN', { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}
+                                {isPrivacyMode ? '****' : `-${showCurrencySymbol ? '₹' : ''}${Math.abs(stats.losersLoss).toLocaleString('en-IN', { maximumFractionDigits: 0, notation: "compact", compactDisplay: "short" })}`}
                             </Text>
                         </View>
                     </View>
