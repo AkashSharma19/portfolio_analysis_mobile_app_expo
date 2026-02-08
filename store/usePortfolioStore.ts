@@ -55,13 +55,9 @@ export const usePortfolioStore = create<PortfolioState>()(
                 try {
                     const response = await fetch(`${API_CONFIG.WEB_APP_URL}?action=get_tickers`);
                     const result = await response.json();
-                    console.log('[Gainbase Store] fetchTickers result.ok:', result.ok);
-                    console.log('[Gainbase Store] response keys:', Object.keys(result));
                     if (result.ok) {
                         const logo = result.config?.headerLogo || result.headerLogo || null;
                         const link = result.config?.headerLink || result.headerLink || null;
-                        console.log('[Gainbase Store] Logo:', logo);
-                        console.log('[Gainbase Store] Link:', link);
                         set({
                             tickers: result.data,
                             headerLogo: logo,
@@ -78,137 +74,91 @@ export const usePortfolioStore = create<PortfolioState>()(
                     return { totalValue: 0, totalCost: 0, profitAmount: 0, profitPercentage: 0, totalReturn: 0, xirr: 0, dayChange: 0, dayChangePercentage: 0, realizedReturn: 0, unrealizedReturn: 0 };
                 }
 
-                const priceMap = new Map(tickers.map(t => [t.Tickers.toUpperCase(), t['Current Value']]));
-                const closeMap = new Map(tickers.map(t => [t.Tickers.toUpperCase(), t['Yesterday Close']]));
+                const priceMap = new Map<string, number>();
+                const closeMap = new Map<string, number>();
+                tickers.forEach(t => {
+                    const sym = t.Tickers.trim().toUpperCase();
+                    priceMap.set(sym, t['Current Value']);
+                    closeMap.set(sym, t['Yesterday Close'] ?? t['Current Value']);
+                });
 
-                // Track holdings for calculation
+                const sortedTransactions = [...transactions].sort((a, b) => {
+                    const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+                    if (dateDiff !== 0) return dateDiff;
+                    if (a.type === b.type) return 0;
+                    return a.type === 'BUY' ? -1 : 1;
+                });
+
                 const holdingsMap = new Map<string, number>();
-                // Track average buy price per symbol to calculate realized gains
                 const avgBuyPriceMap = new Map<string, number>();
 
-                let totalCost = 0;
-                let totalValue = 0;
+                let totalBought = 0;
+                let totalSold = 0;
                 let realizedReturn = 0;
 
-                const cashFlows: { amount: number; date: Date }[] = [];
-
-                // Sort transactions by date to correctly calculate running averages
-                const sortedTransactions = [...transactions].sort((a, b) =>
-                    new Date(a.date).getTime() - new Date(b.date).getTime()
-                );
-
                 sortedTransactions.forEach(t => {
-                    const date = new Date(t.date);
-                    const currentPrice = priceMap.get(t.symbol.toUpperCase());
-                    const valuationPrice = currentPrice || t.price; // Fallback to buy price if no live price
-                    const sym = t.symbol.toUpperCase();
+                    const sym = t.symbol.trim().toUpperCase();
                     const currentQty = holdingsMap.get(sym) || 0;
                     const currentAvgPrice = avgBuyPriceMap.get(sym) || 0;
 
                     if (t.type === 'BUY') {
-                        // Calculate new weighted avg price
-                        // New Avg = ((Old Qty * Old Avg) + (New Qty * New Price)) / (Old Qty + New Qty)
-                        const newTotalQty = currentQty + t.quantity;
-                        const newAvgPrice = ((currentQty * currentAvgPrice) + (t.quantity * t.price)) / newTotalQty;
+                        const newQty = currentQty + t.quantity;
+                        const newAvgPrice = ((currentQty * currentAvgPrice) + (t.quantity * t.price)) / newQty;
                         avgBuyPriceMap.set(sym, newAvgPrice);
-                        holdingsMap.set(sym, newTotalQty);
-
-                        totalCost += t.quantity * t.price;
-                        totalValue += t.quantity * valuationPrice;
-                        cashFlows.push({ amount: -t.quantity * t.price, date });
+                        holdingsMap.set(sym, newQty);
+                        totalBought += t.quantity * t.price;
                     } else {
-                        // SELL
-                        // Realized Gain = (Sell Price - Avg Buy Price) * Sell Qty
                         const gain = (t.price - currentAvgPrice) * t.quantity;
                         realizedReturn += gain;
-
-                        // Reduce quantity, Avg Price stays same (FIFO/Weighted Avg assumption for tax is usually FIFO, but for simple pnl weighted avg is standard)
-                        holdingsMap.set(sym, currentQty - t.quantity);
-
-                        totalCost -= t.quantity * t.price; // We subtract sale proceeds from cost basis in simple view, or adjust accurately below
-                        // Actually, totalCost usually represents "Current Invested Amount". 
-                        // If we sell, we reduce 'Invested Amount' by the proportion of cost basis sold.
-                        // totalCost -= (t.quantity * currentAvgPrice); 
-                        // However, the previous logic (lines 84-85 in original) was: totalCost -= t.quantity * t.price. 
-                        // That logic essentially treats 'totalCost' as 'Net Cash Flow' (Invested - Returned). 
-                        // If that's the desired definition of 'Invested', we keep it. 
-                        // BUT, to be consistent with "Unrealized = Value - Cost", usually Cost is "Remaining Cost Basis".
-                        // Let's stick to the previous 'totalCost' logic if it was 'Net Invested', or refine if 'Remaining Cost'.
-                        // Given 'profitAmount = totalValue - totalCost', if totalCost is 'Net Invested', then profit equals Total PnL (Realized + Unrealized).
-                        // Let's assume existing totalCost logic was essentially 'Net Invested'.
-
-                        // Reverting existing logic for totalCost to match:
-                        totalCost -= t.quantity * t.price;
-
-                        totalValue -= t.quantity * t.price; // This logic in original seems odd for totalValue? 
-                        // Original: totalValue -= t.quantity * t.price; 
-                        // This seems to imply we remove the sold value. Correct.
-
-                        cashFlows.push({ amount: t.quantity * t.price, date });
+                        holdingsMap.set(sym, Math.max(0, currentQty - t.quantity));
+                        totalSold += t.quantity * t.price;
+                        if (currentQty - t.quantity <= 0) {
+                            avgBuyPriceMap.set(sym, 0);
+                        }
                     }
                 });
 
-                // Recalculate Total Value based on current holdings strictly
-                // (The previous loop adjusted totalValue incrementally, but refreshing from current holdings is safer/cleaner)
-                let calculatedTotalValue = 0;
-                let calculatedRemainingCost = 0; // Cost basis of current holdings for Unrealized calc
-
-                holdingsMap.forEach((qty, symbol) => {
-                    if (qty > 0) {
-                        const currentPrice = priceMap.get(symbol) || 0;
-                        calculatedTotalValue += qty * currentPrice;
-                        calculatedRemainingCost += qty * (avgBuyPriceMap.get(symbol) || 0);
-                    }
-                });
-
-                // Override totalValue with the fresh calculation from current holdings
-                totalValue = calculatedTotalValue;
-
-                // Recalculate day change
+                let currentMarketValue = 0;
+                let currentCostBasis = 0;
                 let dayChange = 0;
-                holdingsMap.forEach((qty, symbol) => {
+
+                holdingsMap.forEach((qty, sym) => {
                     if (qty > 0) {
-                        const currentPrice = priceMap.get(symbol) || 0;
-                        const closePrice = closeMap.get(symbol) || currentPrice;
-                        dayChange += (currentPrice - closePrice) * qty;
+                        const currentPrice = priceMap.get(sym);
+                        const avgPrice = avgBuyPriceMap.get(sym) || 0;
+                        const effectivePrice = currentPrice ?? avgPrice;
+                        const closePrice = closeMap.get(sym) ?? effectivePrice;
+
+                        currentMarketValue += qty * effectivePrice;
+                        currentCostBasis += qty * avgPrice;
+                        dayChange += (effectivePrice - closePrice) * qty;
                     }
                 });
 
+                const unrealizedReturn = currentMarketValue - currentCostBasis;
+                const totalReturn = realizedReturn + unrealizedReturn;
+                const netInvested = totalBought - totalSold;
+                const profitPercentage = netInvested > 0 ? (totalReturn / netInvested) * 100 : 0;
 
-                cashFlows.push({ amount: totalValue, date: new Date() });
-
-                // Total Return (Absolute) = Current Value + Realized Cash - Total Invested Cash?
-                // Or simply: Realized + Unrealized.
-                const unrealizedReturn = totalValue - calculatedRemainingCost;
-
-                // The previous logic for 'profitAmount' was 'totalValue - totalCost' where totalCost was Net Invested.
-                // Property: Net Invested = (Total Buy Amount) - (Total Sell Amount).
-                // Property: Realized = (Sell Amount) - (Cost of Sold).
-                // Property: Remaining Cost = (Total Buy Amount) - (Cost of Sold).
-                // Therefore: Value - Net Invested = Value - (Total Buy - Total Sell)
-                // = Value - ( (Remaining Cost + Cost Sold) - (Realized + Cost Sold) )
-                // = Value - (Remaining Cost - Realized)
-                // = (Value - Remaining Cost) + Realized
-                // = Unrealized + Realized.
-                // So the previous formula 'profitAmount = totalValue - totalCost' is mathematically consistent with (Realized + Unrealized).
-
-                const profitAmount = totalValue - totalCost;
-                const profitPercentage = totalCost > 0 ? (profitAmount / totalCost) * 100 : 0; // Note: if Net Invested is negative (huge gains withdrawn), this % is weird.
-                // Usually for display, might want 'Invested' to be 'Current Cost Basis' or 'Max Invested'. 
-                // We will stick to the existing behavior for 'totalCost' and 'profitAmount' to avoid breaking unrelated UI, 
-                // but now we have explicit Realized/Unrealized.
-
+                const cashFlows: { amount: number; date: Date }[] = [];
+                sortedTransactions.forEach(t => {
+                    const amount = t.type === 'BUY' ? -(t.quantity * t.price) : (t.quantity * t.price);
+                    cashFlows.push({ amount, date: new Date(t.date) });
+                });
+                if (currentMarketValue > 0) {
+                    cashFlows.push({ amount: currentMarketValue, date: new Date() });
+                }
                 const xirr = calculateXIRR(cashFlows);
 
                 return {
-                    totalValue,
-                    totalCost,
-                    profitAmount,
-                    profitPercentage,
-                    totalReturn: profitAmount,
+                    totalValue: currentMarketValue,
+                    totalCost: netInvested,
+                    profitAmount: totalReturn,
+                    profitPercentage: profitPercentage,
+                    totalReturn: totalReturn,
                     xirr,
                     dayChange,
-                    dayChangePercentage: (totalValue - dayChange) > 0 ? (dayChange / (totalValue - dayChange)) * 100 : 0,
+                    dayChangePercentage: (currentMarketValue - dayChange) > 0 ? (dayChange / (currentMarketValue - dayChange)) * 100 : 0,
                     realizedReturn,
                     unrealizedReturn
                 };
@@ -217,25 +167,25 @@ export const usePortfolioStore = create<PortfolioState>()(
                 const { transactions, tickers } = get();
                 if (transactions.length === 0) return [];
 
-                const tickerMap = new Map(tickers.map(t => [t.Tickers.toUpperCase(), t]));
-                const holdings = new Map<string, number>();
-
-                transactions.forEach(t => {
-                    const current = holdings.get(t.symbol) || 0;
-                    holdings.set(t.symbol, t.type === 'BUY' ? current + t.quantity : current - t.quantity);
+                const tickerMap = new Map(tickers.map(t => [t.Tickers.trim().toUpperCase(), t]));
+                const sortedTransactions = [...transactions].sort((a, b) => {
+                    const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+                    if (dateDiff !== 0) return dateDiff;
+                    if (a.type === b.type) return 0;
+                    return a.type === 'BUY' ? -1 : 1;
                 });
 
                 const holdingsMap = new Map<string, { quantity: number, totalCost: number }>();
-                transactions.forEach(t => {
-                    const sym = t.symbol.toUpperCase();
+                sortedTransactions.forEach(t => {
+                    const sym = t.symbol.trim().toUpperCase();
                     const current = holdingsMap.get(sym) || { quantity: 0, totalCost: 0 };
                     if (t.type === 'BUY') {
                         current.quantity += t.quantity;
                         current.totalCost += t.quantity * t.price;
                     } else {
                         const avgPriceBefore = current.quantity > 0 ? current.totalCost / current.quantity : 0;
-                        current.quantity -= t.quantity;
-                        current.totalCost -= t.quantity * avgPriceBefore;
+                        current.quantity = Math.max(0, current.quantity - t.quantity);
+                        current.totalCost = Math.max(0, current.totalCost - t.quantity * avgPriceBefore);
                     }
                     holdingsMap.set(sym, current);
                 });
@@ -246,11 +196,10 @@ export const usePortfolioStore = create<PortfolioState>()(
                 holdingsMap.forEach((data, symbol) => {
                     if (data.quantity <= 0) return;
                     const ticker = tickerMap.get(symbol);
-                    const lastTransaction = [...transactions].reverse().find(t => t.symbol.toUpperCase() === symbol);
-                    const fallbackPrice = lastTransaction?.price || 0;
-                    const currentPrice = ticker?.['Current Value'] || fallbackPrice;
+                    const lastTransaction = sortedTransactions.filter(t => t.symbol.trim().toUpperCase() === symbol).reverse()[0];
+                    const avgPrice = data.totalCost / data.quantity;
+                    const currentPrice = ticker?.['Current Value'] ?? avgPrice;
 
-                    // Grouping Logic
                     let dimensionValue = 'Unknown';
                     if (dimension === 'Broker' && lastTransaction) {
                         dimensionValue = lastTransaction.broker || 'No Broker';
@@ -261,17 +210,11 @@ export const usePortfolioStore = create<PortfolioState>()(
                     }
 
                     const currentValue = data.quantity * currentPrice;
-                    const investedValue = data.totalCost;
-
                     if (!groups[dimensionValue]) groups[dimensionValue] = { value: 0, cost: 0, quantity: 0 };
-
                     groups[dimensionValue].value += currentValue;
-                    groups[dimensionValue].cost += investedValue;
+                    groups[dimensionValue].cost += data.totalCost;
                     groups[dimensionValue].quantity += data.quantity;
-                    // If dimension is Company Name, we can reliably map 1:1 to symbol usually.
-                    // If multiple symbols map to same name, this will take the last one iterated, which is acceptable overlap.
                     if (!groups[dimensionValue].symbol) groups[dimensionValue].symbol = symbol;
-
                     totalPortfolioValue += currentValue;
                 });
 
@@ -291,64 +234,59 @@ export const usePortfolioStore = create<PortfolioState>()(
                 const { transactions, tickers } = get();
                 if (transactions.length === 0) return [];
 
-                const tickerMap = new Map(tickers.map(t => [t.Tickers.toUpperCase(), t]));
-                const holdingsMap = new Map<string, {
-                    quantity: number;
-                    totalCost: number;
-                    symbol: string;
-                }>();
+                const tickerMap = new Map(tickers.map(t => [t.Tickers.trim().toUpperCase(), t]));
+                const sortedTransactions = [...transactions].sort((a, b) => {
+                    const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+                    if (dateDiff !== 0) return dateDiff;
+                    if (a.type === b.type) return 0;
+                    return a.type === 'BUY' ? -1 : 1;
+                });
 
-                transactions.forEach(t => {
-                    const sym = t.symbol.toUpperCase();
+                const holdingsMap = new Map<string, { quantity: number; totalCost: number; symbol: string }>();
+                sortedTransactions.forEach(t => {
+                    const sym = t.symbol.trim().toUpperCase();
                     const current = holdingsMap.get(sym) || { quantity: 0, totalCost: 0, symbol: t.symbol };
-
                     if (t.type === 'BUY') {
                         current.quantity += t.quantity;
                         current.totalCost += t.quantity * t.price;
                     } else {
                         const avgPriceBefore = current.quantity > 0 ? current.totalCost / current.quantity : 0;
-                        current.quantity -= t.quantity;
-                        current.totalCost -= t.quantity * avgPriceBefore;
+                        current.quantity = Math.max(0, current.quantity - t.quantity);
+                        current.totalCost = Math.max(0, current.totalCost - t.quantity * avgPriceBefore);
                     }
                     holdingsMap.set(sym, current);
                 });
 
                 let totalPortfolioValue = 0;
                 const preliminaryHoldings: any[] = [];
-
                 holdingsMap.forEach((data, symbol) => {
                     if (data.quantity <= 0) return;
-
                     const ticker = tickerMap.get(symbol);
-                    const currentPrice = ticker?.['Current Value'] || 0;
-                    const yesterdayClose = ticker?.['Yesterday Close'] || currentPrice;
                     const avgPrice = data.totalCost / data.quantity;
-                    const currentValue = data.quantity * (currentPrice || avgPrice);
+                    const currentPrice = ticker?.['Current Value'] ?? avgPrice;
+                    const yesterdayClose = ticker?.['Yesterday Close'] ?? currentPrice;
+                    const currentValue = data.quantity * currentPrice;
                     const investedValue = data.totalCost;
-
                     const dayChange = (currentPrice - yesterdayClose) * data.quantity;
-                    const dayChangePercentage = yesterdayClose > 0 ? ((currentPrice - yesterdayClose) / yesterdayClose) * 100 : 0;
-
                     totalPortfolioValue += currentValue;
-
                     preliminaryHoldings.push({
                         symbol: data.symbol,
                         companyName: ticker?.['Company Name'] || data.symbol,
                         quantity: data.quantity,
                         avgPrice,
-                        currentPrice: currentPrice || avgPrice,
+                        currentPrice,
                         investedValue,
                         currentValue,
                         pnl: currentValue - investedValue,
                         pnlPercentage: investedValue > 0 ? ((currentValue - investedValue) / investedValue) * 100 : 0,
                         dayChange,
-                        dayChangePercentage,
+                        dayChangePercentage: yesterdayClose > 0 ? ((currentPrice - yesterdayClose) / yesterdayClose) * 100 : 0,
                         assetType: ticker?.['Asset Type'] || 'Other',
                         sector: ticker?.['Sector'] || 'Other',
                         high52: ticker?.High52,
                         low52: ticker?.Low52,
                         logo: ticker?.Logo,
-                        broker: transactions.filter(t => t.symbol.toUpperCase() === symbol).reverse()[0]?.broker || 'Unknown'
+                        broker: sortedTransactions.filter(t => t.symbol.trim().toUpperCase() === symbol).reverse()[0]?.broker || 'Unknown'
                     });
                 });
 
@@ -360,46 +298,30 @@ export const usePortfolioStore = create<PortfolioState>()(
             getYearlyAnalysis: () => {
                 const { transactions, tickers } = get();
                 if (transactions.length === 0) return [];
-
-                const tickerMap = new Map(tickers.map(t => [t.Tickers.toUpperCase(), t]));
-
-                const sortedTransactions = [...transactions].sort((a, b) =>
-                    new Date(a.date).getTime() - new Date(b.date).getTime()
-                );
-
+                const tickerMap = new Map(tickers.map(t => [t.Tickers.trim().toUpperCase(), t]));
+                const sortedTransactions = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
                 const years = Array.from(new Set(sortedTransactions.map(t => new Date(t.date).getFullYear()))).sort();
                 const analysis: import('../types').YearlyAnalysis[] = [];
-
                 const cumulativeHoldings = new Map<string, number>();
-                let previousYearInvestment = 0;
                 let previousAverageMonthlyInvestment = 0;
 
                 years.forEach(year => {
                     const yearTransactions = sortedTransactions.filter(t => new Date(t.date).getFullYear() === year);
                     let yearInvestment = 0;
-
-                    yearTransactions.forEach(t => {
-                        const currentQty = cumulativeHoldings.get(t.symbol) || 0;
-                        const qtyChange = t.type === 'BUY' ? t.quantity : -t.quantity;
-                        cumulativeHoldings.set(t.symbol, currentQty + qtyChange);
-
-                        if (t.type === 'BUY') {
-                            yearInvestment += t.quantity * t.price;
-                        } else {
-                            yearInvestment -= t.quantity * t.price;
-                        }
-                    });
-
                     const assetValueMap = new Map<string, number>();
                     let yearInvestmentValue = 0;
 
                     yearTransactions.forEach(t => {
-                        const ticker = tickerMap.get(t.symbol.toUpperCase());
-                        const assetType = (ticker && ticker['Asset Type']) || 'Other';
+                        const sym = t.symbol.trim().toUpperCase();
+                        const currentQty = cumulativeHoldings.get(sym) || 0;
+                        const qtyChange = t.type === 'BUY' ? t.quantity : -t.quantity;
+                        cumulativeHoldings.set(sym, currentQty + qtyChange);
                         const value = t.quantity * t.price;
                         const netValue = t.type === 'BUY' ? value : -value;
-
+                        yearInvestment += netValue;
                         yearInvestmentValue += netValue;
+                        const ticker = tickerMap.get(sym);
+                        const assetType = ticker?.['Asset Type'] || 'Other';
                         assetValueMap.set(assetType, (assetValueMap.get(assetType) || 0) + netValue);
                     });
 
@@ -409,46 +331,23 @@ export const usePortfolioStore = create<PortfolioState>()(
                             name,
                             value,
                             percentage: yearInvestmentValue !== 0 ? (value / Math.abs(yearInvestmentValue)) * 100 : 0
-                        }))
-                        .sort((a, b) => b.value - a.value);
+                        })).sort((a, b) => b.value - a.value);
 
                     const currentDate = new Date();
-                    const currentYear = currentDate.getFullYear();
-
-                    let divisor = 12;
-                    if (year === currentYear) {
-                        divisor = currentDate.getMonth() + 1;
-                    }
-
+                    let divisor = year === currentDate.getFullYear() ? currentDate.getMonth() + 1 : 12;
                     const averageMonthlyInvestment = yearInvestment / divisor;
+                    const percentageIncrease = previousAverageMonthlyInvestment > 0 ? ((averageMonthlyInvestment - previousAverageMonthlyInvestment) / previousAverageMonthlyInvestment) * 100 : 0;
 
-                    const percentageIncrease = previousAverageMonthlyInvestment > 0
-                        ? ((averageMonthlyInvestment - previousAverageMonthlyInvestment) / previousAverageMonthlyInvestment) * 100
-                        : 0;
-
-                    analysis.push({
-                        year,
-                        investment: yearInvestment,
-                        averageMonthlyInvestment,
-                        percentageIncrease,
-                        assetDistribution
-                    });
-
-                    previousYearInvestment = yearInvestment;
+                    analysis.push({ year, investment: yearInvestment, averageMonthlyInvestment, percentageIncrease, assetDistribution });
                     previousAverageMonthlyInvestment = averageMonthlyInvestment;
                 });
-
                 return analysis.reverse();
             },
             getMonthlyAnalysis: () => {
                 const { transactions, tickers } = get();
                 if (transactions.length === 0) return [];
-
-                const tickerMap = new Map(tickers.map(t => [t.Tickers.toUpperCase(), t]));
-                const sortedTransactions = [...transactions].sort((a, b) =>
-                    new Date(a.date).getTime() - new Date(b.date).getTime()
-                );
-
+                const tickerMap = new Map(tickers.map(t => [t.Tickers.trim().toUpperCase(), t]));
+                const sortedTransactions = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
                 const monthlyGroups = new Map<string, Transaction[]>();
                 sortedTransactions.forEach(t => {
                     const date = new Date(t.date);
@@ -458,18 +357,14 @@ export const usePortfolioStore = create<PortfolioState>()(
                 });
 
                 const monthKeys = Array.from(monthlyGroups.keys()).sort();
+                if (monthKeys.length === 0) return [];
                 const analysis: import('../types').MonthlyAnalysis[] = [];
-
                 const cumulativeHoldings = new Map<string, number>();
                 let previousMonthInvestment = 0;
 
-                if (monthKeys.length === 0) return [];
-
-                const firstMonth = monthKeys[0];
                 const lastDate = new Date();
                 const lastMonth = `${lastDate.getFullYear()}-${String(lastDate.getMonth() + 1).padStart(2, '0')}`;
-
-                let currentKey = firstMonth;
+                let currentKey = monthKeys[0];
                 const allMonthKeys: string[] = [];
                 while (currentKey <= lastMonth) {
                     allMonthKeys.push(currentKey);
@@ -481,29 +376,18 @@ export const usePortfolioStore = create<PortfolioState>()(
                 allMonthKeys.forEach(key => {
                     const monthTransactions = monthlyGroups.get(key) || [];
                     let monthInvestment = 0;
-
-                    monthTransactions.forEach(t => {
-                        const currentQty = cumulativeHoldings.get(t.symbol) || 0;
-                        const qtyChange = t.type === 'BUY' ? t.quantity : -t.quantity;
-                        cumulativeHoldings.set(t.symbol, currentQty + qtyChange);
-
-                        if (t.type === 'BUY') {
-                            monthInvestment += t.quantity * t.price;
-                        } else {
-                            monthInvestment -= t.quantity * t.price;
-                        }
-                    });
-
                     const assetValueMap = new Map<string, number>();
                     let monthInvestmentValue = 0;
 
                     monthTransactions.forEach(t => {
-                        const ticker = tickerMap.get(t.symbol.toUpperCase());
-                        const assetType = (ticker && ticker['Asset Type']) || 'Other';
-                        const value = t.quantity * t.price;
-                        const netValue = t.type === 'BUY' ? value : -value;
-
+                        const sym = t.symbol.trim().toUpperCase();
+                        const currentQty = cumulativeHoldings.get(sym) || 0;
+                        const qtyChange = t.type === 'BUY' ? t.quantity : -t.quantity;
+                        cumulativeHoldings.set(sym, currentQty + qtyChange);
+                        const netValue = t.type === 'BUY' ? t.quantity * t.price : -(t.quantity * t.price);
+                        monthInvestment += netValue;
                         monthInvestmentValue += netValue;
+                        const assetType = tickerMap.get(sym)?.['Asset Type'] || 'Other';
                         assetValueMap.set(assetType, (assetValueMap.get(assetType) || 0) + netValue);
                     });
 
@@ -513,28 +397,15 @@ export const usePortfolioStore = create<PortfolioState>()(
                             name,
                             value,
                             percentage: monthInvestmentValue !== 0 ? (value / Math.abs(monthInvestmentValue)) * 100 : 0
-                        }))
-                        .sort((a, b) => b.value - a.value);
+                        })).sort((a, b) => b.value - a.value);
 
                     const [y, m] = key.split('-');
-                    const date = new Date(Number(y), Number(m) - 1);
-                    const monthName = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+                    const monthName = new Date(Number(y), Number(m) - 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+                    const percentageIncrease = previousMonthInvestment !== 0 ? ((monthInvestment - previousMonthInvestment) / Math.abs(previousMonthInvestment)) * 100 : 0;
 
-                    const percentageIncrease = previousMonthInvestment !== 0
-                        ? ((monthInvestment - previousMonthInvestment) / Math.abs(previousMonthInvestment)) * 100
-                        : 0;
-
-                    analysis.push({
-                        month: monthName,
-                        monthKey: key,
-                        investment: monthInvestment,
-                        percentageIncrease,
-                        assetDistribution
-                    });
-
+                    analysis.push({ month: monthName, monthKey: key, investment: monthInvestment, percentageIncrease, assetDistribution });
                     previousMonthInvestment = monthInvestment;
                 });
-
                 return analysis.reverse();
             },
             importTransactions: (newTransactions) =>
