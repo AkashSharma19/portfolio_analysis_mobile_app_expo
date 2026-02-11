@@ -55,9 +55,38 @@ export default function InsightsScreen() {
         });
     }, [insights, selectedTab]);
 
+    const renderDescription = (text: string) => {
+        const parts = text.split(/(\*\*.*?\*\*)/g);
+        return (
+            <Text style={[styles.insightDescription, { color: currColors.textSecondary }]}>
+                {parts.map((part, index) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                        return (
+                            <Text key={index} style={[styles.highlightText, { color: currColors.text }]}>
+                                {part.slice(2, -2)}
+                            </Text>
+                        );
+                    }
+                    return part;
+                })}
+            </Text>
+        );
+    };
+
     const renderInsight = (insight: Insight) => {
         const IconComponent = IconMap[insight.icon] || TriangleAlert;
         const typeColor = ColorMap[insight.type] || currColors.tint;
+
+        // Custom labels for better "at-a-glance" understanding
+        const getCategoryLabel = (type: string, id: string) => {
+            if (id.startsWith('profit')) return 'PROFIT TAKE';
+            if (id.startsWith('dca')) return 'DCA BUY';
+            if (id.startsWith('conc')) return 'CONCENTRATION';
+            if (id.startsWith('high')) return 'PEAK';
+            if (id.startsWith('low')) return 'ENTRY';
+            if (id.startsWith('div')) return 'DIVERSIFY';
+            return type.toUpperCase();
+        };
 
         return (
             <View
@@ -67,6 +96,15 @@ export default function InsightsScreen() {
                     { backgroundColor: currColors.card, borderColor: currColors.border }
                 ]}
             >
+                <View style={styles.categoryBadgeAbsolute}>
+                    <View style={[styles.miniCategoryBadge, { backgroundColor: `${typeColor}20` }]}>
+                        <IconComponent size={10} color={typeColor} />
+                        <Text style={[styles.categoryLabel, { color: typeColor }]}>
+                            {getCategoryLabel(insight.type, insight.id)}
+                        </Text>
+                    </View>
+                </View>
+
                 <View style={styles.insightHeader}>
                     {insight.logo ? (
                         <View style={[styles.logoWrapper, { backgroundColor: '#FFFFFF' }]}>
@@ -82,13 +120,13 @@ export default function InsightsScreen() {
                         </View>
                     )}
                     <View style={styles.titleWrapper}>
-                        <Text style={[styles.insightTitle, { color: currColors.text }]}>{insight.title}</Text>
+                        <Text style={[styles.insightTitle, { color: currColors.text, paddingRight: 80 }]}>
+                            {insight.name || insight.title}
+                        </Text>
                     </View>
                 </View>
 
-                <Text style={[styles.insightDescription, { color: currColors.textSecondary }]}>
-                    {insight.description}
-                </Text>
+                {renderDescription(insight.description)}
 
                 {insight.symbol && (
                     <TouchableOpacity
@@ -109,6 +147,56 @@ export default function InsightsScreen() {
     };
 
     const tabs: ('All' | 'Alerts' | 'Opportunities' | 'Profits')[] = ['All', 'Alerts', 'Opportunities', 'Profits'];
+    const horizontalScrollRef = React.useRef<ScrollView>(null);
+    const [pageWidth, setPageWidth] = React.useState(0);
+
+    const onPageLayout = (event: any) => {
+        setPageWidth(event.nativeEvent.layout.width);
+    };
+
+    const handleTabPress = (tab: typeof selectedTab, index: number) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setSelectedTab(tab);
+        horizontalScrollRef.current?.scrollTo({ x: index * pageWidth, animated: true });
+    };
+
+    const onHorizontalScroll = (event: any) => {
+        const offsetX = event.nativeEvent.contentOffset.x;
+        const page = Math.round(offsetX / pageWidth);
+        if (page >= 0 && page < tabs.length) {
+            setSelectedTab(tabs[page]);
+        }
+    };
+
+    const renderInsightList = (tabType: typeof selectedTab) => {
+        const list = tabType === 'All' ? insights : insights.filter(i => {
+            if (tabType === 'Alerts') return i.type === 'warning';
+            if (tabType === 'Opportunities') return i.type === 'opportunity' || i.type === 'info';
+            if (tabType === 'Profits') return i.type === 'success';
+            return true;
+        });
+
+        return (
+            <ScrollView
+                key={tabType}
+                style={{ width: pageWidth }}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                bounces={false}
+            >
+                {list.length > 0 ? (
+                    list.map(renderInsight)
+                ) : (
+                    <View style={styles.emptyState}>
+                        <Compass size={48} color={currColors.textSecondary} style={{ marginBottom: 16 }} />
+                        <Text style={[styles.emptyText, { color: currColors.textSecondary }]}>
+                            No {tabType.toLowerCase()} insights at the moment.
+                        </Text>
+                    </View>
+                )}
+            </ScrollView>
+        );
+    };
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
@@ -121,8 +209,13 @@ export default function InsightsScreen() {
             </View>
 
             <View style={[styles.tabContainer, { borderBottomColor: currColors.border }]}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabScrollContent}>
-                    {tabs.map((tab) => {
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.tabScrollContent}
+                    bounces={false}
+                >
+                    {tabs.map((tab, index) => {
                         const isActive = selectedTab === tab;
                         const count = tab === 'All' ? insights.length : insights.filter(i => {
                             if (tab === 'Alerts') return i.type === 'warning';
@@ -138,10 +231,7 @@ export default function InsightsScreen() {
                                     styles.tabButton,
                                     isActive && { borderBottomColor: currColors.tint }
                                 ]}
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    setSelectedTab(tab);
-                                }}
+                                onPress={() => handleTabPress(tab, index)}
                             >
                                 <Text style={[
                                     styles.tabText,
@@ -155,18 +245,20 @@ export default function InsightsScreen() {
                 </ScrollView>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                {filteredInsights.length > 0 ? (
-                    filteredInsights.map(renderInsight)
-                ) : (
-                    <View style={styles.emptyState}>
-                        <Compass size={48} color={currColors.textSecondary} style={{ marginBottom: 16 }} />
-                        <Text style={[styles.emptyText, { color: currColors.textSecondary }]}>
-                            No {selectedTab.toLowerCase()} insights at the moment.
-                        </Text>
-                    </View>
+            <View style={{ flex: 1 }} onLayout={onPageLayout}>
+                {pageWidth > 0 && (
+                    <ScrollView
+                        ref={horizontalScrollRef}
+                        horizontal
+                        pagingEnabled
+                        showsHorizontalScrollIndicator={false}
+                        onMomentumScrollEnd={onHorizontalScroll}
+                        bounces={false}
+                    >
+                        {tabs.map(renderInsightList)}
+                    </ScrollView>
                 )}
-            </ScrollView>
+            </View>
         </SafeAreaView>
     );
 }
@@ -256,6 +348,25 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
     },
+    categoryBadgeAbsolute: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        zIndex: 1,
+    },
+    miniCategoryBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 6,
+        paddingVertical: 3,
+        borderRadius: 6,
+    },
+    categoryLabel: {
+        fontSize: 10,
+        fontWeight: '800',
+        marginLeft: 4,
+        letterSpacing: 0.5,
+    },
     titleWrapper: {
         flex: 1,
         flexDirection: 'row',
@@ -281,6 +392,9 @@ const styles = StyleSheet.create({
         fontSize: 14,
         lineHeight: 20,
         marginBottom: 12,
+    },
+    highlightText: {
+        fontWeight: '700',
     },
     actionButton: {
         flexDirection: 'row',

@@ -12,6 +12,7 @@ export interface Insight {
     actionLabel?: string;
     symbol?: string;
     logo?: string;
+    name?: string;
 }
 
 export const useInsights = () => {
@@ -27,89 +28,88 @@ export const useInsights = () => {
 
         if (holdings.length === 0) return list;
 
-        // 1. Concentration Alert
         holdings.forEach((h) => {
             if (h.contributionPercentage > 25) {
                 list.push({
                     id: `concentration-${h.symbol}`,
                     type: 'warning',
                     title: 'High Concentration',
-                    description: `${h.symbol} makes up ${h.contributionPercentage.toFixed(1)}% of your portfolio. Consider diversifying to reduce risk.`,
+                    description: `This stock is **${h.contributionPercentage.toFixed(1)}%** of your portfolio. Consider selling a bit to avoid having "too many eggs in one basket."`,
                     icon: 'TriangleAlert',
                     symbol: h.symbol,
                     logo: h.logo,
+                    name: h.companyName,
                 });
             }
         });
 
-        // 2. Profit Taking Opportunity
         holdings.forEach((h) => {
             if (h.pnlPercentage > 30) {
                 list.push({
                     id: `profit-${h.symbol}`,
                     type: 'success',
                     title: 'Profit Taking Opportunity',
-                    description: `${h.symbol} is up ${h.pnlPercentage.toFixed(1)}%. It might be a good time to secure some gains.`,
+                    description: `You're up **${h.pnlPercentage.toFixed(1)}%**! It might be a smart move to sell some now and keep the cash you've made.`,
                     icon: 'TrendingUp',
                     symbol: h.symbol,
                     logo: h.logo,
+                    name: h.companyName,
                 });
             }
         });
 
-        // 3. DCA Opportunity
         holdings.forEach((h) => {
             if (h.pnlPercentage < -10) {
                 list.push({
                     id: `dca-${h.symbol}`,
                     type: 'opportunity',
                     title: 'DCA Opportunity',
-                    description: `${h.symbol} is down ${Math.abs(h.pnlPercentage).toFixed(1)}% from your average. Consider lowering your cost basis.`,
+                    description: `The price is **${Math.abs(h.pnlPercentage).toFixed(1)}%** lower than your average buy price. This is a chance to buy more for less.`,
                     icon: 'CircleArrowDown',
                     symbol: h.symbol,
                     logo: h.logo,
+                    name: h.companyName,
                 });
             }
         });
 
-        // 4. 52-Week High
         holdings.forEach((h) => {
             if (h.high52 && h.currentPrice >= h.high52 * 0.98) {
                 list.push({
                     id: `high52-${h.symbol}`,
                     type: 'info',
                     title: 'Near 52-Week High',
-                    description: `${h.symbol} is trading near its yearly high. Monitor for potential resistance or momentum.`,
+                    description: `Price is at a yearly high (**98%+**). Great performance! Just watch out in case it starts to drop back down.`,
                     icon: 'Zap',
                     symbol: h.symbol,
                     logo: h.logo,
+                    name: h.companyName,
                 });
             }
         });
 
-        // 5. 52-Week Low
         holdings.forEach((h) => {
             if (h.low52 && h.currentPrice <= h.low52 * 1.02) {
                 list.push({
                     id: `low52-${h.symbol}`,
                     type: 'opportunity',
                     title: 'Near 52-Week Low',
-                    description: `${h.symbol} is near its yearly low. This could be an attractive entry point if the fundamentals are strong.`,
+                    description: `Price is at a yearly low (**within 2%**). Could be a good time to buy more if you think the company will bounce back.`,
                     icon: 'Compass',
                     symbol: h.symbol,
                     logo: h.logo,
+                    name: h.companyName,
                 });
             }
         });
 
-        // 6. Diversification
         const sectors = new Set(holdings.map((h) => h.sector).filter(Boolean));
         if (holdings.length >= 5 && sectors.size < 3) {
             list.push({
                 id: 'diversification-sector',
                 type: 'info',
                 title: 'Low Sector Diversity',
-                description: `Your portfolio is spread across only ${sectors.size} sectors. Adding assets from different industries can reduce risk.`,
+                description: `You're only invested in **${sectors.size}** types of industries. Spreading your money across more areas helps keep your savings safer.`,
                 icon: 'PieChart',
             });
         }

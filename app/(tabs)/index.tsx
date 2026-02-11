@@ -132,6 +132,7 @@ export default function PortfolioScreen() {
           contentContainerStyle={[styles.scrollContent, { backgroundColor: currColors.background }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={currColors.text} />}
           showsVerticalScrollIndicator={false}
+          bounces={false}
           showsHorizontalScrollIndicator={false}
         >
           <View style={styles.header}>
@@ -371,7 +372,7 @@ export default function PortfolioScreen() {
           <ShareableCard data={shareData} />
         </ViewShot>
       </View>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 
