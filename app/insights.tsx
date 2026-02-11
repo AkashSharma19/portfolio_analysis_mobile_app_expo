@@ -14,7 +14,7 @@ import {
     Zap
 } from 'lucide-react-native';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const IconMap: Record<string, any> = {
@@ -68,16 +68,21 @@ export default function InsightsScreen() {
                 ]}
             >
                 <View style={styles.insightHeader}>
-                    <View style={[styles.iconWrapper, { backgroundColor: `${typeColor}20` }]}>
-                        <IconComponent size={20} color={typeColor} />
-                    </View>
+                    {insight.logo ? (
+                        <View style={[styles.logoWrapper, { backgroundColor: '#FFFFFF' }]}>
+                            <Image
+                                source={{ uri: insight.logo }}
+                                style={styles.logoImage}
+                                resizeMode="contain"
+                            />
+                        </View>
+                    ) : (
+                        <View style={[styles.iconWrapper, { backgroundColor: `${typeColor}20` }]}>
+                            <IconComponent size={20} color={typeColor} />
+                        </View>
+                    )}
                     <View style={styles.titleWrapper}>
                         <Text style={[styles.insightTitle, { color: currColors.text }]}>{insight.title}</Text>
-                        {insight.symbol && (
-                            <View style={[styles.symbolBadge, { backgroundColor: currColors.cardSecondary }]}>
-                                <Text style={[styles.symbolText, { color: currColors.textSecondary }]}>{insight.symbol}</Text>
-                            </View>
-                        )}
                     </View>
                 </View>
 
@@ -90,6 +95,9 @@ export default function InsightsScreen() {
                         style={[styles.actionButton, { borderTopColor: currColors.border }]}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            if (insight.symbol) {
+                                router.push(`/stock-details/${insight.symbol}`);
+                            }
                         }}
                     >
                         <Text style={[styles.actionText, { color: currColors.tint }]}>View Asset Details</Text>
@@ -233,6 +241,20 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
+    },
+    logoWrapper: {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+        padding: 4,
+        overflow: 'hidden',
+    },
+    logoImage: {
+        width: '100%',
+        height: '100%',
     },
     titleWrapper: {
         flex: 1,

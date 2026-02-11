@@ -11,6 +11,7 @@ export interface Insight {
     icon: string;
     actionLabel?: string;
     symbol?: string;
+    logo?: string;
 }
 
 export const useInsights = () => {
@@ -36,6 +37,7 @@ export const useInsights = () => {
                     description: `${h.symbol} makes up ${h.contributionPercentage.toFixed(1)}% of your portfolio. Consider diversifying to reduce risk.`,
                     icon: 'TriangleAlert',
                     symbol: h.symbol,
+                    logo: h.logo,
                 });
             }
         });
@@ -50,6 +52,7 @@ export const useInsights = () => {
                     description: `${h.symbol} is up ${h.pnlPercentage.toFixed(1)}%. It might be a good time to secure some gains.`,
                     icon: 'TrendingUp',
                     symbol: h.symbol,
+                    logo: h.logo,
                 });
             }
         });
@@ -64,6 +67,7 @@ export const useInsights = () => {
                     description: `${h.symbol} is down ${Math.abs(h.pnlPercentage).toFixed(1)}% from your average. Consider lowering your cost basis.`,
                     icon: 'CircleArrowDown',
                     symbol: h.symbol,
+                    logo: h.logo,
                 });
             }
         });
@@ -78,6 +82,7 @@ export const useInsights = () => {
                     description: `${h.symbol} is trading near its yearly high. Monitor for potential resistance or momentum.`,
                     icon: 'Zap',
                     symbol: h.symbol,
+                    logo: h.logo,
                 });
             }
         });
@@ -92,6 +97,7 @@ export const useInsights = () => {
                     description: `${h.symbol} is near its yearly low. This could be an attractive entry point if the fundamentals are strong.`,
                     icon: 'Compass',
                     symbol: h.symbol,
+                    logo: h.logo,
                 });
             }
         });
