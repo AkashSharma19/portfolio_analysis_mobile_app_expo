@@ -132,7 +132,7 @@ export default function PortfolioScreen() {
           contentContainerStyle={[styles.scrollContent, { backgroundColor: currColors.background }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={currColors.text} />}
           showsVerticalScrollIndicator={false}
-          bounces={false}
+          bounces={true}
           showsHorizontalScrollIndicator={false}
         >
           <View style={styles.header}>

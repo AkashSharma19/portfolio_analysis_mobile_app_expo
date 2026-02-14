@@ -83,7 +83,7 @@ export default function WinLossDetailsScreen() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false}>
                 {/* Hero Card */}
                 <View style={[styles.heroCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                     <Text style={[styles.heroLabel, { color: currColors.textSecondary }]}>WIN RATE</Text>

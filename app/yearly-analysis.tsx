@@ -17,6 +17,7 @@ export default function YearlyAnalysisScreen() {
     const router = useRouter();
     const transactions = usePortfolioStore((state) => state.transactions);
     const tickers = usePortfolioStore((state) => state.tickers);
+    const fetchTickers = usePortfolioStore((state) => state.fetchTickers);
     const getYearlyAnalysis = usePortfolioStore((state) => state.getYearlyAnalysis);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
     const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
@@ -60,6 +61,7 @@ export default function YearlyAnalysisScreen() {
                     keyExtractor={(item) => item.year.toString()}
                     contentContainerStyle={[styles.modalList, { backgroundColor: 'transparent' }]}
                     showsVerticalScrollIndicator={false}
+                    bounces={false}
                     renderItem={({ item, index }) => {
                         const isExpanded = expandedYears.has(item.year);
                         return (
