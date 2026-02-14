@@ -1,7 +1,7 @@
 // import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Tabs, useRouter } from 'expo-router';
-import { Compass, History, Plus, User, Wallet } from 'lucide-react-native';
+import { Compass, History, Plus, Sparkles, User, Wallet } from 'lucide-react-native';
 import React from 'react';
 import { Platform, TouchableOpacity, View } from 'react-native';
 
@@ -61,6 +61,16 @@ export default function TabLayout() {
             title: 'Portfolio',
             tabBarIcon: ({ color, focused }) => (
               <Wallet size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+            ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="insights"
+          options={{
+            title: 'Insights',
+            tabBarIcon: ({ color, focused }) => (
+              <Sparkles size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
             ),
           }}
         />

@@ -36,7 +36,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -164,9 +163,9 @@ export default function ExploreScreen() {
                 }}
             >
                 <View style={styles.itemLeft}>
-                    <View style={[styles.holdingIcon, { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] + '22' }]}>
+                    <View style={[styles.holdingIcon, !item.Logo && { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] + '22' }]}>
                         {item.Logo ? (
-                            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 2 }}>
+                            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 3 }}>
                                 <Image
                                     source={{ uri: item.Logo }}
                                     style={{ width: 40, height: 40, borderRadius: 10 }}
@@ -233,10 +232,7 @@ export default function ExploreScreen() {
             })
             .sort((a, b) => Math.abs(b.changePercentage) - Math.abs(a.changePercentage));
 
-        return {
-            gainers: sorted.filter(t => t.changePercentage > 0).slice(0, 5),
-            losers: sorted.filter(t => t.changePercentage < 0).slice(0, 5)
-        };
+        return sorted.slice(0, 10);
     }, [tickers]);
 
     const renderTopMovers = () => {
@@ -248,7 +244,7 @@ export default function ExploreScreen() {
                     <Text style={[styles.sectionTitle, { color: currColors.textSecondary }]}>TOP MOVERS</Text>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topMoversScroll}>
-                    {[...topMovers.gainers, ...topMovers.losers].map((item, index) => {
+                    {topMovers.map((item, index) => {
                         const isPositive = item.changePercentage >= 0;
                         return (
                             <TouchableOpacity
@@ -260,24 +256,24 @@ export default function ExploreScreen() {
                                 }}
                             >
                                 <View style={styles.moverHeader}>
-                                    <View style={[styles.moverIcon, { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] + '22' }]}>
+                                    <View style={[styles.moverIcon, { backgroundColor: currColors.cardSecondary }]}>
                                         {item.Logo ? (
-                                            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 8, padding: 2 }}>
+                                            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 10, padding: 3 }}>
                                                 <Image
                                                     source={{ uri: item.Logo }}
-                                                    style={{ width: 24, height: 24, borderRadius: 6 }}
+                                                    style={{ width: 32, height: 32, borderRadius: 8 }}
                                                     resizeMode="contain"
                                                 />
                                             </View>
                                         ) : (
-                                            <Text style={[styles.moverIconText, { color: CHART_COLORS[index % CHART_COLORS.length] }]}>
+                                            <Text style={[styles.moverIconText, { color: currColors.text }]}>
                                                 {item['Company Name']?.[0] || '?'}
                                             </Text>
                                         )}
                                     </View>
                                     <View style={[styles.miniBadge, { backgroundColor: isPositive ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)' }]}>
                                         <Text style={[styles.miniBadgeText, { color: isPositive ? '#4CAF50' : '#F44336' }]}>
-                                            {isPositive ? '+' : ''}{item.changePercentage.toFixed(1)}%
+                                            {isPositive ? '+' : ''}{item.changePercentage.toFixed(2)}%
                                         </Text>
                                     </View>
                                 </View>
@@ -354,29 +350,32 @@ export default function ExploreScreen() {
                         return (
                             <TouchableOpacity
                                 key={sName}
-                                style={[styles.sectorCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}
+                                style={[
+                                    styles.sectorCard,
+                                    { backgroundColor: color + '15', borderColor: color + '30' }
+                                ]}
                                 onPress={() => {
                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     router.push(`/sector-details/${encodeURIComponent(sName)}`);
                                 }}
                             >
-                                <View style={[styles.sectorIconContainer, { backgroundColor: color + '15' }]}>
-                                    <SectorIcon size={20} color={color} />
-                                </View>
-                                <Text style={[styles.sectorName, { color: currColors.text }]} numberOfLines={1}>{sName}</Text>
+                                <SectorIcon size={20} color={color} style={{ marginBottom: 6 }} />
+                                <Text style={[styles.sectorName, { color: currColors.text }]} numberOfLines={2}>{sName}</Text>
                             </TouchableOpacity>
                         );
                     })}
                     <TouchableOpacity
-                        style={[styles.sectorCard, styles.moreCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}
+                        style={[
+                            styles.sectorCard,
+                            styles.moreCard,
+                            { backgroundColor: currColors.card, borderColor: currColors.border }
+                        ]}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             setIsSectorsExpanded(!isSectorsExpanded);
                         }}
                     >
-                        <View style={[styles.sectorIconContainer, { backgroundColor: currColors.tint + '15' }]}>
-                            <Ionicons name={isSectorsExpanded ? "chevron-up" : "chevron-down"} size={20} color={currColors.tint} />
-                        </View>
+                        <Ionicons name={isSectorsExpanded ? "chevron-up" : "chevron-down"} size={20} color={currColors.tint} style={{ marginBottom: 6 }} />
                         <Text style={[styles.sectorName, { color: currColors.tint }]}>{isSectorsExpanded ? 'Less' : 'More'}</Text>
                     </TouchableOpacity>
                 </View>
@@ -551,72 +550,43 @@ const MarketRibbon = ({ indicesData, isVisible, currColors }: { indicesData: any
         { label: 'NASDAQ', data: nasdaq },
     ].filter(i => i && i.data), [nifty50, sensex, nasdaq]);
 
-    const [contentWidth, setContentWidth] = useState(0);
-    const translateX = useSharedValue(0);
-
-    useEffect(() => {
-        if (!isVisible || indices.length === 0 || contentWidth === 0) return;
-        translateX.value = 0;
-        translateX.value = withRepeat(
-            withTiming(-contentWidth, {
-                duration: contentWidth * 50,
-                easing: Easing.linear,
-            }),
-            -1,
-            false
-        );
-    }, [contentWidth, isVisible, indices.length]);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ translateX: translateX.value }],
-    }));
-
     if (!isVisible || indices.length === 0) return null;
-
-    const renderIndices = (keyPrefix: string, onLayout?: (event: any) => void) => (
-        <View
-            key={keyPrefix}
-            style={{ flexDirection: 'row', alignItems: 'center' }}
-            onLayout={onLayout}
-        >
-            {indices.map((item, index) => {
-                const data = item.data;
-                const currentValue = data?.['Current Value'] ?? 0;
-                const yesterdayClose = data?.['Yesterday Close'] ?? currentValue;
-                const change = currentValue - yesterdayClose;
-                const changePercentage = yesterdayClose !== 0 ? (change / yesterdayClose) * 100 : 0;
-                const isPositive = change >= 0;
-
-                return (
-                    <View key={`${keyPrefix}-${item.label}-${index}`} style={[styles.tickerItem, { backgroundColor: currColors.card }]}>
-                        <Text style={[styles.tickerLabel, { color: currColors.text, marginRight: 8 }]} numberOfLines={1} ellipsizeMode="tail">
-                            {data?.['Company Name'] || item.label}
-                        </Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Text style={[styles.tickerPrice, { color: currColors.text }]}>
-                                {currentValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                            </Text>
-                            <View style={styles.tickerChangeContainer}>
-                                <TrendingUp size={12} color={isPositive ? '#4CAF50' : '#F44336'} style={{ marginRight: 2, transform: [{ rotate: isPositive ? '0deg' : '180deg' }] }} />
-                                <Text style={[styles.tickerChange, { color: isPositive ? '#4CAF50' : '#F44336' }]}>
-                                    {Math.abs(changePercentage).toFixed(2)}%
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-                );
-            })}
-        </View>
-    );
 
     return (
         <View style={styles.ribbonContainer}>
-            <Animated.View style={[styles.ribbonContent, animatedStyle]}>
-                {renderIndices('original', (e) => setContentWidth(e.nativeEvent.layout.width))}
-                {renderIndices('copy1')}
-                {renderIndices('copy2')}
-                {renderIndices('copy3')}
-            </Animated.View>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[styles.ribbonContent, { paddingHorizontal: 16 }]}
+            >
+                {indices.map((item, index) => {
+                    const data = item.data;
+                    const currentValue = data?.['Current Value'] ?? 0;
+                    const yesterdayClose = data?.['Yesterday Close'] ?? currentValue;
+                    const change = currentValue - yesterdayClose;
+                    const changePercentage = yesterdayClose !== 0 ? (change / yesterdayClose) * 100 : 0;
+                    const isPositive = change >= 0;
+
+                    return (
+                        <View key={`${item.label}-${index}`} style={[styles.tickerItem, { backgroundColor: currColors.card }]}>
+                            <Text style={[styles.tickerLabel, { color: currColors.text, marginRight: 8 }]} numberOfLines={1} ellipsizeMode="tail">
+                                {data?.['Company Name'] || item.label}
+                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <Text style={[styles.tickerPrice, { color: currColors.text }]}>
+                                    {currentValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                </Text>
+                                <View style={styles.tickerChangeContainer}>
+                                    <TrendingUp size={12} color={isPositive ? '#4CAF50' : '#F44336'} style={{ marginRight: 2, transform: [{ rotate: isPositive ? '0deg' : '180deg' }] }} />
+                                    <Text style={[styles.tickerChange, { color: isPositive ? '#4CAF50' : '#F44336' }]}>
+                                        {Math.abs(changePercentage).toFixed(2)}%
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+                    );
+                })}
+            </ScrollView>
         </View>
     );
 };
@@ -814,7 +784,7 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     moverCard: {
-        width: 120,
+        width: 140,
         padding: 12,
         borderRadius: 20,
         borderWidth: 1,
@@ -867,28 +837,22 @@ const styles = StyleSheet.create({
         rowGap: 12,
     },
     sectorCard: {
-        width: (SCREEN_WIDTH - 32 - 32) / 5,
-        paddingVertical: 8,
+        width: (SCREEN_WIDTH - 32 - 32) / 5, // 5 columns
+        height: 75,
+        padding: 4,
         borderRadius: 12,
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 4,
     },
     moreCard: {
         borderStyle: 'dashed',
     },
-    sectorIconContainer: {
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
     sectorName: {
         fontSize: 9,
-        fontWeight: '500',
+        fontWeight: '600',
         textAlign: 'center',
+        lineHeight: 11,
     },
     ribbonContainer: {
         height: 50,
@@ -910,7 +874,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 20,
+        borderRadius: 12,
     },
     tickerLabel: {
         color: '#FFF',

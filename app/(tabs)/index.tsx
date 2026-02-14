@@ -1,6 +1,5 @@
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import { ForecastCard } from '@/components/ForecastCard';
-import { InsightsSummaryCard } from '@/components/InsightsSummaryCard';
 import ShareableCard from '@/components/ShareableCard';
 import TopMovers from '@/components/TopMovers';
 import WinLossCard from '@/components/WinLossCard';
@@ -12,8 +11,10 @@ import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import * as WebBrowser from 'expo-web-browser';
 import { ArrowRight, ChevronDown, Eye, EyeOff, PieChart, Share2, TrendingUp } from 'lucide-react-native';
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ViewShot from 'react-native-view-shot';
 
@@ -227,7 +228,7 @@ export default function PortfolioScreen() {
             </View>
           </View>
 
-          <InsightsSummaryCard />
+
 
           <TopMovers />
 
@@ -654,5 +655,19 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  communityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    gap: 12,
+  },
+  communityText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

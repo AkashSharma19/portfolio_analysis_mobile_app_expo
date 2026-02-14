@@ -7,9 +7,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
-import { ChevronRight, Database, Download, Edit2, FileText, Mail, Phone, Upload, User, X } from 'lucide-react-native';
+import { Database, Download, Edit2, FileText, Mail, MessageCircle, Phone, Settings, Upload, User, X } from 'lucide-react-native';
+
 import React, { useMemo, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as XLSX from 'xlsx';
 
@@ -372,20 +374,32 @@ export default function ProfileScreen() {
                                 <Text style={[styles.gridLabel, { color: currColors.text }]}>Export</Text>
                             </TouchableOpacity>
                         </View>
-                    </View>
 
+                        <View style={[styles.gridRow, { marginTop: 24 }]}>
+                            <TouchableOpacity style={styles.gridButton} onPress={() => router.push('/settings')}>
+                                <View style={[styles.gridIconBox, { backgroundColor: currColors.cardSecondary }]}>
+                                    <Settings size={24} color={currColors.tint} />
+                                </View>
+                                <Text style={[styles.gridLabel, { color: currColors.text }]}>Settings</Text>
+                            </TouchableOpacity>
 
-                    {/* Settings Action */}
-                    <TouchableOpacity
-                        style={[styles.settingsCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}
-                        onPress={() => router.push('/settings')}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.settingsLeft}>
-                            <Text style={[styles.settingsLabel, { color: currColors.text }]}>Settings</Text>
+                            <TouchableOpacity
+                                style={styles.gridButton}
+                                onPress={() => {
+                                    Linking.openURL('https://chat.whatsapp.com/INyTPVgPq908dEMWgFiq44?mode=gi_t');
+                                }}
+                            >
+                                <View style={[styles.gridIconBox, { backgroundColor: 'rgba(37, 211, 102, 0.1)' }]}>
+                                    <MessageCircle size={24} color="#25D366" />
+                                </View>
+                                <Text style={[styles.gridLabel, { color: currColors.text }]}>WhatsApp</Text>
+                            </TouchableOpacity>
+
+                            {/* Spacers to align left with space-between */}
+                            <View style={{ width: 70 }} />
+                            <View style={{ width: 70 }} />
                         </View>
-                        <ChevronRight size={20} color={currColors.textSecondary} />
-                    </TouchableOpacity>
+                    </View>
                 </ScrollView>
 
                 {/* Edit Profile Modal */}
@@ -573,8 +587,8 @@ const styles = StyleSheet.create({
     },
     gridRow: {
         flexDirection: 'row',
-        justifyContent: 'flex-start',
-        gap: 16,
+        justifyContent: 'space-between',
+        // gap removed to let space-between handle it
     },
     gridButton: {
         alignItems: 'center',
@@ -680,23 +694,5 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 16,
         fontWeight: '600',
-    },
-    settingsCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderRadius: 24,
-        padding: 16,
-        marginBottom: 16,
-        borderWidth: 1,
-    },
-    settingsLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    settingsLabel: {
-        fontSize: 16,
-        fontWeight: '500',
     },
 });

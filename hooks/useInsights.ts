@@ -1,18 +1,18 @@
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { useMemo } from 'react';
 
-export type InsightType = 'warning' | 'success' | 'info' | 'opportunity';
+export type InsightCategory = 'Buy' | 'Sell/Hold' | 'Observe';
 
 export interface Insight {
     id: string;
-    type: InsightType;
-    title: string;
-    description: string;
+    category: InsightCategory;
+    title: string; // Used for company name
+    subtitle: string; // Used for "Total Invested"
     icon: string;
-    actionLabel?: string;
     symbol?: string;
     logo?: string;
-    name?: string;
+    value: string; // The primary metric to display (e.g. +30%)
+    color: string; // Insight color
 }
 
 export const useInsights = () => {
@@ -20,102 +20,106 @@ export const useInsights = () => {
     const transactions = usePortfolioStore((state) => state.transactions);
     const tickers = usePortfolioStore((state) => state.tickers);
     const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
+    const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
 
     const holdings = useMemo(() => getHoldingsData(), [getHoldingsData, transactions, tickers]);
+
+    const formatCurrency = (value: number) => {
+        return `${showCurrencySymbol ? '₹' : ''}${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+    };
 
     const insights = useMemo(() => {
         const list: Insight[] = [];
 
         if (holdings.length === 0) return list;
 
+        // Sell/Hold: High Concentration
         holdings.forEach((h) => {
             if (h.contributionPercentage > 25) {
                 list.push({
                     id: `concentration-${h.symbol}`,
-                    type: 'warning',
-                    title: 'High Concentration',
-                    description: `This stock is **${h.contributionPercentage.toFixed(1)}%** of your portfolio. Consider selling a bit to avoid having "too many eggs in one basket."`,
-                    icon: 'TriangleAlert',
+                    category: 'Sell/Hold',
+                    title: h.companyName || h.symbol,
+                    subtitle: `Invested: ${formatCurrency(h.investedValue)}`,
                     symbol: h.symbol,
                     logo: h.logo,
-                    name: h.companyName,
+                    icon: 'TriangleAlert',
+                    value: `${h.contributionPercentage.toFixed(1)}% Portfolio`,
+                    color: '#FF3B30',
                 });
             }
         });
 
+        // Sell/Hold: Profit Taking
         holdings.forEach((h) => {
             if (h.pnlPercentage > 30) {
                 list.push({
                     id: `profit-${h.symbol}`,
-                    type: 'success',
-                    title: 'Profit Taking Opportunity',
-                    description: `You're up **${h.pnlPercentage.toFixed(1)}%**! It might be a smart move to sell some now and keep the cash you've made.`,
-                    icon: 'TrendingUp',
+                    category: 'Sell/Hold',
+                    title: h.companyName || h.symbol,
+                    subtitle: `Invested: ${formatCurrency(h.investedValue)}`,
                     symbol: h.symbol,
                     logo: h.logo,
-                    name: h.companyName,
+                    icon: 'TrendingUp',
+                    value: `+${h.pnlPercentage.toFixed(1)}%`,
+                    color: '#34C759',
                 });
             }
         });
 
+        // Buy: DCA Opportunity
         holdings.forEach((h) => {
             if (h.pnlPercentage < -10) {
                 list.push({
                     id: `dca-${h.symbol}`,
-                    type: 'opportunity',
-                    title: 'DCA Opportunity',
-                    description: `The price is **${Math.abs(h.pnlPercentage).toFixed(1)}%** lower than your average buy price. This is a chance to buy more for less.`,
-                    icon: 'CircleArrowDown',
+                    category: 'Buy',
+                    title: h.companyName || h.symbol,
+                    subtitle: `Invested: ${formatCurrency(h.investedValue)}`,
                     symbol: h.symbol,
                     logo: h.logo,
-                    name: h.companyName,
+                    icon: 'CircleArrowDown',
+                    value: `${h.pnlPercentage.toFixed(1)}%`,
+                    color: '#FF3B30', // Red for low price/discount
                 });
             }
         });
 
+        // Observe: Near 52W High
         holdings.forEach((h) => {
             if (h.high52 && h.currentPrice >= h.high52 * 0.98) {
                 list.push({
                     id: `high52-${h.symbol}`,
-                    type: 'info',
-                    title: 'Near 52-Week High',
-                    description: `Price is at a yearly high (**98%+**). Great performance! Just watch out in case it starts to drop back down.`,
-                    icon: 'Zap',
+                    category: 'Observe',
+                    title: h.companyName || h.symbol,
+                    subtitle: `Invested: ${formatCurrency(h.investedValue)}`,
                     symbol: h.symbol,
                     logo: h.logo,
-                    name: h.companyName,
+                    icon: 'Zap',
+                    value: 'Near High',
+                    color: '#FF9500',
                 });
             }
         });
 
+        // Buy: Near 52W Low
         holdings.forEach((h) => {
             if (h.low52 && h.currentPrice <= h.low52 * 1.02) {
                 list.push({
                     id: `low52-${h.symbol}`,
-                    type: 'opportunity',
-                    title: 'Near 52-Week Low',
-                    description: `Price is at a yearly low (**within 2%**). Could be a good time to buy more if you think the company will bounce back.`,
-                    icon: 'Compass',
+                    category: 'Buy',
+                    title: h.companyName || h.symbol,
+                    subtitle: `Invested: ${formatCurrency(h.investedValue)}`,
                     symbol: h.symbol,
                     logo: h.logo,
-                    name: h.companyName,
+                    icon: 'Compass',
+                    value: 'Near Low',
+                    color: '#34C759',
                 });
             }
         });
 
-        const sectors = new Set(holdings.map((h) => h.sector).filter(Boolean));
-        if (holdings.length >= 5 && sectors.size < 3) {
-            list.push({
-                id: 'diversification-sector',
-                type: 'info',
-                title: 'Low Sector Diversity',
-                description: `You're only invested in **${sectors.size}** types of industries. Spreading your money across more areas helps keep your savings safer.`,
-                icon: 'PieChart',
-            });
-        }
-
         return list;
-    }, [holdings, isPrivacyMode]);
+    }, [holdings, isPrivacyMode, showCurrencySymbol]);
 
     return {
         insights,
