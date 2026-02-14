@@ -411,11 +411,15 @@ export default function StockDetailsScreen() {
                         <Text style={{ color: currColors.textSecondary, fontSize: 13 }}>No recent news found for this company.</Text>
                     </View>
                 ) : (
-                    <View style={styles.newsList}>
+                    <View style={[styles.newsList, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
                         {news.map((item, index) => (
                             <TouchableOpacity
                                 key={index}
-                                style={[styles.newsCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}
+                                style={[
+                                    styles.newsItem,
+                                    { borderBottomColor: currColors.border },
+                                    index === news.length - 1 && { borderBottomWidth: 0 }
+                                ]}
                                 onPress={() => handleOpenNews(item.link)}
                                 activeOpacity={0.7}
                             >
@@ -434,7 +438,7 @@ export default function StockDetailsScreen() {
                                     {item.imageUrl && (
                                         <Image
                                             source={{ uri: item.imageUrl }}
-                                            style={{ width: 60, height: 60, borderRadius: 8, backgroundColor: '#FFFFFF' }}
+                                            style={{ width: 50, height: 50, borderRadius: 8, backgroundColor: '#FFFFFF' }}
                                             resizeMode="contain"
                                         />
                                     )}
@@ -715,14 +719,15 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     newsList: {
-        gap: 12,
-    },
-    newsCard: {
-        padding: 16,
-        borderRadius: 16,
+        borderRadius: 20,
+        overflow: 'hidden',
         borderWidth: 1,
         borderColor: '#2C2C2E',
-        backgroundColor: '#1C1C1E',
+    },
+    newsItem: {
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#2C2C2E',
     },
     newsSourceRow: {
         flexDirection: 'row',
