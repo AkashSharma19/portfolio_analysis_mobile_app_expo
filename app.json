@@ -27,6 +27,7 @@
       }
     },
     "android": {
+      "package": "com.akashsharma.gainbase",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -46,6 +47,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "21dd3f85-abe7-46ce-b0d1-a2005aa80148"
+      }
+    },
+    "owner": "sharmaakash4299"
   }
 }
