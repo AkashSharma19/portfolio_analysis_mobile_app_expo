@@ -96,7 +96,7 @@ const TransactionItem = memo(({
           <Text style={[styles.symbolText, { color: currColors.text }]} numberOfLines={1} ellipsizeMode="tail">
             {displayName}
           </Text>
-          <Text style={[styles.dateText, { color: currColors.textSecondary }]}>{format(parseISO(item.date), 'MMM dd')}</Text>
+          <Text style={[styles.dateText, { color: currColors.textSecondary }]}>{format(parseISO(typeof item.date === 'string' ? item.date : new Date(item.date).toISOString()), 'MMM dd')}</Text>
         </View>
 
         <View style={styles.rightCol}>
@@ -164,7 +164,7 @@ export default function HistoryScreen() {
     const groups: { [key: string]: Transaction[] } = {};
 
     filteredTransactions.forEach(t => {
-      const date = parseISO(t.date);
+      const date = parseISO(typeof t.date === 'string' ? t.date : new Date(t.date).toISOString());
       const monthYear = format(date, 'MMMM yyyy');
       if (!groups[monthYear]) {
         groups[monthYear] = [];

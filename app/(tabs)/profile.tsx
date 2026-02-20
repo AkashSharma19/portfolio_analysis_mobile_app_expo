@@ -270,12 +270,33 @@ export default function ProfileScreen() {
                 return;
             }
 
+            const ensureISOString = (val: any) => {
+                if (!val) return new Date().toISOString();
+                if (val instanceof Date) return val.toISOString();
+                if (typeof val === 'number') {
+                    // Handle Excel serial date (Excel base date is Dec 30, 1899)
+                    // 25569 is the number of days between Dec 30, 1899 and Jan 1, 1970
+                    const date = new Date((val - 25569) * 86400 * 1000);
+                    return date.toISOString();
+                }
+                if (typeof val === 'string') {
+                    // Try to parse if it looks like a number
+                    if (!isNaN(Number(val)) && val.trim() !== '') {
+                        const date = new Date((Number(val) - 25569) * 86400 * 1000);
+                        return date.toISOString();
+                    }
+                    const d = new Date(val);
+                    if (!isNaN(d.getTime())) return d.toISOString();
+                }
+                return new Date().toISOString();
+            };
+
             const newTransactions = jsonData.map((row: any) => ({
                 id: Math.random().toString(36).substr(2, 9),
                 symbol: row.Symbol || row.symbol || '',
                 quantity: Number(row.Quantity || row.quantity || 0),
                 price: Number(row.Price || row.price || 0),
-                date: row.Date || row.date || new Date().toISOString(),
+                date: ensureISOString(row.Date || row.date),
                 type: (row.Type?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
                 currency: row.Currency || row.currency || 'INR',
                 broker: row.Broker || row.broker || ''

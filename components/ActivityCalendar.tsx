@@ -20,7 +20,8 @@ export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
         const stats: Record<string, { buy: number; sell: number }> = {};
 
         transactions.forEach((t) => {
-            const dateStr = format(parseISO(t.date), 'yyyy-MM-dd');
+            const rawDate = t.date;
+            const dateStr = format(parseISO(typeof rawDate === 'string' ? rawDate : new Date(rawDate).toISOString()), 'yyyy-MM-dd');
             if (!stats[dateStr]) {
                 stats[dateStr] = { buy: 0, sell: 0 };
             }
