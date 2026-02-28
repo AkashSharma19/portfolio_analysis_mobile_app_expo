@@ -5,22 +5,24 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
+    Antenna,
+    BarChart3,
+    Bolt,
+    Briefcase,
+    Building2,
     Candy,
-    Car,
-    Coins,
-    CreditCard, Diamond,
+    CarFront,
+    CircleDollarSign,
+    Cpu,
     Droplet,
     Factory,
     FlaskConical,
-    Hammer,
-    Landmark,
+    Fuel,
+    Gem,
+    HandCoins,
     LayoutGrid,
-    Monitor,
-    Phone,
-    ShoppingBasket,
-    TrendingUp,
-    Wallet,
-    Zap
+    Package,
+    TrendingUp
 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -287,21 +289,21 @@ export default function ExploreScreen() {
 
     const getSectorIcon = (name: string) => {
         const sectorIcons: Record<string, any> = {
-            'Bank': Landmark,
-            'IT': Monitor,
-            'Refineries': Factory,
-            'Mutual Fund': Wallet,
-            'FMCG': ShoppingBasket,
-            'Automobile': Car,
-            'Gold': Coins,
-            'Communications': Phone,
-            'Steel/ Iron Prducts': Hammer,
-            'Steel/ Iron Products': Hammer,
+            'Bank': Building2,
+            'IT': Cpu,
+            'Refineries': Fuel,
+            'Mutual Fund': Briefcase,
+            'FMCG': Package,
+            'Automobile': CarFront,
+            'Gold': CircleDollarSign,
+            'Communications': Antenna,
+            'Steel/ Iron Prducts': Factory,
+            'Steel/ Iron Products': Factory,
             'Oil': Droplet,
-            'NBFC': CreditCard,
-            'Power': Zap,
-            'Jewellery': Diamond,
-            'Trading': TrendingUp,
+            'NBFC': HandCoins,
+            'Power': Bolt,
+            'Jewellery': Gem,
+            'Trading': BarChart3,
             'Petrochemicals': FlaskConical,
             'Sugar': Candy,
         };
