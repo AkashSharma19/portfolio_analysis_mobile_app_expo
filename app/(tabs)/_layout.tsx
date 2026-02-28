@@ -1,12 +1,57 @@
 // import { Ionicons } from '@expo/vector-icons';
+import { useInsights } from '@/hooks/useInsights';
 import * as Haptics from 'expo-haptics';
 import { Tabs, useRouter } from 'expo-router';
 import { Compass, History, Plus, Sparkles, User, Wallet } from 'lucide-react-native';
 import React from 'react';
-import { Platform, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
+
+function InsightsTabIcon({ color, focused }: { color: string; focused: boolean }) {
+  const { count } = useInsights();
+  const badgeCount = Math.min(count, 9);
+  const showBadge = count > 0;
+
+  return (
+    <View style={tabStyles.iconWrapper}>
+      <Sparkles size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+      {showBadge && (
+        <View style={tabStyles.badge}>
+          <Text style={tabStyles.badgeText}>{badgeCount}{count > 9 ? '+' : ''}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const tabStyles = StyleSheet.create({
+  iconWrapper: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -8,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800',
+    lineHeight: 11,
+  },
+});
 
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? 'dark';
@@ -70,7 +115,7 @@ export default function TabLayout() {
           options={{
             title: 'Insights',
             tabBarIcon: ({ color, focused }) => (
-              <Sparkles size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+              <InsightsTabIcon color={color} focused={focused} />
             ),
           }}
         />

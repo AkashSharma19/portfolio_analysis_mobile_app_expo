@@ -41,6 +41,7 @@ interface PortfolioState {
     setForecastYears: (years: number) => void;
     defaultIndex: string;
     setDefaultIndex: (ticker: string) => void;
+    lastSyncedAt: number | null;
 }
 
 export const usePortfolioStore = create<PortfolioState>()(
@@ -68,6 +69,7 @@ export const usePortfolioStore = create<PortfolioState>()(
                             tickers: result.data,
                             headerLogo: logo,
                             headerLink: link,
+                            lastSyncedAt: Date.now(),
                         });
                     }
                 } catch (error) {
@@ -493,6 +495,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             setForecastYears: (years) => set({ forecastYears: years }),
             defaultIndex: 'INDEXNSE:NIFTY_50',
             setDefaultIndex: (ticker) => set({ defaultIndex: ticker }),
+            lastSyncedAt: null,
         }),
         {
             name: 'portfolio-storage',

@@ -1,5 +1,6 @@
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import { ForecastCard } from '@/components/ForecastCard';
+import { PortfolioHealthCard } from '@/components/PortfolioHealthCard';
 import ShareableCard from '@/components/ShareableCard';
 import TopMovers from '@/components/TopMovers';
 import WinLossCard from '@/components/WinLossCard';
@@ -40,9 +41,32 @@ export default function PortfolioScreen() {
   const headerLink = usePortfolioStore((state) => state.headerLink);
   const defaultIndex = usePortfolioStore((state) => state.defaultIndex);
   const setDefaultIndex = usePortfolioStore((state) => state.setDefaultIndex);
+  const lastSyncedAt = usePortfolioStore((state) => state.lastSyncedAt);
 
   const theme = useColorScheme() ?? 'dark';
   const currColors = Colors[theme];
+
+  // Tracks the formatted "X min ago" string, refreshed every minute
+  const [syncLabel, setSyncLabel] = useState<string | null>(null);
+  const [isStale, setIsStale] = useState(false);
+
+  const computeSyncLabel = (ts: number | null) => {
+    if (!ts) return null;
+    const diffMs = Date.now() - ts;
+    const diffMin = Math.floor(diffMs / 60000);
+    setIsStale(diffMin >= 30);
+    if (diffMin < 1) return 'Just updated';
+    if (diffMin === 1) return 'Updated 1 min ago';
+    if (diffMin < 60) return `Updated ${diffMin} min ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    return `Updated ${diffHr}h ago`;
+  };
+
+  useEffect(() => {
+    setSyncLabel(computeSyncLabel(lastSyncedAt));
+    const ticker = setInterval(() => setSyncLabel(computeSyncLabel(lastSyncedAt)), 60000);
+    return () => clearInterval(ticker);
+  }, [lastSyncedAt]);
 
   const viewShotRef = useRef<any>(null);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -197,6 +221,20 @@ export default function PortfolioScreen() {
 
               <Text style={[styles.heroValue, { color: currColors.text }]}>{isPrivacyMode ? '****' : `${showCurrencySymbol ? '₹' : ''}${summary.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}</Text>
 
+              {/* Last Synced Indicator */}
+              {syncLabel && (
+                <TouchableOpacity
+                  onPress={onRefresh}
+                  activeOpacity={0.7}
+                  style={styles.syncRow}
+                >
+                  <View style={[styles.syncDot, { backgroundColor: isStale ? '#FF9500' : '#34C759' }]} />
+                  <Text style={[styles.syncLabel, { color: isStale ? '#FF9500' : currColors.textSecondary }]}>
+                    {syncLabel}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
               <View style={[styles.dashedDivider, { borderColor: currColors.border }]} />
 
               <View style={styles.heroRow}>
@@ -271,6 +309,8 @@ export default function PortfolioScreen() {
 
 
           <TopMovers />
+
+          <PortfolioHealthCard />
 
           <WinLossCard
             onPress={() => {
@@ -796,5 +836,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     lineHeight: 22,
+  },
+  syncRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 14,
+  },
+  syncDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  syncLabel: {
+    fontSize: 11,
+    fontWeight: '500',
   },
 });
