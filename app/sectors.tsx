@@ -5,6 +5,7 @@ import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Stack, useRouter } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import {
     Dimensions,
@@ -15,6 +16,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -56,24 +58,22 @@ export default function SectorsScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: currColors.background }]}>
-            <Stack.Screen
-                options={{
-                    headerTitle: 'All Sectors',
-                    headerTitleStyle: { fontSize: 17, fontWeight: '600' },
-                    headerShadowVisible: false,
-                    headerStyle: { backgroundColor: currColors.background },
-                    headerTintColor: currColors.text,
-                    headerLeft: () => (
-                        <TouchableOpacity
-                            onPress={() => router.back()}
-                            style={{ marginLeft: -8, padding: 8 }}
-                        >
-                            <Ionicons name="chevron-back" size={24} color={currColors.text} />
-                        </TouchableOpacity>
-                    ),
-                }}
-            />
+        <SafeAreaView style={[styles.container, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
+            <Stack.Screen options={{ headerShown: false }} />
+
+            <View style={[styles.header, { backgroundColor: currColors.background }]}>
+                <TouchableOpacity
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        router.back();
+                    }}
+                    style={[styles.backButtonIcon, { borderColor: currColors.border }]}
+                >
+                    <ArrowLeft size={24} color={currColors.text} />
+                </TouchableOpacity>
+                <Text style={[styles.headerTitle, { color: currColors.text }]}>All Sectors</Text>
+                <View style={{ width: 40 }} />
+            </View>
 
             <View style={styles.searchContainer}>
                 <View style={[styles.searchBar, { backgroundColor: currColors.card }]}>
@@ -106,13 +106,33 @@ export default function SectorsScreen() {
                     </View>
                 }
             />
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingBottom: 12,
+        paddingTop: 8,
+    },
+    backButtonIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '600',
     },
     searchContainer: {
         paddingHorizontal: 16,
