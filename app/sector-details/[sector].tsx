@@ -1,4 +1,5 @@
 import { useColorScheme } from '@/components/useColorScheme';
+import { getSectorIcon } from '@/constants/Sectors';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,23 +8,7 @@ import {
     ArrowDown,
     ArrowUp,
     ArrowUpDown,
-    Candy,
-    Car,
-    Coins,
-    CreditCard,
-    Diamond,
-    Droplet,
-    Factory,
-    FlaskConical,
-    Hammer,
-    Landmark,
-    LayoutGrid,
-    Monitor,
-    Phone,
-    ShoppingBasket,
-    TrendingUp,
-    Wallet,
-    Zap
+    TrendingUp
 } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -55,50 +40,7 @@ export default function SectorDetailsScreen() {
     const [viewMode, setViewMode] = useState<'Price' | 'DailyChange' | 'Name'>('DailyChange');
     const [sortDirection, setSortDirection] = useState<'ASC' | 'DESC'>('DESC');
 
-    const getSectorIcon = (name: string) => {
-        const sectorIcons: Record<string, any> = {
-            'Bank': Landmark,
-            'IT': Monitor,
-            'Refineries': Factory,
-            'Mutual Fund': Wallet,
-            'FMCG': ShoppingBasket,
-            'Automobile': Car,
-            'Gold': Coins,
-            'Communications': Phone,
-            'Steel/ Iron Products': Hammer,
-            'Steel/ Iron Prducts': Hammer,
-            'Oil': Droplet,
-            'NBFC': CreditCard,
-            'Power': Zap,
-            'Jewellery': Diamond,
-            'Trading': TrendingUp,
-            'Petrochemicals': FlaskConical,
-            'Sugar': Candy,
-        };
-
-        const Icon = sectorIcons[name] || LayoutGrid;
-
-        const sectorColors: Record<string, string> = {
-            'Bank': '#0A84FF',
-            'IT': '#5E5CE6',
-            'Refineries': '#8E8E93',
-            'Mutual Fund': '#AF52DE',
-            'FMCG': '#FF375F',
-            'Automobile': '#FF2D55',
-            'Gold': '#FFD60A',
-            'Communications': '#64D2FF',
-            'Steel/ Iron Products': '#8E8E93',
-            'Oil': '#007AFF',
-            'NBFC': '#5AC8FA',
-            'Power': '#FF9F0A',
-            'Jewellery': '#BF5AF2',
-            'Trading': '#30D158',
-            'Petrochemicals': '#BF5AF2',
-            'Sugar': '#FFCC00',
-        };
-
-        return { icon: Icon, color: sectorColors[name] || '#32D74B' };
-    };
+    // Removed local getSectorIcon
 
     const sectorData = getSectorIcon(sector || '');
     const SectorIcon = sectorData.icon;
