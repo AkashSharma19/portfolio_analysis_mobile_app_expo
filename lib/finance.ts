@@ -37,7 +37,7 @@ export function calculateProjection(currentVal: number, annualReturn: number, mo
     // Compound interest for current principal + future value of an annuity (SIP)
     const principalFutureValue = currentVal * Math.pow(1 + r, n);
     const sipFutureValue = monthlySIP > 0
-        ? monthlySIP * (Math.pow(1 + r, n) - 1) / r
+        ? (r === 0 ? monthlySIP * n : monthlySIP * (Math.pow(1 + r, n) - 1) / r)
         : 0;
 
     const totalFutureValue = principalFutureValue + sipFutureValue;
@@ -70,7 +70,7 @@ export function calculateProjectionSeries(currentVal: number, annualReturn: numb
 
         // SIP Calculation (End of period)
         const sipFutureValue = monthlySIP > 0
-            ? monthlySIP * (Math.pow(1 + r, n) - 1) / r
+            ? (r === 0 ? monthlySIP * n : monthlySIP * (Math.pow(1 + r, n) - 1) / r)
             : 0;
 
         const totalFutureValue = principalFutureValue + sipFutureValue;

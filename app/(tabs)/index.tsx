@@ -272,7 +272,7 @@ export default function PortfolioScreen() {
 
               <View style={styles.heroRow}>
                 <Text style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>XIRR</Text>
-                <Text style={[styles.heroRowValueWhite, { color: currColors.text }]}>{isPrivacyMode ? '****' : `${summary.xirr.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`}</Text>
+                <Text style={[styles.heroRowValueWhite, { color: isPrivacyMode ? currColors.text : (summary.xirr < 0 ? '#F44336' : currColors.text) }]}>{isPrivacyMode ? '****' : `${summary.xirr.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`}</Text>
               </View>
 
               <TouchableOpacity
@@ -300,7 +300,9 @@ export default function PortfolioScreen() {
                   />
                 </View>
                 <Text style={[styles.comparisonValue, { color: currColors.textSecondary }]}>
-                  {isPrivacyMode ? '****' : `PF XIRR ${summary.xirr.toFixed(2)}% / Idx ${index1YReturn.toFixed(2)}%`}
+                  {isPrivacyMode ? '****' : (
+                    <Text>PF XIRR <Text style={{ color: summary.xirr < 0 ? '#F44336' : currColors.textSecondary }}>{summary.xirr.toFixed(2)}%</Text> / Idx {index1YReturn.toFixed(2)}%</Text>
+                  )}
                 </Text>
               </TouchableOpacity>
             </View>

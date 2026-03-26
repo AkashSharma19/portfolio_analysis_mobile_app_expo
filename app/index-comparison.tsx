@@ -42,7 +42,7 @@ export default function IndexComparisonScreen() {
                 showGradient: true,
                 topLabelComponent: () => (
                     <View style={{ width: 40, alignItems: 'center' }}>
-                        <Text style={{ color: currColors.text, fontSize: 8, marginBottom: 4 }}>
+                        <Text style={{ color: portfolioXIRR < 0 ? '#F44336' : currColors.text, fontSize: 8, marginBottom: 4 }}>
                             {portfolioXIRR.toFixed(2)}%
                         </Text>
                     </View>

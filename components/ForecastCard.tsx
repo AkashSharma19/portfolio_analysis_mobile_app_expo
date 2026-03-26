@@ -22,8 +22,7 @@ export const ForecastCard = ({ onPress, years = 20, summary, yearlyAnalysis }: F
 
     // Derived values from user data
     const annualReturn = useMemo(() => {
-        // Fallback to 12% if XIRR is 0 or negative (conservative)
-        return summary.xirr > 0 ? summary.xirr / 100 : 0.12;
+        return (summary.xirr || 0) / 100;
     }, [summary.xirr]);
 
     const monthlySIP = useMemo(() => {

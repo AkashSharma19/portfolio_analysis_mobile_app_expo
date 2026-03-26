@@ -33,7 +33,7 @@ export default function ForecastDetailsScreen() {
     const [activePoint, setActivePoint] = useState<any>(null);
 
     const annualReturn = useMemo(() => {
-        return summary.xirr > 0 ? summary.xirr / 100 : 0.12;
+        return (summary.xirr || 0) / 100;
     }, [summary.xirr]);
 
     const monthlySIP = useMemo(() => {
@@ -263,8 +263,8 @@ export default function ForecastDetailsScreen() {
                     </View>
                     <View style={[styles.horizontalDivider, { backgroundColor: currColors.border }]} />
                     <View style={styles.dataRow}>
-                        <Text style={[styles.dataLabel, { color: currColors.textSecondary }]}>Expected Annual Return</Text>
-                        <Text style={[styles.dataValue, { color: '#4CAF50' }]}>{(annualReturn * 100).toFixed(2)}%</Text>
+                        <Text style={[styles.dataLabel, { color: currColors.textSecondary }]}>Current XIRR</Text>
+                        <Text style={[styles.dataValue, { color: annualReturn < 0 ? '#F44336' : '#4CAF50' }]}>{(annualReturn * 100).toFixed(2)}%</Text>
                     </View>
                     <View style={styles.dataRow}>
                         <Text style={[styles.dataLabel, { color: currColors.textSecondary }]}>Total Invested Capital</Text>
