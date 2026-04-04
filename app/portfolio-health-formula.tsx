@@ -2,7 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Box, LayoutGrid, PieChart, TrendingUp } from 'lucide-react-native';
+import { Activity, ArrowLeft, Box, LayoutGrid, PieChart, Shield, TrendingUp } from 'lucide-react-native';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -57,61 +57,92 @@ export default function PortfolioHealthFormulaScreen() {
                 bounces={false}
             >
                 <Text style={[styles.introText, { color: c.textSecondary }]}>
-                    Your Portfolio Health Score is calculated based on four key dimensions, weighted equally to provide a balanced assessment.
+                    Your Portfolio Health Score is calculated based on five advanced dimensions to provide a deep assessment of diversification, risk, and performance.
                 </Text>
 
-                {/* 1. Concentration Risk */}
-                <Section icon={PieChart} title="Concentration Risk" points={25}>
+                {/* 1. Diversity & Asset Mix */}
+                <Section icon={LayoutGrid} title="Diversity & Asset Mix" points={25}>
                     <Text style={[styles.description, { color: c.textSecondary }]}>
-                        Measures risk based on your largest single position. Lower concentration is safer.
-                    </Text>
-                    <Row label="< 15% Weight" value="25 pts" />
-                    <Row label="15% - 25% Weight" value="18 pts" />
-                    <Row label="25% - 40% Weight" value="10 pts" />
-                    <Row label="> 40% Weight" value="3 pts" isLast />
-                </Section>
-
-                {/* 2. Diversification */}
-                <Section icon={LayoutGrid} title="Diversification" points={25}>
-                    <Text style={[styles.description, { color: c.textSecondary }]}>
-                        Based on the number of stocks (up to 15 pts) and unique sectors (up to 10 pts).
+                        Evaluates breadth across sectors, market caps (Large/Mid/Small/ETF), and stock count.
                     </Text>
                     <View style={styles.subHeader}>
-                        <Text style={[styles.subTitle, { color: c.text }]}>Stocks Count</Text>
+                        <Text style={[styles.subTitle, { color: c.text }]}>Stock Count</Text>
                     </View>
-                    <Row label="15+ Stocks" value="+15 pts" />
-                    <Row label="8 - 14 Stocks" value="+12 pts" />
-                    <Row label="4 - 7 Stocks" value="+8 pts" />
+                    <Row label="12+ Stocks" value="9 pts" />
+                    <Row label="8 - 11 Stocks" value="7 pts" />
                     <View style={styles.subHeader}>
                         <Text style={[styles.subTitle, { color: c.text }]}>Sectors Reach</Text>
                     </View>
-                    <Row label="5+ Sectors" value="+10 pts" />
-                    <Row label="3 - 4 Sectors" value="+7 pts" />
-                    <Row label="2 Sectors" value="+4 pts" isLast />
+                    <Row label="6+ Sectors" value="8 pts" />
+                    <Row label="4 - 5 Sectors" value="6 pts" />
+                    <View style={styles.subHeader}>
+                        <Text style={[styles.subTitle, { color: c.text }]}>Asset Type mix</Text>
+                    </View>
+                    <Row label="4 Types (L/M/S/ETF)" value="8 pts" />
+                    <Row label="3 Types" value="6 pts" isLast />
                 </Section>
 
-                {/* 3. Profitability */}
-                <Section icon={Box} title="Profitability" points={25}>
+                {/* 2. Concentration Risk */}
+                <Section icon={PieChart} title="Concentration Risk" points={20}>
                     <Text style={[styles.description, { color: c.textSecondary }]}>
-                        Evaluates the overall absolute gain/loss percentage of your portfolio.
+                        Focuses on the weight of single largest stock and the top 3 combined weight.
                     </Text>
-                    <Row label="> 30% Profit" value="25 pts" />
-                    <Row label="15% - 30% Profit" value="20 pts" />
-                    <Row label="5% - 15% Profit" value="14 pts" />
-                    <Row label="0% - 5% Profit" value="8 pts" />
-                    <Row label="Losses" value="2 pts" isLast />
+                    <View style={styles.subHeader}>
+                        <Text style={[styles.subTitle, { color: c.text }]}>Single Largest Stock</Text>
+                    </View>
+                    <Row label="< 15% Weight" value="12 pts" />
+                    <Row label="15% - 25% Weight" value="8 pts" />
+                    <View style={styles.subHeader}>
+                        <Text style={[styles.subTitle, { color: c.text }]}>Top 3 Combined</Text>
+                    </View>
+                    <Row label="< 40% Weight" value="8 pts" />
+                    <Row label="40% - 60% Weight" value="5 pts" isLast />
                 </Section>
 
-                {/* 4. XIRR Quality */}
-                <Section icon={TrendingUp} title="XIRR Quality" points={25}>
+                {/* 3. Performance Quality */}
+                <Section icon={TrendingUp} title="Performance Quality" points={20}>
                     <Text style={[styles.description, { color: c.textSecondary }]}>
-                        Assesses long-term performance (XIRR) against market benchmarks.
+                        Assesses long-term returns (XIRR) and 'Win Ratio' (percentage of profitable stocks).
                     </Text>
-                    <Row label="> 20% XIRR" value="25 pts" />
-                    <Row label="12% - 20% XIRR" value="20 pts" />
-                    <Row label="8% - 12% XIRR" value="14 pts" />
-                    <Row label="0% - 8% XIRR" value="7 pts" />
-                    <Row label="Negative XIRR" value="1 pt" isLast />
+                    <View style={styles.subHeader}>
+                        <Text style={[styles.subTitle, { color: c.text }]}>XIRR Yield</Text>
+                    </View>
+                    <Row label="> 18% XIRR" value="12 pts" />
+                    <Row label="12% - 18% XIRR" value="9 pts" />
+                    <View style={styles.subHeader}>
+                        <Text style={[styles.subTitle, { color: c.text }]}>Win Ratio</Text>
+                    </View>
+                    <Row label="> 80% Profitable" value="8 pts" />
+                    <Row label="60% - 80% Profitable" value="6 pts" isLast />
+                </Section>
+
+                {/* 4. Short-term Stability */}
+                <Section icon={Shield} title="Short-term Stability" points={20}>
+                    <Text style={[styles.description, { color: c.textSecondary }]}>
+                        Uses 7-day volatility analysis and positioning relative to 52-week highs/lows.
+                    </Text>
+                    <View style={styles.subHeader}>
+                        <Text style={[styles.subTitle, { color: c.text }]}>7-Day Volatility</Text>
+                    </View>
+                    <Row label="< 1.0% (Stable)" value="12 pts" />
+                    <Row label="1.0% - 2.0% (Moderate)" value="8 pts" />
+                    <View style={styles.subHeader}>
+                        <Text style={[styles.subTitle, { color: c.text }]}>52W Range Pos</Text>
+                    </View>
+                    <Row label="Bottom 30% (Advantageous)" value="8 pts" />
+                    <Row label="30% - 60% (Mid Range)" value="5 pts" isLast />
+                </Section>
+
+                {/* 5. Absolute Profit */}
+                <Section icon={Box} title="Absolute Profit" points={15}>
+                    <Text style={[styles.description, { color: c.textSecondary }]}>
+                        Evaluates the total absolute gain/loss percentage of your entire portfolio.
+                    </Text>
+                    <Row label="> 25% Profit" value="15 pts" />
+                    <Row label="15% - 25% Profit" value="12 pts" />
+                    <Row label="5% - 15% Profit" value="8 pts" />
+                    <Row label="0% - 5% Profit" value="4 pts" />
+                    <Row label="Losses" value="1 pt" isLast />
                 </Section>
 
                 <View style={styles.gradeSection}>

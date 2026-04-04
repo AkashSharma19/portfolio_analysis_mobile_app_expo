@@ -1,4 +1,5 @@
 import { usePortfolioStore } from '@/store/usePortfolioStore';
+import { Ticker } from '../types';
 import { useMemo } from 'react';
 
 export interface HealthDimension {
@@ -36,86 +37,98 @@ export const usePortfolioHealth = (): PortfolioHealth => {
 
         if (holdings.length === 0) return empty;
 
-        // ── 1. CONCENTRATION RISK (25 pts) ────────────────────────────────
-        const maxConcentration = Math.max(...holdings.map((h) => h.contributionPercentage));
-        let concentrationScore = 0;
-        let concentrationDesc = '';
-        if (maxConcentration < 15) {
-            concentrationScore = 25;
-            concentrationDesc = 'No single stock dominates. Well spread.';
-        } else if (maxConcentration < 25) {
-            concentrationScore = 18;
-            concentrationDesc = `Largest position is ${maxConcentration.toFixed(0)}%. Acceptable.`;
-        } else if (maxConcentration < 40) {
-            concentrationScore = 10;
-            concentrationDesc = `${maxConcentration.toFixed(0)}% in one stock. Consider trimming.`;
-        } else {
-            concentrationScore = 3;
-            concentrationDesc = `${maxConcentration.toFixed(0)}% in one stock. High risk.`;
-        }
-
-        // ── 2. DIVERSIFICATION (25 pts) ───────────────────────────────────
-        const holdingCount = holdings.length;
+        // ── 1. DIVERSITY & ASSET MIX (25 pts) ───────────────────────────
         const sectorCount = new Set(holdings.map((h) => h.sector || 'Other')).size;
+        const assetTypes = new Set(holdings.map((h) => h.assetType || 'Other')).size;
+        const stockCount = holdings.length;
 
-        let holdingPts = 0;
-        if (holdingCount >= 15) holdingPts = 15;
-        else if (holdingCount >= 8) holdingPts = 12;
-        else if (holdingCount >= 4) holdingPts = 8;
-        else holdingPts = 3;
+        let sectorPts = sectorCount >= 6 ? 8 : sectorCount >= 4 ? 6 : sectorCount >= 2 ? 3 : 1;
+        let assetTypePts = assetTypes >= 4 ? 8 : assetTypes >= 3 ? 6 : assetTypes >= 2 ? 3 : 1;
+        let stockPts = stockCount >= 12 ? 9 : stockCount >= 8 ? 7 : stockCount >= 4 ? 4 : 1;
 
-        let sectorPts = 0;
-        if (sectorCount >= 5) sectorPts = 10;
-        else if (sectorCount >= 3) sectorPts = 7;
-        else if (sectorCount >= 2) sectorPts = 4;
-        else sectorPts = 1;
+        const diversityScore = sectorPts + assetTypePts + stockPts;
+        const diversityDesc = `${stockCount} stocks in ${sectorCount} sectors and ${assetTypes} asset types.`;
 
-        const diversificationScore = Math.min(25, holdingPts + sectorPts);
-        const diversificationDesc = `${holdingCount} stocks across ${sectorCount} sector${sectorCount !== 1 ? 's' : ''}.`;
+        // ── 2. CONCENTRATION RISK (20 pts) ──────────────────────────────
+        const sortedByContrib = [...holdings].sort((a, b) => b.contributionPercentage - a.contributionPercentage);
+        const maxSingle = sortedByContrib[0]?.contributionPercentage || 0;
+        const top3Sum = sortedByContrib.slice(0, 3).reduce((acc, h) => acc + h.contributionPercentage, 0);
 
-        // ── 3. PROFITABILITY (25 pts) ─────────────────────────────────────
-        const pnlPct = summary.profitPercentage;
-        let profitabilityScore = 0;
-        let profitabilityDesc = '';
-        if (pnlPct >= 30) {
-            profitabilityScore = 25;
-            profitabilityDesc = `Outstanding ${pnlPct.toFixed(1)}% overall return.`;
-        } else if (pnlPct >= 15) {
-            profitabilityScore = 20;
-            profitabilityDesc = `Strong ${pnlPct.toFixed(1)}% overall return.`;
-        } else if (pnlPct >= 5) {
-            profitabilityScore = 14;
-            profitabilityDesc = `Decent ${pnlPct.toFixed(1)}% overall return.`;
-        } else if (pnlPct >= 0) {
-            profitabilityScore = 8;
-            profitabilityDesc = `Slightly positive at ${pnlPct.toFixed(1)}%.`;
-        } else {
-            profitabilityScore = 2;
-            profitabilityDesc = `Portfolio is ${pnlPct.toFixed(1)}% in the red.`;
-        }
+        let singlePts = maxSingle < 15 ? 12 : maxSingle < 25 ? 8 : maxSingle < 40 ? 4 : 1;
+        let top3Pts = top3Sum < 40 ? 8 : top3Sum < 60 ? 5 : top3Sum < 80 ? 2 : 0;
 
-        // ── 4. XIRR QUALITY (25 pts) ──────────────────────────────────────
+        const concentrationScore = singlePts + top3Pts;
+        const concentrationDesc = `Top 3 holdings are ${top3Sum.toFixed(0)}% of portfolio.`;
+
+        // ── 3. PERFORMANCE QUALITY (20 pts) ────────────────────────────
         const xirr = summary.xirr;
-        let xirrScore = 0;
-        let xirrDesc = '';
-        if (xirr >= 20) {
-            xirrScore = 25;
-            xirrDesc = `Exceptional XIRR of ${xirr.toFixed(1)}%.`;
-        } else if (xirr >= 12) {
-            xirrScore = 20;
-            xirrDesc = `Great XIRR of ${xirr.toFixed(1)}%, beating most benchmarks.`;
-        } else if (xirr >= 8) {
-            xirrScore = 14;
-            xirrDesc = `Solid XIRR of ${xirr.toFixed(1)}%.`;
-        } else if (xirr >= 0) {
-            xirrScore = 7;
-            xirrDesc = `Low XIRR of ${xirr.toFixed(1)}%. Room to improve.`;
-        } else {
-            xirrScore = 1;
-            xirrDesc = `Negative XIRR of ${xirr.toFixed(1)}%.`;
+        const winRatio = (holdings.filter(h => h.pnl > 0).length / holdings.length) * 100;
+
+        let xirrPts = xirr >= 18 ? 12 : xirr >= 12 ? 9 : xirr >= 8 ? 6 : xirr >= 0 ? 3 : 0;
+        let winPts = winRatio >= 80 ? 8 : winRatio >= 60 ? 6 : winRatio >= 40 ? 4 : winRatio >= 20 ? 2 : 0;
+
+        const performanceScore = xirrPts + winPts;
+        const performanceDesc = `Win ratio: ${winRatio.toFixed(0)}%. XIRR: ${xirr.toFixed(1)}%.`;
+
+        // ── 4. RISK & VOLATILITY (20 pts) ───────────────────────────────
+        // Calculate 7-Day Portfolio Volatility
+        const portfolioReturns: number[] = [];
+        const tickerMap = new Map(tickers.map(t => [t.Tickers.trim().toUpperCase(), t]));
+
+        // We have Today, Yesterday, Today-2...Today-7. Total 8 points = 7 daily return steps.
+        for (let i = 0; i < 7; i++) {
+            let dayValue = 0;
+            let prevDayValue = 0;
+
+            holdings.forEach(h => {
+                const t = tickerMap.get(h.symbol.trim().toUpperCase());
+                if (!t) return;
+
+                const getPrice = (dayIndex: number) => {
+                    if (dayIndex === 0) return t['Current Value'];
+                    if (dayIndex === 1) return t['Yesterday Close'] ?? t['Current Value'];
+                    const key = `Today - ${dayIndex}`;
+                    return (t as any)[key] ?? t['Yesterday Close'] ?? t['Current Value'];
+                };
+
+                const pToday = getPrice(i);
+                const pPrev = getPrice(i + 1);
+
+                dayValue += h.quantity * pToday;
+                prevDayValue += h.quantity * pPrev;
+            });
+
+            if (prevDayValue > 0) {
+                portfolioReturns.push((dayValue - prevDayValue) / prevDayValue);
+            }
         }
 
-        const totalScore = concentrationScore + diversificationScore + profitabilityScore + xirrScore;
+        const avgReturn = portfolioReturns.length > 0 ? portfolioReturns.reduce((a, b) => a + b, 0) / portfolioReturns.length : 0;
+        const variance = portfolioReturns.length > 0 ? portfolioReturns.reduce((a, b) => a + Math.pow(b - avgReturn, 2), 0) / portfolioReturns.length : 0;
+        const stdDev = Math.sqrt(variance) * 100; // in %
+
+        let stabilityPts = stdDev < 1.0 ? 12 : stdDev < 2.0 ? 8 : stdDev < 3.5 ? 4 : 1;
+
+        // 52W Range Positioning
+        const avgPos = holdings.reduce((acc, h) => {
+            if (h.high52 && h.low52 && h.high52 > h.low52) {
+                const pos = (h.currentPrice - h.low52) / (h.high52 - h.low52);
+                return acc + pos;
+            }
+            return acc + 0.5; // Neutral default
+        }, 0) / holdings.length;
+
+        let positioningPts = avgPos < 0.3 ? 8 : avgPos < 0.6 ? 5 : avgPos < 0.8 ? 2 : 0;
+
+        const riskScore = stabilityPts + positioningPts;
+        const riskDesc = `7-day volatility is ${stdDev.toFixed(2)}%. Stability is ${stdDev < 2 ? 'Good' : 'Moderate'}.`;
+
+        // ── 5. PROFITABILITY (15 pts) ───────────────────────────────────
+        const pnlPct = summary.profitPercentage;
+        let profitabilityScore = pnlPct >= 25 ? 15 : pnlPct >= 15 ? 12 : pnlPct >= 5 ? 8 : pnlPct >= 0 ? 4 : 1;
+        const profitabilityDesc = `Total gains of ${pnlPct.toFixed(1)}%.`;
+
+        const totalScore = Math.min(100, diversityScore + concentrationScore + performanceScore + riskScore + profitabilityScore);
 
         let grade: PortfolioHealth['grade'];
         let gradeColor: string;
@@ -130,11 +143,12 @@ export const usePortfolioHealth = (): PortfolioHealth => {
             gradeColor,
             isEmpty: false,
             dimensions: [
-                { label: 'Concentration', score: concentrationScore, maxScore: 25, description: concentrationDesc },
-                { label: 'Diversification', score: diversificationScore, maxScore: 25, description: diversificationDesc },
-                { label: 'Profitability', score: profitabilityScore, maxScore: 25, description: profitabilityDesc },
-                { label: 'XIRR Quality', score: xirrScore, maxScore: 25, description: xirrDesc },
+                { label: 'Diversity & Asset Mix', score: diversityScore, maxScore: 25, description: diversityDesc },
+                { label: 'Concentration Risk', score: concentrationScore, maxScore: 20, description: concentrationDesc },
+                { label: 'Performance Quality', score: performanceScore, maxScore: 20, description: performanceDesc },
+                { label: 'Short-term Stability', score: Math.round(riskScore), maxScore: 20, description: riskDesc },
+                { label: 'Absolute Profit', score: profitabilityScore, maxScore: 15, description: profitabilityDesc },
             ],
         };
-    }, [holdings, summary]);
+    }, [holdings, summary, tickers]);
 };
