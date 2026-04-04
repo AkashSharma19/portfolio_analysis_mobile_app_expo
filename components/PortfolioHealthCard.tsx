@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     },
     compactScoreNum: {
         fontSize: 24,
-        fontWeight: '800',
+        fontWeight: '500',
     },
     compactScoreLabel: {
         fontSize: 7,

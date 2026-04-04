@@ -7,7 +7,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Circle, Svg } from 'react-native-svg';
 
 // ✨ Redesigned Donut Chart for Compact View
-const WinLossDonut = ({ winners, losers, size, colorWin, colorLoss, trackColor, winRate, isPrivacyMode }: any) => {
+const WinLossDonut = ({ winners, losers, size, colorWin, colorLoss, trackColor, winRate, isPrivacyMode, textColor }: any) => {
     const r = size * 0.4;
     const center = size / 2;
     const circum = 2 * Math.PI * r;
@@ -49,7 +49,7 @@ const WinLossDonut = ({ winners, losers, size, colorWin, colorLoss, trackColor, 
                 />
             </Svg>
             <View style={styles.compactRateBox}>
-                <Text style={[styles.compactRateValue, { color: '#FFFFFF' }]}>{isPrivacyMode ? '**' : `${winRate.toFixed(0)}%`}</Text>
+                <Text style={[styles.compactRateValue, { color: textColor }]}>{isPrivacyMode ? '**' : `${winRate.toFixed(0)}%`}</Text>
                 <Text style={[styles.compactRateLabel, { color: '#8E8E93' }]}>WIN RATE</Text>
             </View>
         </View>
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     },
     compactRateValue: {
         fontSize: 22,
-        fontWeight: '800',
+        fontWeight: '500',
     },
     compactRateLabel: {
         fontSize: 7,
