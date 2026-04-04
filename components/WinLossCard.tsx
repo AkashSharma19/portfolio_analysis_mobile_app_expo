@@ -133,6 +133,7 @@ export default function WinLossCard({ onPress, isCompact = false }: { onPress?: 
                             trackColor={theme === 'dark' ? '#2C2C2E' : '#E5E5EA'}
                             winRate={stats.winRate}
                             isPrivacyMode={isPrivacyMode}
+                            textColor={currColors.text}
                         />
                         <View style={[styles.compactFooter, { marginTop: 12 }]}>
                             <Text style={[styles.compactFooterText, { color: currColors.textSecondary }]}>
