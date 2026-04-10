@@ -10,10 +10,11 @@ import {
   Dimensions,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { BarChart } from 'react-native-gifted-charts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -51,11 +52,9 @@ export default function IndexComparisonScreen() {
 
   const index1YReturn = useMemo(() => {
     if (!selectedIndexData || !selectedIndexData['Today - 365']) return 0;
-    return (
-      ((selectedIndexData['Current Value'] - selectedIndexData['Today - 365']) /
-        selectedIndexData['Today - 365']) *
-      100
-    );
+    const today365 = selectedIndexData['Today - 365'] as number;
+    const currentVal = selectedIndexData['Current Value'] as number;
+    return ((currentVal - today365) / today365) * 100;
   }, [selectedIndexData]);
 
   const chartData = useMemo(() => {
@@ -68,7 +67,7 @@ export default function IndexComparisonScreen() {
         showGradient: true,
         topLabelComponent: () => (
           <View style={{ width: 40, alignItems: 'center' }}>
-            <Text
+            <ThemedText
               style={{
                 color: portfolioXIRR < 0 ? '#F44336' : currColors.text,
                 fontSize: 8,
@@ -76,7 +75,7 @@ export default function IndexComparisonScreen() {
               }}
             >
               {portfolioXIRR.toFixed(2)}%
-            </Text>
+            </ThemedText>
           </View>
         ),
       },
@@ -109,7 +108,7 @@ export default function IndexComparisonScreen() {
         showGradient: true,
         topLabelComponent: () => (
           <View style={{ width: 40, alignItems: 'center' }}>
-            <Text
+            <ThemedText
               style={{
                 color: currColors.textSecondary,
                 fontSize: 8,
@@ -117,7 +116,7 @@ export default function IndexComparisonScreen() {
               }}
             >
               {return1Y.toFixed(2)}%
-            </Text>
+            </ThemedText>
           </View>
         ),
       });
@@ -147,9 +146,9 @@ export default function IndexComparisonScreen() {
         <View style={styles.header}>
           <BackButton />
           <View>
-            <Text style={[styles.headerTitle, { color: currColors.text }]}>
+            <ThemedText style={[styles.headerTitle, { color: currColors.text }]}>
               Market Benchmark
-            </Text>
+            </ThemedText>
           </View>
           <View style={{ width: 40 }} />
         </View>
@@ -164,11 +163,11 @@ export default function IndexComparisonScreen() {
             style={[styles.comparisonCard, { borderColor: currColors.border }]}
           >
             <View style={styles.chartTitleRow}>
-              <Text
+              <ThemedText
                 style={[styles.chartTitle, { color: currColors.textSecondary }]}
               >
                 PERFORMANCE (1Y)
-              </Text>
+              </ThemedText>
             </View>
 
             <View
@@ -185,27 +184,28 @@ export default function IndexComparisonScreen() {
                 spacing={chartConfigs.spacing}
                 maxValue={maxValue}
                 noOfSections={3}
-                dashGap={0}
                 yAxisThickness={0}
                 xAxisThickness={0}
                 hideRules
-                hideYAxisText
                 yAxisTextStyle={{
                   color: currColors.textSecondary,
-                  fontSize: 9,
+                  fontSize: 10,
+                  fontFamily: 'Outfit_400Regular',
                 }}
                 xAxisLabelTextStyle={{
                   color: currColors.textSecondary,
-                  fontSize: 9,
+                  fontSize: 10,
                   height: 30,
                   textAlign: 'center',
+                  fontFamily: 'Outfit_400Regular',
                 }}
+                formatYLabel={(val) => `${parseFloat(val).toFixed(0)}%`}
+                initialSpacing={15}
                 isAnimated
                 animationDuration={600}
-                roundedTop
                 xAxisLabelsVerticalShift={0}
                 barBorderRadius={6}
-                width={Dimensions.get('window').width - 72}
+                width={Dimensions.get('window').width - 110}
               />
             </View>
 
@@ -217,7 +217,7 @@ export default function IndexComparisonScreen() {
                 borderTopColor: currColors.border,
               }}
             >
-              <Text
+              <ThemedText
                 style={{
                   fontSize: 10,
                   color: currColors.textSecondary,
@@ -226,19 +226,19 @@ export default function IndexComparisonScreen() {
               >
                 Portfolio performance is measured by lifetime XIRR, while
                 benchmarks show 1-year absolute returns.
-              </Text>
+              </ThemedText>
             </View>
           </LinearGradient>
 
           <View style={{ marginTop: 24 }}>
-            <Text
+            <ThemedText
               style={[
                 styles.innerSectionTitle,
                 { color: currColors.textSecondary, marginLeft: 0 },
               ]}
             >
               BENCHMARKS
-            </Text>
+            </ThemedText>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -264,7 +264,7 @@ export default function IndexComparisonScreen() {
                     setDefaultIndex(idx.Tickers);
                   }}
                 >
-                  <Text
+                  <ThemedText
                     style={[
                       styles.benchmarkChipText,
                       { color: currColors.textSecondary },
@@ -275,7 +275,7 @@ export default function IndexComparisonScreen() {
                     ]}
                   >
                     {idx['Company Name'] || idx.Tickers}
-                  </Text>
+                  </ThemedText>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -304,7 +304,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     textAlign: 'center',
-    fontFamily: 'Outfit_600SemiBold',
   },
   scrollContent: {
     padding: 16,
@@ -326,7 +325,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_700Bold',
   },
   innerSectionTitle: {
     fontSize: 10,
@@ -334,7 +332,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 12,
-    fontFamily: 'Outfit_700Bold',
   },
   benchmarkChip: {
     paddingHorizontal: 16,
@@ -345,6 +342,5 @@ const styles = StyleSheet.create({
   },
   benchmarkChipText: {
     fontSize: 13,
-    fontFamily: 'Outfit_400Regular',
   },
 });

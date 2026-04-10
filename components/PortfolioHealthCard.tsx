@@ -8,11 +8,12 @@ import { ArrowRight } from 'lucide-react-native';
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
+
+import { ThemedText } from './ThemedText';
 import { Circle, G, Path, Svg } from 'react-native-svg';
 
 // ─── Gauge geometry (viewBox units) ─────────────────────────────────────────
@@ -111,12 +112,12 @@ const CircularProgress = ({
         />
       </Svg>
       <View style={styles.compactScoreBox}>
-        <Text style={[styles.compactScoreNum, { color }]}>
+        <ThemedText style={[styles.compactScoreNum, { color }]}>
           {isPrivacyMode ? '**' : score}
-        </Text>
-        <Text style={[styles.compactScoreLabel, { color: textColor }]}>
+        </ThemedText>
+        <ThemedText style={[styles.compactScoreLabel, { color: textColor }]}>
           HEALTH
-        </Text>
+        </ThemedText>
       </View>
     </View>
   );
@@ -180,14 +181,14 @@ export const PortfolioHealthCard = ({
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           {isCompact && <Shield size={12} color={c.textSecondary} />}
-          <Text
+          <ThemedText
             style={[
               styles.sectionLabel,
               { color: c.textSecondary, fontSize: isCompact ? 9 : 10 },
             ]}
           >
             {isCompact ? 'HEALTH' : 'PORTFOLIO HEALTH'}
-          </Text>
+          </ThemedText>
         </View>
         <View style={styles.headerRight}>
           {!isCompact && (
@@ -197,9 +198,9 @@ export const PortfolioHealthCard = ({
                 { backgroundColor: `${gradeColor}22` },
               ]}
             >
-              <Text style={[styles.gradeText, { color: gradeColor }]}>
+              <ThemedText style={[styles.gradeText, { color: gradeColor }]}>
                 {grade}
-              </Text>
+              </ThemedText>
             </View>
           )}
           <View
@@ -232,9 +233,9 @@ export const PortfolioHealthCard = ({
               { backgroundColor: `${gradeColor}11` },
             ]}
           >
-            <Text style={[styles.compactGradeText, { color: gradeColor }]}>
+            <ThemedText style={[styles.compactGradeText, { color: gradeColor }]}>
               {grade.toUpperCase()}
-            </Text>
+            </ThemedText>
           </View>
         </View>
       ) : (
@@ -267,22 +268,22 @@ export const PortfolioHealthCard = ({
             style={[styles.scoreBox, { bottom: svgH - hubY + 15 }]}
             pointerEvents="none"
           >
-            <Text
+            <ThemedText
               style={[
                 styles.scoreNum,
                 { color: gradeColor, fontSize: 32, lineHeight: 36 },
               ]}
             >
               {totalScore}
-            </Text>
-            <Text
+            </ThemedText>
+            <ThemedText
               style={[
                 styles.scoreOut,
                 { color: c.textSecondary, fontSize: 14 },
               ]}
             >
               / 100
-            </Text>
+            </ThemedText>
           </View>
         </View>
       )}
@@ -309,7 +310,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_700Bold',
   },
   headerRight: {
     flexDirection: 'row',
@@ -324,7 +324,6 @@ const styles = StyleSheet.create({
   gradeText: {
     fontSize: 12,
     fontWeight: '700',
-    fontFamily: 'Outfit_700Bold',
   },
   iconCircle: {
     width: 28,
@@ -351,13 +350,11 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     lineHeight: 36,
-    fontFamily: 'Outfit_700Bold',
   },
   scoreOut: {
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 3,
-    fontFamily: 'Outfit_500Medium',
   },
   compactMain: {
     alignItems: 'center',
@@ -370,7 +367,6 @@ const styles = StyleSheet.create({
   compactScoreNum: {
     fontSize: 24,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   compactScoreLabel: {
     fontSize: 7,
@@ -378,7 +374,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginTop: -2,
-    fontFamily: 'Outfit_700Bold',
   },
   compactGradeBadge: {
     marginTop: 10,
@@ -390,6 +385,5 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.5,
-    fontFamily: 'Outfit_700Bold',
   },
 });

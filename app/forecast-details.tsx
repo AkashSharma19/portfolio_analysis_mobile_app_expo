@@ -13,10 +13,11 @@ import {
   Dimensions,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { LineChart } from 'react-native-gifted-charts';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -119,9 +120,9 @@ export default function ForecastDetailsScreen() {
     >
       <View style={[styles.header, { backgroundColor: currColors.background }]}>
         <BackButton />
-        <Text style={[styles.headerTitle, { color: currColors.text }]}>
+        <ThemedText style={[styles.headerTitle, { color: currColors.text }]}>
           Portfolio Forecast
-        </Text>
+        </ThemedText>
         <View style={{ width: 40 }} />
       </View>
 
@@ -135,13 +136,13 @@ export default function ForecastDetailsScreen() {
           {/* Header overlayed/integrated with graph */}
           <View style={[styles.graphStatsContainer, { marginBottom: 0 }]}>
             <View style={styles.headerTopRow}>
-              <Text
+              <ThemedText
                 style={[styles.heroLabel, { color: currColors.textSecondary }]}
               >
                 {activePoint
                   ? `PROJECTED BY ${currentYear + activePoint.year}`
                   : `PROJECTED BY ${currentYear + years}`}
-              </Text>
+              </ThemedText>
               <View
                 style={[
                   styles.multiplierBadge,
@@ -158,13 +159,13 @@ export default function ForecastDetailsScreen() {
                   },
                 ]}
               >
-                <Text style={[styles.badgeText, { color: currColors.tint }]}>
+                <ThemedText style={[styles.badgeText, { color: currColors.tint }]}>
                   {displayPoint.multiplier.toFixed(1)}x Growth
-                </Text>
+                </ThemedText>
               </View>
             </View>
 
-            <Text
+            <ThemedText
               style={[
                 styles.heroValue,
                 {
@@ -178,9 +179,9 @@ export default function ForecastDetailsScreen() {
               {isPrivacyMode
                 ? '****'
                 : `${showCurrencySymbol ? '₹' : ''}${formatValue(displayPoint.value)}`}
-            </Text>
+            </ThemedText>
 
-            <Text
+            <ThemedText
               style={[
                 styles.inflationNote,
                 {
@@ -193,7 +194,7 @@ export default function ForecastDetailsScreen() {
             >
               ≈ {showCurrencySymbol ? '₹' : ''}
               {formatValue(displayPoint.presentValue)} today
-            </Text>
+            </ThemedText>
           </View>
 
           <View
@@ -300,7 +301,7 @@ export default function ForecastDetailsScreen() {
                   years === y && { backgroundColor: currColors.tint },
                 ]}
               >
-                <Text
+                <ThemedText
                   style={[
                     styles.tabText,
                     {
@@ -314,7 +315,7 @@ export default function ForecastDetailsScreen() {
                   ]}
                 >
                   {y}Y
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             ))}
             <TouchableOpacity
@@ -324,7 +325,7 @@ export default function ForecastDetailsScreen() {
                 !isPredefined && { backgroundColor: currColors.tint },
               ]}
             >
-              <Text
+              <ThemedText
                 style={[
                   styles.tabText,
                   {
@@ -337,16 +338,16 @@ export default function ForecastDetailsScreen() {
                 ]}
               >
                 {isPredefined ? 'Custom' : `${years}Y`}
-              </Text>
+              </ThemedText>
             </TouchableOpacity>
           </View>
         </View>
 
-        <Text
+        <ThemedText
           style={[styles.sectionTitle, { color: currColors.textSecondary }]}
         >
           PROJECTION BREAKDOWN
-        </Text>
+        </ThemedText>
         <View
           style={[
             styles.dataCard,
@@ -357,28 +358,28 @@ export default function ForecastDetailsScreen() {
           ]}
         >
           <View style={styles.dataRow}>
-            <Text
+            <ThemedText
               style={[styles.dataLabel, { color: currColors.textSecondary }]}
             >
               Current Value
-            </Text>
-            <Text style={[styles.dataValue, { color: currColors.text }]}>
+            </ThemedText>
+            <ThemedText style={[styles.dataValue, { color: currColors.text }]}>
               {isPrivacyMode
                 ? '****'
                 : `${showCurrencySymbol ? '₹' : ''}${formatValue(summary.totalValue)}`}
-            </Text>
+            </ThemedText>
           </View>
           <View style={styles.dataRow}>
-            <Text
+            <ThemedText
               style={[styles.dataLabel, { color: currColors.textSecondary }]}
             >
               Monthly Investment
-            </Text>
-            <Text style={[styles.dataValue, { color: currColors.text }]}>
+            </ThemedText>
+            <ThemedText style={[styles.dataValue, { color: currColors.text }]}>
               {isPrivacyMode
                 ? '****'
                 : `${showCurrencySymbol ? '₹' : ''}${formatValue(monthlySIP)}`}
-            </Text>
+            </ThemedText>
           </View>
           <View
             style={[
@@ -387,53 +388,53 @@ export default function ForecastDetailsScreen() {
             ]}
           />
           <View style={styles.dataRow}>
-            <Text
+            <ThemedText
               style={[styles.dataLabel, { color: currColors.textSecondary }]}
             >
               Current XIRR
-            </Text>
-            <Text
+            </ThemedText>
+            <ThemedText
               style={[
                 styles.dataValue,
                 { color: annualReturn < 0 ? '#F44336' : '#4CAF50' },
               ]}
             >
               {(annualReturn * 100).toFixed(2)}%
-            </Text>
+            </ThemedText>
           </View>
           <View style={styles.dataRow}>
-            <Text
+            <ThemedText
               style={[styles.dataLabel, { color: currColors.textSecondary }]}
             >
               Total Invested Capital
-            </Text>
-            <Text style={[styles.dataValue, { color: currColors.text }]}>
+            </ThemedText>
+            <ThemedText style={[styles.dataValue, { color: currColors.text }]}>
               {isPrivacyMode
                 ? '****'
                 : `${showCurrencySymbol ? '₹' : ''}${formatValue(displayPoint.totalInvested)}`}
-            </Text>
+            </ThemedText>
           </View>
           <View style={styles.dataRow}>
-            <Text
+            <ThemedText
               style={[styles.dataLabel, { color: currColors.textSecondary }]}
             >
               Est. Capital Gains
-            </Text>
-            <Text style={[styles.dataValue, { color: '#4CAF50' }]}>
+            </ThemedText>
+            <ThemedText style={[styles.dataValue, { color: '#4CAF50' }]}>
               {isPrivacyMode
                 ? '****'
                 : `+${showCurrencySymbol ? '₹' : ''}${formatValue(displayPoint.estimatedGains)}`}
-            </Text>
+            </ThemedText>
           </View>
         </View>
 
         <View style={styles.infoBox}>
           <Info size={16} color={currColors.textSecondary} />
-          <Text style={[styles.infoText, { color: currColors.textSecondary }]}>
+          <ThemedText style={[styles.infoText, { color: currColors.textSecondary }]}>
             Projections are based on your current portfolio XIRR and average
             monthly investment. Past performance does not guarantee future
             results.
-          </Text>
+          </ThemedText>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -454,7 +455,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   scrollContent: {
     padding: 20,
@@ -475,14 +475,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_700Bold',
   },
   heroValue: {
     fontSize: 32,
     fontWeight: '400',
     marginBottom: 6,
     letterSpacing: -0.5,
-    fontFamily: 'Outfit_400Regular',
   },
   multiplierBadge: {
     paddingHorizontal: 8,
@@ -505,7 +503,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginLeft: 4,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_500Medium',
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -525,7 +522,6 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   dataCard: {
     borderRadius: 20,
@@ -542,13 +538,11 @@ const styles = StyleSheet.create({
   dataLabel: {
     fontSize: 13,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   dataValue: {
     fontSize: 13,
     fontWeight: '400',
     letterSpacing: 0,
-    fontFamily: 'Outfit_400Regular',
   },
   horizontalDivider: {
     height: 1,

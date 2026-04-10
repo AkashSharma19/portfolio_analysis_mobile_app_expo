@@ -2,6 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { getSectorIcon } from '@/constants/Sectors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
+import { Ticker } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,11 +16,12 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -144,7 +146,7 @@ export default function ExploreScreen() {
     return Array.from(sectors).sort();
   }, [tickers]);
 
-  const renderItem = ({ item, index }: { item: any; index: number }) => {
+  const renderItem = ({ item, index }: { item: Ticker; index: number }) => {
     const currentValue = item['Current Value'] || 0;
     const yesterdayClose = item['Yesterday Close'] || currentValue;
     const change = currentValue - yesterdayClose;
@@ -188,29 +190,29 @@ export default function ExploreScreen() {
                 />
               </View>
             ) : (
-              <Text
+              <ThemedText
                 style={[
                   styles.iconLetter,
                   { color: CHART_COLORS[index % CHART_COLORS.length] },
                 ]}
               >
                 {companyName[0]?.toUpperCase() || '?'}
-              </Text>
+              </ThemedText>
             )}
           </View>
           <View style={styles.infoCol}>
-            <Text
+            <ThemedText
               style={[styles.companyName, { color: currColors.text }]}
               numberOfLines={1}
             >
               {companyName}
-            </Text>
+            </ThemedText>
             <View style={styles.tickerRow}>
-              <Text
+              <ThemedText
                 style={[styles.tickerText, { color: currColors.textSecondary }]}
               >
                 {item.Tickers?.split(':').pop() || item.Tickers}
-              </Text>
+              </ThemedText>
               {item['Asset Type'] && (
                 <>
                   <View
@@ -219,14 +221,14 @@ export default function ExploreScreen() {
                       { backgroundColor: currColors.border },
                     ]}
                   />
-                  <Text
+                  <ThemedText
                     style={[
                       styles.assetTag,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     {item['Asset Type']}
-                  </Text>
+                  </ThemedText>
                 </>
               )}
             </View>
@@ -235,13 +237,13 @@ export default function ExploreScreen() {
         <View style={styles.itemRight}>
           <View style={styles.priceRow}>
             <View style={{ alignItems: 'flex-end', marginRight: 12 }}>
-              <Text style={[styles.currentPrice, { color: currColors.text }]}>
+              <ThemedText style={[styles.currentPrice, { color: currColors.text }]}>
                 {showCurrencySymbol ? '₹' : ''}
                 {currentValue.toLocaleString('en-IN', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
-              </Text>
+              </ThemedText>
               <View
                 style={[
                   styles.changeBadge,
@@ -259,14 +261,14 @@ export default function ExploreScreen() {
                     transform: [{ rotate: isPositive ? '0deg' : '180deg' }],
                   }}
                 />
-                <Text
+                <ThemedText
                   style={[
                     styles.changeText,
                     { color: isPositive ? '#4CAF50' : '#F44336' },
                   ]}
                 >
                   {Math.abs(changePercentage).toFixed(2)}%
-                </Text>
+                </ThemedText>
               </View>
             </View>
             <TouchableOpacity
@@ -325,11 +327,11 @@ export default function ExploreScreen() {
             { marginTop: 8, paddingHorizontal: 16 },
           ]}
         >
-          <Text
+          <ThemedText
             style={[styles.sectionTitle, { color: currColors.textSecondary }]}
           >
             TOP MOVERS
-          </Text>
+          </ThemedText>
         </View>
         <ScrollView
           horizontal
@@ -375,14 +377,14 @@ export default function ExploreScreen() {
                         />
                       </View>
                     ) : (
-                      <Text
+                      <ThemedText
                         style={[
                           styles.moverIconText,
                           { color: currColors.text },
                         ]}
                       >
                         {item['Company Name']?.[0] || '?'}
-                      </Text>
+                      </ThemedText>
                     )}
                   </View>
                   <View
@@ -395,7 +397,7 @@ export default function ExploreScreen() {
                       },
                     ]}
                   >
-                    <Text
+                    <ThemedText
                       style={[
                         styles.miniBadgeText,
                         { color: isPositive ? '#4CAF50' : '#F44336' },
@@ -403,16 +405,16 @@ export default function ExploreScreen() {
                     >
                       {isPositive ? '+' : ''}
                       {item.changePercentage.toFixed(2)}%
-                    </Text>
+                    </ThemedText>
                   </View>
                 </View>
-                <Text
+                <ThemedText
                   style={[styles.moverSymbol, { color: currColors.text }]}
                   numberOfLines={1}
                 >
                   {item['Company Name']}
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[
                     styles.moverPrice,
                     { color: currColors.textSecondary },
@@ -420,7 +422,7 @@ export default function ExploreScreen() {
                 >
                   {showCurrencySymbol ? '₹' : ''}
                   {item['Current Value']?.toLocaleString('en-IN')}
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             );
           })}
@@ -440,11 +442,11 @@ export default function ExploreScreen() {
     return (
       <View style={styles.sectorGridContainer}>
         <View style={styles.sectionHeader}>
-          <Text
+          <ThemedText
             style={[styles.sectionTitle, { color: currColors.textSecondary }]}
           >
             BROWSE SECTORS
-          </Text>
+          </ThemedText>
         </View>
         <View style={styles.sectorGrid}>
           {displaySectors.map((sName) => {
@@ -466,12 +468,12 @@ export default function ExploreScreen() {
                 >
                   <SectorIcon size={20} color={color} />
                 </View>
-                <Text
+                <ThemedText
                   style={[styles.sectorName, { color: currColors.text }]}
                   numberOfLines={1}
                 >
                   {sName}
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             );
           })}
@@ -490,9 +492,9 @@ export default function ExploreScreen() {
             >
               <Ionicons name="apps-outline" size={20} color={currColors.tint} />
             </View>
-            <Text style={[styles.sectorName, { color: currColors.tint }]}>
+            <ThemedText style={[styles.sectorName, { color: currColors.tint }]}>
               More
-            </Text>
+            </ThemedText>
           </TouchableOpacity>
         </View>
       </View>
@@ -507,18 +509,20 @@ export default function ExploreScreen() {
         {recentSearches.length > 0 && (
           <View style={styles.focusSection}>
             <View style={styles.focusHeader}>
-              <Text
+              <ThemedText
                 style={[
                   styles.sectionTitle,
                   { color: currColors.textSecondary },
                 ]}
               >
                 RECENT SEARCHES
-              </Text>
+              </ThemedText>
               <TouchableOpacity onPress={clearRecentSearches}>
-                <Text style={[styles.clearAllText, { color: currColors.tint }]}>
+                <ThemedText
+                  style={[styles.clearAllText, { color: currColors.tint }]}
+                >
                   Clear All
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             </View>
             <View style={styles.historyChips}>
@@ -539,11 +543,11 @@ export default function ExploreScreen() {
                     size={14}
                     color={currColors.textSecondary}
                   />
-                  <Text
+                  <ThemedText
                     style={[styles.historyChipText, { color: currColors.text }]}
                   >
                     {term}
-                  </Text>
+                  </ThemedText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -625,14 +629,14 @@ export default function ExploreScreen() {
             <View style={styles.filtersContainer}>
               {uniqueAssetTypes.length > 0 && (
                 <View style={styles.filterRow}>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.filterLabel,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     Asset Type
-                  </Text>
+                  </ThemedText>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -652,7 +656,7 @@ export default function ExploreScreen() {
                         setFilterAssetType(null);
                       }}
                     >
-                      <Text
+                      <ThemedText
                         style={[
                           styles.filterChipText,
                           { color: currColors.textSecondary },
@@ -661,7 +665,7 @@ export default function ExploreScreen() {
                         ]}
                       >
                         All
-                      </Text>
+                      </ThemedText>
                     </TouchableOpacity>
                     {uniqueAssetTypes.map((at) => (
                       <TouchableOpacity
@@ -681,7 +685,7 @@ export default function ExploreScreen() {
                           setFilterAssetType(at);
                         }}
                       >
-                        <Text
+                        <ThemedText
                           style={[
                             styles.filterChipText,
                             { color: currColors.textSecondary },
@@ -690,7 +694,7 @@ export default function ExploreScreen() {
                           ]}
                         >
                           {at}
-                        </Text>
+                        </ThemedText>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -728,25 +732,25 @@ export default function ExploreScreen() {
                 {!isSearchFocused && renderSectorGrid()}
                 {searchQuery || filterAssetType ? (
                   <View style={[styles.sectionHeader, { marginTop: 10 }]}>
-                    <Text
+                    <ThemedText
                       style={[
                         styles.sectionTitle,
                         { color: currColors.textSecondary },
                       ]}
                     >
                       SEARCH RESULTS
-                    </Text>
+                    </ThemedText>
                   </View>
                 ) : !isSearchFocused ? (
                   <View style={[styles.sectionHeader, { marginTop: 20 }]}>
-                    <Text
+                    <ThemedText
                       style={[
                         styles.sectionTitle,
                         { color: currColors.textSecondary },
                       ]}
                     >
                       WATCHLIST
-                    </Text>
+                    </ThemedText>
                   </View>
                 ) : null}
               </>
@@ -772,7 +776,7 @@ export default function ExploreScreen() {
                     color={currColors.textSecondary}
                     style={{ marginBottom: 16 }}
                   />
-                  <Text
+                  <ThemedText
                     style={[
                       styles.emptyText,
                       { color: currColors.textSecondary, textAlign: 'center' },
@@ -781,7 +785,7 @@ export default function ExploreScreen() {
                     {searchQuery
                       ? 'No companies found'
                       : 'Your watchlist is empty.\nSearch for companies to add them.'}
-                  </Text>
+                  </ThemedText>
                 </View>
               )
             }
@@ -797,7 +801,7 @@ const MarketRibbon = ({
   isVisible,
   currColors,
 }: {
-  indicesData: any[];
+  indicesData: Ticker[];
   isVisible: boolean;
   currColors: any;
 }) => {
@@ -826,7 +830,7 @@ const MarketRibbon = ({
               key={`${item.Tickers}-${index}`}
               style={[styles.tickerItem, { backgroundColor: currColors.card }]}
             >
-              <Text
+              <ThemedText
                 style={[
                   styles.tickerLabel,
                   { color: currColors.text, marginRight: 8 },
@@ -835,15 +839,15 @@ const MarketRibbon = ({
                 ellipsizeMode="tail"
               >
                 {item['Company Name'] || item.Tickers}
-              </Text>
+              </ThemedText>
               <View
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
               >
-                <Text style={[styles.tickerPrice, { color: currColors.text }]}>
+                <ThemedText style={[styles.tickerPrice, { color: currColors.text }]}>
                   {currentValue.toLocaleString('en-IN', {
                     maximumFractionDigits: 2,
                   })}
-                </Text>
+                </ThemedText>
                 <View style={styles.tickerChangeContainer}>
                   <TrendingUp
                     size={12}
@@ -853,14 +857,14 @@ const MarketRibbon = ({
                       transform: [{ rotate: isPositive ? '0deg' : '180deg' }],
                     }}
                   />
-                  <Text
+                  <ThemedText
                     style={[
                       styles.tickerChange,
                       { color: isPositive ? '#4CAF50' : '#F44336' },
                     ]}
                   >
                     {Math.abs(changePercentage).toFixed(2)}%
-                  </Text>
+                  </ThemedText>
                 </View>
               </View>
             </View>
@@ -935,7 +939,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    fontFamily: 'Outfit_600SemiBold',
   },
   filterChip: {
     paddingHorizontal: 16,
@@ -952,12 +955,10 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     fontSize: 13,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   filterChipTextActive: {
     color: '#FFF',
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   listContent: {
     paddingHorizontal: 16,
@@ -988,7 +989,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   infoCol: {
     flex: 1,
@@ -997,7 +997,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 2,
-    fontFamily: 'Outfit_600SemiBold',
   },
   tickerRow: {
     flexDirection: 'row',
@@ -1006,7 +1005,6 @@ const styles = StyleSheet.create({
   tickerText: {
     fontSize: 12,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   tagDot: {
     width: 3,
@@ -1017,7 +1015,6 @@ const styles = StyleSheet.create({
   assetTag: {
     fontSize: 11,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   itemRight: {
     alignItems: 'flex-end',
@@ -1026,7 +1023,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 4,
-    fontFamily: 'Outfit_400Regular',
   },
   changeBadge: {
     flexDirection: 'row',
@@ -1039,7 +1035,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '400',
     marginLeft: 4,
-    fontFamily: 'Outfit_400Regular',
   },
   priceRow: {
     flexDirection: 'row',
@@ -1055,7 +1050,6 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#8E8E93',
     fontSize: 16,
-    fontFamily: 'Outfit_400Regular',
   },
   sectionHeader: {
     marginBottom: 12,
@@ -1065,7 +1059,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_700Bold',
   },
   topMoversContainer: {
     marginBottom: 24,
@@ -1097,7 +1090,6 @@ const styles = StyleSheet.create({
   moverIconText: {
     fontSize: 14,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   miniBadge: {
     paddingHorizontal: 6,
@@ -1107,18 +1099,15 @@ const styles = StyleSheet.create({
   miniBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    fontFamily: 'Outfit_700Bold',
   },
   moverSymbol: {
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
-    fontFamily: 'Outfit_600SemiBold',
   },
   moverPrice: {
     fontSize: 12,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   sectorGridContainer: {
     marginBottom: 24,
@@ -1146,7 +1135,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     letterSpacing: -0.2,
-    fontFamily: 'Outfit_500Medium',
   },
   ribbonContainer: {
     height: 50,
@@ -1174,13 +1162,11 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 12,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   tickerPrice: {
     color: '#FFF',
     fontSize: 12,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   tickerChangeContainer: {
     flexDirection: 'row',
@@ -1189,7 +1175,6 @@ const styles = StyleSheet.create({
   tickerChange: {
     fontSize: 11,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   focusView: {
     flex: 1,
@@ -1208,7 +1193,6 @@ const styles = StyleSheet.create({
   clearAllText: {
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   historyChips: {
     flexDirection: 'row',
@@ -1227,6 +1211,5 @@ const styles = StyleSheet.create({
   historyChipText: {
     fontSize: 13,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
 });

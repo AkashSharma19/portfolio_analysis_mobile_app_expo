@@ -12,10 +12,11 @@ import {
   SafeAreaView,
   StyleSheet,
   Switch,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -41,9 +42,9 @@ export default function SettingsScreen() {
           style={[styles.header, { backgroundColor: currColors.background }]}
         >
           <BackButton />
-          <Text style={[styles.headerTitle, { color: currColors.text }]}>
+          <ThemedText style={[styles.headerTitle, { color: currColors.text }]}>
             Settings
-          </Text>
+          </ThemedText>
           <View style={{ width: 40 }} />
         </View>
 
@@ -59,17 +60,17 @@ export default function SettingsScreen() {
           >
             <View style={styles.settingRow}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.settingTitle, { color: currColors.text }]}>
+                <ThemedText style={[styles.settingTitle, { color: currColors.text }]}>
                   Appearance
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[
                     styles.settingDescription,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Choose how the app looks to you
-                </Text>
+                </ThemedText>
               </View>
             </View>
 
@@ -101,7 +102,7 @@ export default function SettingsScreen() {
                       : currColors.textSecondary
                   }
                 />
-                <Text
+                <ThemedText
                   style={[
                     styles.themeText,
                     {
@@ -113,7 +114,7 @@ export default function SettingsScreen() {
                   ]}
                 >
                   Light
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -138,7 +139,7 @@ export default function SettingsScreen() {
                       : currColors.textSecondary
                   }
                 />
-                <Text
+                <ThemedText
                   style={[
                     styles.themeText,
                     {
@@ -150,7 +151,7 @@ export default function SettingsScreen() {
                   ]}
                 >
                   Dark
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -175,7 +176,7 @@ export default function SettingsScreen() {
                       : currColors.textSecondary
                   }
                 />
-                <Text
+                <ThemedText
                   style={[
                     styles.themeText,
                     {
@@ -187,7 +188,7 @@ export default function SettingsScreen() {
                   ]}
                 >
                   System
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             </View>
 
@@ -197,17 +198,17 @@ export default function SettingsScreen() {
 
             <View style={styles.settingRow}>
               <View>
-                <Text style={[styles.settingTitle, { color: currColors.text }]}>
+                <ThemedText style={[styles.settingTitle, { color: currColors.text }]}>
                   Show Currency Symbol
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[
                     styles.settingDescription,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Display symbols like ₹ in portfolios
-                </Text>
+                </ThemedText>
               </View>
               <Switch
                 value={showCurrencySymbol}
@@ -246,7 +247,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   content: {
     flex: 1,
@@ -266,7 +266,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
-    fontFamily: 'Outfit_600SemiBold',
   },
   settingDescription: {
     fontSize: 11,
@@ -290,11 +289,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     gap: 8,
-    fontFamily: 'Outfit_400Regular',
   },
   themeText: {
     fontSize: 12,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
 });

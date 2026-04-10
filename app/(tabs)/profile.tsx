@@ -31,11 +31,12 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as XLSX from 'xlsx';
@@ -424,11 +425,11 @@ export default function ProfileScreen() {
                 />
               </View>
               <View style={styles.nameContainer}>
-                <Text style={[styles.nameText, { color: currColors.text }]}>
+                <ThemedText style={[styles.nameText, { color: currColors.text }]}>
                   {userName || 'Set up your profile'}
-                </Text>
+                </ThemedText>
                 {userEmail ? (
-                  <Text
+                  <ThemedText
                     style={[
                       styles.emailText,
                       { color: currColors.textSecondary },
@@ -436,16 +437,16 @@ export default function ProfileScreen() {
                     numberOfLines={1}
                   >
                     {userEmail}
-                  </Text>
+                  </ThemedText>
                 ) : (
-                  <Text
+                  <ThemedText
                     style={[
                       styles.emailText,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     Tap the edit icon to get started
-                  </Text>
+                  </ThemedText>
                 )}
               </View>
               <TouchableOpacity
@@ -461,32 +462,32 @@ export default function ProfileScreen() {
 
             <View style={styles.statsBar}>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: currColors.text }]}>
+                <ThemedText style={[styles.statValue, { color: currColors.text }]}>
                   {isPrivacyMode ? '****' : transactions.length}
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[
                     styles.statLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Transactions
-                </Text>
+                </ThemedText>
               </View>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: currColors.text }]}>
+                <ThemedText style={[styles.statValue, { color: currColors.text }]}>
                   {isPrivacyMode
                     ? '****'
                     : `${showCurrencySymbol ? '₹' : ''}${summary.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0, notation: 'compact', compactDisplay: 'short' })}`}
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[
                     styles.statLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Net assets
-                </Text>
+                </ThemedText>
               </View>
             </View>
           </View>
@@ -514,9 +515,9 @@ export default function ProfileScreen() {
                 >
                   <FileText size={24} color={currColors.tint} />
                 </View>
-                <Text style={[styles.gridLabel, { color: currColors.text }]}>
+                <ThemedText style={[styles.gridLabel, { color: currColors.text }]}>
                   Sample
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -531,9 +532,9 @@ export default function ProfileScreen() {
                 >
                   <Upload size={24} color={currColors.tint} />
                 </View>
-                <Text style={[styles.gridLabel, { color: currColors.text }]}>
+                <ThemedText style={[styles.gridLabel, { color: currColors.text }]}>
                   Import
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -548,9 +549,9 @@ export default function ProfileScreen() {
                 >
                   <Database size={24} color={currColors.tint} />
                 </View>
-                <Text style={[styles.gridLabel, { color: currColors.text }]}>
+                <ThemedText style={[styles.gridLabel, { color: currColors.text }]}>
                   Backup
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -565,9 +566,9 @@ export default function ProfileScreen() {
                 >
                   <Download size={24} color={currColors.tint} />
                 </View>
-                <Text style={[styles.gridLabel, { color: currColors.text }]}>
+                <ThemedText style={[styles.gridLabel, { color: currColors.text }]}>
                   Export
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             </View>
 
@@ -584,9 +585,9 @@ export default function ProfileScreen() {
                 >
                   <Settings size={24} color={currColors.tint} />
                 </View>
-                <Text style={[styles.gridLabel, { color: currColors.text }]}>
+                <ThemedText style={[styles.gridLabel, { color: currColors.text }]}>
                   Settings
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -605,9 +606,9 @@ export default function ProfileScreen() {
                 >
                   <MessageCircle size={24} color="#25D366" />
                 </View>
-                <Text style={[styles.gridLabel, { color: currColors.text }]}>
+                <ThemedText style={[styles.gridLabel, { color: currColors.text }]}>
                   WhatsApp
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
 
               {/* Spacers to align left with space-between */}
@@ -646,9 +647,9 @@ export default function ProfileScreen() {
                   { borderBottomColor: currColors.border },
                 ]}
               >
-                <Text style={[styles.modalTitle, { color: currColors.text }]}>
+                <ThemedText style={[styles.modalTitle, { color: currColors.text }]}>
                   Edit Profile
-                </Text>
+                </ThemedText>
                 <TouchableOpacity
                   onPress={() => setIsEditModalVisible(false)}
                   style={styles.closeButton}
@@ -745,7 +746,7 @@ export default function ProfileScreen() {
                   style={styles.saveButton}
                   onPress={handleSaveProfile}
                 >
-                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                  <ThemedText style={styles.saveButtonText}>Save Changes</ThemedText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -817,13 +818,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: '#FFF',
-    fontFamily: 'Outfit_600SemiBold',
   },
   emailText: {
     fontSize: 14,
     color: '#8E8E93',
     marginTop: 2,
-    fontFamily: 'Outfit_400Regular',
   },
   mainEditIcon: {
     width: 40,
@@ -845,12 +844,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFF',
     marginBottom: 4,
-    fontFamily: 'Outfit_600SemiBold',
   },
   statLabel: {
     fontSize: 12,
     color: '#8E8E93',
-    fontFamily: 'Outfit_400Regular',
   },
   actionGridContainer: {
     borderRadius: 24,
@@ -879,7 +876,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFF',
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   // Modal Styles
   modalOverlay: {
@@ -904,7 +900,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: '#FFF',
-    fontFamily: 'Outfit_600SemiBold',
   },
   closeButton: {
     padding: 4,
@@ -970,6 +965,5 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
 });

@@ -117,7 +117,10 @@ export const usePortfolioStore = create<PortfolioState>()(
           const sym = t.Tickers.trim().toUpperCase();
           priceMap.set(sym, t['Current Value']);
           closeMap.set(sym, t['Yesterday Close'] ?? t['Current Value']);
-          oneYearAgoPriceMap.set(sym, t['Today - 365'] ?? t['Current Value']);
+          oneYearAgoPriceMap.set(
+            sym,
+            (t['Today - 365'] as number) ?? (t['Current Value'] as number),
+          );
         });
 
         const sortedTransactions = [...transactions].sort((a, b) => {
@@ -196,8 +199,8 @@ export const usePortfolioStore = create<PortfolioState>()(
               (t) => t.Tickers.trim().toUpperCase() === sym,
             );
             const price1Y =
-              (ticker as any)?.['Today - 365'] ??
-              (ticker as any)?.['Current Value'] ??
+              (ticker?.['Today - 365'] as number) ??
+              ticker?.['Current Value'] ??
               0;
             valueOneYearAgo += qty * price1Y;
           }
@@ -307,8 +310,8 @@ export const usePortfolioStore = create<PortfolioState>()(
           let dimensionValue = 'Unknown';
           if (dimension === 'Broker' && lastTransaction) {
             dimensionValue = lastTransaction.broker || 'No Broker';
-          } else if (ticker && (ticker as any)[dimension]) {
-            dimensionValue = (ticker as any)[dimension];
+          } else if (ticker && ticker[dimension]) {
+            dimensionValue = String(ticker[dimension]);
           } else if (dimension === 'Company Name') {
             dimensionValue = ticker ? ticker['Company Name'] : symbol;
           }
@@ -384,7 +387,7 @@ export const usePortfolioStore = create<PortfolioState>()(
         });
 
         let totalPortfolioValue = 0;
-        const preliminaryHoldings: any[] = [];
+        const preliminaryHoldings: import('../types').Holding[] = [];
         holdingsMap.forEach((data, symbol) => {
           if (data.quantity <= 0) return;
           const ticker = tickerMap.get(symbol);

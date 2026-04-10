@@ -8,11 +8,12 @@ import React from 'react';
 import {
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Circle,
@@ -96,9 +97,9 @@ export default function PortfolioHealthScreen() {
     >
       <View style={[styles.header, { backgroundColor: c.background }]}>
         <BackButton />
-        <Text style={[styles.headerTitle, { color: c.text }]}>
+        <ThemedText style={[styles.headerTitle, { color: c.text }]}>
           Portfolio Health
-        </Text>
+        </ThemedText>
         <View style={{ width: 40 }} />
       </View>
 
@@ -116,18 +117,18 @@ export default function PortfolioHealthScreen() {
         >
           <View style={styles.heroTop}>
             <View style={styles.heroHeader}>
-              <Text style={[styles.heroLabel, { color: c.textSecondary }]}>
+              <ThemedText style={[styles.heroLabel, { color: c.textSecondary }]}>
                 HEALTH SCORE
-              </Text>
+              </ThemedText>
               <View
                 style={[
                   styles.gradeBadge,
                   { backgroundColor: `${gradeColor}22` },
                 ]}
               >
-                <Text style={[styles.gradeText, { color: gradeColor }]}>
+                <ThemedText style={[styles.gradeText, { color: gradeColor }]}>
                   {grade.toUpperCase()}
-                </Text>
+                </ThemedText>
               </View>
             </View>
           </View>
@@ -178,20 +179,20 @@ export default function PortfolioHealthScreen() {
               style={[styles.scoreBox, { bottom: svgH - hubY + 10 }]}
               pointerEvents="none"
             >
-              <Text style={[styles.scoreNum, { color: c.text }]}>
+              <ThemedText style={[styles.scoreNum, { color: c.text }]}>
                 {totalScore}
-              </Text>
-              <Text style={[styles.scoreOut, { color: c.textSecondary }]}>
+              </ThemedText>
+              <ThemedText style={[styles.scoreOut, { color: c.textSecondary }]}>
                 /100
-              </Text>
+              </ThemedText>
             </View>
           </View>
         </View>
 
         <View style={styles.sectionHeaderRow}>
-          <Text style={[styles.sectionTitle, { color: c.textSecondary }]}>
+          <ThemedText style={[styles.sectionTitle, { color: c.textSecondary }]}>
             HEALTH DIMENSIONS
-          </Text>
+          </ThemedText>
         </View>
 
         <View style={styles.listContainer}>
@@ -215,16 +216,16 @@ export default function PortfolioHealthScreen() {
               >
                 <View style={styles.dimContent}>
                   <View style={styles.dimHeader}>
-                    <Text style={[styles.dimLabel, { color: c.text }]}>
+                    <ThemedText style={[styles.dimLabel, { color: c.text }]}>
                       {dim.label}
-                    </Text>
+                    </ThemedText>
                     <View style={styles.dimScoreBox}>
-                      <Text style={[styles.dimScore, { color: dc }]}>
+                      <ThemedText style={[styles.dimScore, { color: dc }]}>
                         {dim.score}
-                      </Text>
-                      <Text style={[styles.dimMax, { color: c.textSecondary }]}>
+                      </ThemedText>
+                      <ThemedText style={[styles.dimMax, { color: c.textSecondary }]}>
                         /{dim.maxScore}
-                      </Text>
+                      </ThemedText>
                     </View>
                   </View>
                   <View
@@ -240,9 +241,9 @@ export default function PortfolioHealthScreen() {
                       ]}
                     />
                   </View>
-                  <Text style={[styles.dimDesc, { color: c.textSecondary }]}>
+                  <ThemedText style={[styles.dimDesc, { color: c.textSecondary }]}>
                     {dim.description}
-                  </Text>
+                  </ThemedText>
                 </View>
               </View>
             );
@@ -256,9 +257,9 @@ export default function PortfolioHealthScreen() {
             router.push('/portfolio-health-formula');
           }}
         >
-          <Text style={[styles.formulaLinkText, { color: c.textSecondary }]}>
+          <ThemedText style={[styles.formulaLinkText, { color: c.textSecondary }]}>
             How is this calculated?
-          </Text>
+          </ThemedText>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -277,7 +278,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   scrollContent: { padding: 20, paddingBottom: 40 },
   heroCard: {
@@ -301,7 +301,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_700Bold',
   },
   gaugeContainer: {
     position: 'relative',
@@ -321,7 +320,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 52,
     letterSpacing: -1,
-    fontFamily: 'Outfit_400Regular',
   },
   scoreOut: {
     fontSize: 14,
@@ -348,7 +346,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_700Bold',
   },
   listContainer: {
     gap: 16,
@@ -369,7 +366,6 @@ const styles = StyleSheet.create({
   dimLabel: {
     fontSize: 14,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   dimScoreBox: { flexDirection: 'row', alignItems: 'flex-end' },
   dimScore: {

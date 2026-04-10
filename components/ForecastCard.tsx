@@ -4,7 +4,8 @@ import { calculateProjection } from '@/lib/finance';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { ArrowRight } from 'lucide-react-native';
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ThemedText } from './ThemedText';
 
 interface ForecastCardProps {
   onPress?: () => void;
@@ -65,22 +66,22 @@ export const ForecastCard = ({
       ]}
     >
       <View>
-        <Text style={[styles.title, { color: currColors.textSecondary }]}>
+        <ThemedText style={[styles.title, { color: currColors.textSecondary }]}>
           FORECAST ({years}Y)
-        </Text>
+        </ThemedText>
         <View style={styles.content}>
           <View>
-            <Text style={[styles.mainValue, { color: currColors.text }]}>
+            <ThemedText style={[styles.mainValue, { color: currColors.text }]}>
               {isPrivacyMode
                 ? '****'
                 : `${showCurrencySymbol ? '₹' : ''}${formatValue(projection.totalFutureValue)}`}
-            </Text>
-            <Text
+            </ThemedText>
+            <ThemedText
               style={[styles.subValue, { color: currColors.textSecondary }]}
             >
               Worth {showCurrencySymbol ? '₹' : ''}
               {formatValue(projection.presentValue)} today
-            </Text>
+            </ThemedText>
           </View>
           <View style={styles.rightContent}>
             <View
@@ -89,9 +90,9 @@ export const ForecastCard = ({
                 { backgroundColor: 'rgba(0, 122, 255, 0.1)' },
               ]}
             >
-              <Text style={[styles.badgeText, { color: currColors.tint }]}>
+              <ThemedText style={[styles.badgeText, { color: currColors.tint }]}>
                 {projection.multiplier.toFixed(1)}x
-              </Text>
+              </ThemedText>
             </View>
             <View
               style={[
@@ -126,7 +127,6 @@ const styles = StyleSheet.create({
     fontWeight: '700', // Standardized Section Weight
     letterSpacing: 1, // Tracking wide
     textTransform: 'uppercase', // Uppercase
-    fontFamily: 'Outfit_700Bold',
   },
   rightContent: {
     flexDirection: 'row',
@@ -141,17 +141,14 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   mainValue: {
     fontSize: 20,
     fontWeight: '500',
     marginBottom: 2,
-    fontFamily: 'Outfit_500Medium',
   },
   subValue: {
     fontSize: 12,
-    fontFamily: 'Outfit_400Regular',
   },
   iconCircle: {
     width: 28,

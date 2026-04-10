@@ -5,7 +5,8 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { ChevronRight, Sparkles } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ThemedText } from './ThemedText';
 
 export const InsightsSummaryCard = () => {
   const router = useRouter();
@@ -43,9 +44,9 @@ export const InsightsSummaryCard = () => {
           <View style={[styles.iconContainer, { backgroundColor: '#5AC8FA' }]}>
             <Sparkles size={14} color="#FFF" />
           </View>
-          <Text style={[styles.title, { color: currColors.text }]}>
+          <ThemedText style={[styles.title, { color: currColors.text }]}>
             {count} Actionable {count === 1 ? 'Insight' : 'Insights'}
-          </Text>
+          </ThemedText>
         </View>
         <ChevronRight size={18} color={currColors.textSecondary} />
       </View>
@@ -56,14 +57,14 @@ export const InsightsSummaryCard = () => {
             <View
               style={[styles.categoryDot, { backgroundColor: '#34C759' }]}
             />
-            <Text
+            <ThemedText
               style={[styles.categoryText, { color: currColors.textSecondary }]}
             >
-              <Text style={{ color: '#34C759', fontWeight: '700' }}>
+              <ThemedText style={{ color: '#34C759', fontWeight: '700' }}>
                 {countByCategory['Buy']}
-              </Text>{' '}
+              </ThemedText>{' '}
               Buy
-            </Text>
+            </ThemedText>
           </View>
         )}
         {countByCategory['Sell/Hold'] > 0 && (
@@ -71,14 +72,14 @@ export const InsightsSummaryCard = () => {
             <View
               style={[styles.categoryDot, { backgroundColor: '#FF3B30' }]}
             />
-            <Text
+            <ThemedText
               style={[styles.categoryText, { color: currColors.textSecondary }]}
             >
-              <Text style={{ color: '#FF3B30', fontWeight: '700' }}>
+              <ThemedText style={{ color: '#FF3B30', fontWeight: '700' }}>
                 {countByCategory['Sell/Hold']}
-              </Text>{' '}
+              </ThemedText>{' '}
               Sell/Hold
-            </Text>
+            </ThemedText>
           </View>
         )}
         {countByCategory['Observe'] > 0 && (
@@ -86,14 +87,14 @@ export const InsightsSummaryCard = () => {
             <View
               style={[styles.categoryDot, { backgroundColor: '#007AFF' }]}
             />
-            <Text
+            <ThemedText
               style={[styles.categoryText, { color: currColors.textSecondary }]}
             >
-              <Text style={{ color: '#007AFF', fontWeight: '700' }}>
+              <ThemedText style={{ color: '#007AFF', fontWeight: '700' }}>
                 {countByCategory['Observe']}
-              </Text>{' '}
+              </ThemedText>{' '}
               Observe
-            </Text>
+            </ThemedText>
           </View>
         )}
       </View>

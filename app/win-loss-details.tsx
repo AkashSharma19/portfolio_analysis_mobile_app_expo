@@ -10,10 +10,11 @@ import {
   Image,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function WinLossDetailsScreen() {
@@ -94,9 +95,9 @@ export default function WinLossDetailsScreen() {
     >
       <View style={[styles.header, { backgroundColor: currColors.background }]}>
         <BackButton />
-        <Text style={[styles.headerTitle, { color: currColors.text }]}>
+        <ThemedText style={[styles.headerTitle, { color: currColors.text }]}>
           Win / Loss Details
-        </Text>
+        </ThemedText>
         <View style={{ width: 40 }} />
       </View>
 
@@ -115,12 +116,12 @@ export default function WinLossDetailsScreen() {
             },
           ]}
         >
-          <Text style={[styles.heroLabel, { color: currColors.textSecondary }]}>
+          <ThemedText style={[styles.heroLabel, { color: currColors.textSecondary }]}>
             WIN RATE
-          </Text>
-          <Text style={[styles.heroValue, { color: currColors.text }]}>
+          </ThemedText>
+          <ThemedText style={[styles.heroValue, { color: currColors.text }]}>
             {isPrivacyMode ? '****' : `${stats.winRate.toFixed(2)}%`}
-          </Text>
+          </ThemedText>
 
           {/* Progress Bar */}
           <View style={styles.barContainer}>
@@ -151,22 +152,22 @@ export default function WinLossDetailsScreen() {
 
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
-              <Text
+              <ThemedText
                 style={[
                   styles.summaryLabel,
                   { color: currColors.textSecondary },
                 ]}
               >
                 Winners
-              </Text>
-              <Text style={[styles.summaryValue, { color: '#4CAF50' }]}>
+              </ThemedText>
+              <ThemedText style={[styles.summaryValue, { color: '#4CAF50' }]}>
                 {isPrivacyMode ? '****' : stats.winners}
-              </Text>
-              <Text style={[styles.summaryAmount, { color: '#4CAF50' }]}>
+              </ThemedText>
+              <ThemedText style={[styles.summaryAmount, { color: '#4CAF50' }]}>
                 {isPrivacyMode
                   ? '****'
                   : `+${showCurrencySymbol ? '₹' : ''}${formatCompactValue(stats.winnersProfit)}`}
-              </Text>
+              </ThemedText>
             </View>
             <View
               style={[
@@ -175,22 +176,22 @@ export default function WinLossDetailsScreen() {
               ]}
             />
             <View style={styles.summaryItem}>
-              <Text
+              <ThemedText
                 style={[
                   styles.summaryLabel,
                   { color: currColors.textSecondary },
                 ]}
               >
                 Losers
-              </Text>
-              <Text style={[styles.summaryValue, { color: '#F44336' }]}>
+              </ThemedText>
+              <ThemedText style={[styles.summaryValue, { color: '#F44336' }]}>
                 {isPrivacyMode ? '****' : stats.losers}
-              </Text>
-              <Text style={[styles.summaryAmount, { color: '#F44336' }]}>
+              </ThemedText>
+              <ThemedText style={[styles.summaryAmount, { color: '#F44336' }]}>
                 {isPrivacyMode
                   ? '****'
                   : `-${showCurrencySymbol ? '₹' : ''}${formatCompactValue(Math.abs(stats.losersLoss))}`}
-              </Text>
+              </ThemedText>
             </View>
           </View>
         </View>
@@ -216,7 +217,7 @@ export default function WinLossDetailsScreen() {
             }}
             activeOpacity={0.7}
           >
-            <Text
+            <ThemedText
               style={[
                 styles.tabText,
                 {
@@ -228,7 +229,7 @@ export default function WinLossDetailsScreen() {
               ]}
             >
               Winners ({stats.winners})
-            </Text>
+            </ThemedText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -241,7 +242,7 @@ export default function WinLossDetailsScreen() {
             }}
             activeOpacity={0.7}
           >
-            <Text
+            <ThemedText
               style={[
                 styles.tabText,
                 {
@@ -253,7 +254,7 @@ export default function WinLossDetailsScreen() {
               ]}
             >
               Losers ({stats.losers})
-            </Text>
+            </ThemedText>
           </TouchableOpacity>
         </View>
 
@@ -304,24 +305,24 @@ export default function WinLossDetailsScreen() {
                         />
                       </View>
                     ) : (
-                      <Text
+                      <ThemedText
                         style={[
                           styles.logoPlaceholderText,
                           { color: currColors.text },
                         ]}
                       >
                         {holding.symbol.substring(0, 2).toUpperCase()}
-                      </Text>
+                      </ThemedText>
                     )}
                   </View>
                   <View style={styles.holdingInfo}>
-                    <Text
+                    <ThemedText
                       style={[styles.holdingSymbol, { color: currColors.text }]}
                       numberOfLines={1}
                     >
                       {holding.companyName}
-                    </Text>
-                    <Text
+                    </ThemedText>
+                    <ThemedText
                       style={[
                         styles.holdingValue,
                         { color: currColors.textSecondary },
@@ -330,15 +331,15 @@ export default function WinLossDetailsScreen() {
                       {isPrivacyMode
                         ? '****'
                         : `${showCurrencySymbol ? '₹' : ''}${formatCompactValue(holding.currentValue)}`}
-                    </Text>
+                    </ThemedText>
                   </View>
                 </View>
                 <View style={styles.holdingRight}>
-                  <Text style={[styles.pnlAmount, { color: currentColor }]}>
+                  <ThemedText style={[styles.pnlAmount, { color: currentColor }]}>
                     {isPrivacyMode
                       ? '****'
                       : `${activeTab === 'winners' ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${formatValue(Math.abs(holding.pnl))}`}
-                  </Text>
+                  </ThemedText>
                   <View
                     style={[
                       styles.percentageBadge,
@@ -350,13 +351,13 @@ export default function WinLossDetailsScreen() {
                       },
                     ]}
                   >
-                    <Text
+                    <ThemedText
                       style={[styles.percentageText, { color: currentColor }]}
                     >
                       {isPrivacyMode
                         ? '**'
                         : `${activeTab === 'winners' ? '+' : ''}${holding.pnlPercentage.toFixed(2)}%`}
-                    </Text>
+                    </ThemedText>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -372,11 +373,11 @@ export default function WinLossDetailsScreen() {
               },
             ]}
           >
-            <Text
+            <ThemedText
               style={[styles.emptyText, { color: currColors.textSecondary }]}
             >
               No {activeTab} found
-            </Text>
+            </ThemedText>
           </View>
         )}
       </ScrollView>
@@ -398,7 +399,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   scrollContent: {
     padding: 20,
@@ -418,14 +418,12 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 8,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_700Bold',
   },
   heroValue: {
     fontSize: 32,
     fontWeight: '400',
     marginBottom: 20,
     letterSpacing: -0.5,
-    fontFamily: 'Outfit_400Regular',
   },
   barContainer: {
     flexDirection: 'row',
@@ -477,7 +475,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_700Bold',
   },
   sectionSubtitle: {
     fontSize: 12,
@@ -532,7 +529,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 2,
-    fontFamily: 'Outfit_500Medium',
   },
   holdingValue: {
     fontSize: 11,
@@ -545,7 +541,6 @@ const styles = StyleSheet.create({
   pnlAmount: {
     fontSize: 13,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   percentageBadge: {
     paddingHorizontal: 8,
@@ -575,7 +570,6 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 13,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   emptyCard: {
     padding: 40,

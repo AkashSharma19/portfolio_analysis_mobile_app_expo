@@ -14,10 +14,11 @@ import {
   Image,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from './ThemedText';
 
 export default function TopMovers() {
   const router = useRouter();
@@ -101,9 +102,9 @@ export default function TopMovers() {
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.sectionTitle, { color: currColors.textSecondary }]}>
+      <ThemedText style={[styles.sectionTitle, { color: currColors.textSecondary }]}>
         TOP MOVERS
-      </Text>
+      </ThemedText>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -152,9 +153,9 @@ export default function TopMovers() {
                     />
                   </View>
                 ) : (
-                  <Text style={[styles.symbolText, { color: currColors.text }]}>
+                  <ThemedText style={[styles.symbolText, { color: currColors.text }]}>
                     {item.label.substring(0, 2).toUpperCase()}
-                  </Text>
+                  </ThemedText>
                 )}
               </View>
               <View
@@ -174,33 +175,33 @@ export default function TopMovers() {
                     <ArrowDownRight size={12} color="#FF3B30" />
                   )
                 ) : null}
-                <Text
+                <ThemedText
                   style={[
                     styles.badgeText,
                     { color: item.isProfit ? '#34C759' : '#FF3B30' },
                   ]}
                 >
                   {item.value}
-                </Text>
+                </ThemedText>
               </View>
             </View>
 
             <View style={styles.cardFooter}>
-              <Text
+              <ThemedText
                 style={[styles.symbolName, { color: currColors.text }]}
                 numberOfLines={1}
               >
                 {item.label}
-              </Text>
+              </ThemedText>
               {item.price && (
-                <Text
+                <ThemedText
                   style={[
                     styles.priceText,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   {item.price}
-                </Text>
+                </ThemedText>
               )}
             </View>
           </TouchableOpacity>
@@ -223,7 +224,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: 12,
     marginLeft: 16,
-    fontFamily: 'Outfit_700Bold',
   },
   listContent: {
     paddingHorizontal: 16,
@@ -253,7 +253,6 @@ const styles = StyleSheet.create({
   symbolText: {
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   badge: {
     flexDirection: 'row',
@@ -266,7 +265,6 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   cardFooter: {
     gap: 2,
@@ -274,10 +272,8 @@ const styles = StyleSheet.create({
   symbolName: {
     fontSize: 14,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   priceText: {
     fontSize: 12,
-    fontFamily: 'Outfit_400Regular',
   },
 });

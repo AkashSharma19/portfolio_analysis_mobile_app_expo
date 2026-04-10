@@ -20,10 +20,11 @@ import {
   FlatList,
   Image,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '../../../constants/Colors';
 import { CHART_COLORS, getCategoryIcon } from '../../../constants/Icons';
@@ -137,52 +138,52 @@ export default function AnalyticsDetailsScreen() {
                 />
               </View>
             ) : (
-              <Text
+              <ThemedText
                 style={[
                   styles.iconLetter,
                   { color: CHART_COLORS[index % CHART_COLORS.length] },
                 ]}
               >
                 {item.companyName[0]?.toUpperCase() || '?'}
-              </Text>
+              </ThemedText>
             )}
           </View>
           <View style={styles.infoCol}>
-            <Text
+            <ThemedText
               style={[styles.companyName, { color: currColors.text }]}
               numberOfLines={1}
             >
               {item.companyName}
-            </Text>
+            </ThemedText>
             <View style={styles.tickerRow}>
-              <Text
+              <ThemedText
                 style={[styles.tickerText, { color: currColors.textSecondary }]}
               >
                 Qty: {item.quantity.toLocaleString()}
-              </Text>
+              </ThemedText>
             </View>
           </View>
         </View>
         <View style={styles.itemRight}>
           {viewMode === 'Invested' && (
             <>
-              <Text style={[styles.currentPrice, { color: currColors.text }]}>
+              <ThemedText style={[styles.currentPrice, { color: currColors.text }]}>
                 {isPrivacyMode
                   ? '****'
                   : `${showCurrencySymbol ? '₹' : ''}${item.currentValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-              </Text>
-              <Text
+              </ThemedText>
+              <ThemedText
                 style={[styles.tickerText, { color: currColors.textSecondary }]}
               >
                 {isPrivacyMode
                   ? '****'
                   : `${showCurrencySymbol ? '₹' : ''}${item.investedValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-              </Text>
+              </ThemedText>
             </>
           )}
           {viewMode === 'Returns' && (
             <>
-              <Text
+              <ThemedText
                 style={[
                   styles.currentPrice,
                   { color: item.pnl >= 0 ? '#4CAF50' : '#F44336' },
@@ -191,7 +192,7 @@ export default function AnalyticsDetailsScreen() {
                 {isPrivacyMode
                   ? '****'
                   : `${item.pnl >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(item.pnl).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-              </Text>
+              </ThemedText>
               <View
                 style={[
                   styles.changeBadge,
@@ -203,7 +204,7 @@ export default function AnalyticsDetailsScreen() {
                   },
                 ]}
               >
-                <Text
+                <ThemedText
                   style={[
                     styles.changeText,
                     { color: item.pnl >= 0 ? '#4CAF50' : '#F44336' },
@@ -212,24 +213,24 @@ export default function AnalyticsDetailsScreen() {
                 >
                   {item.pnl >= 0 ? '+' : ''}
                   {item.pnlPercentage.toFixed(2)}%
-                </Text>
+                </ThemedText>
               </View>
             </>
           )}
           {viewMode === 'Contribution' && (
             <>
-              <Text style={[styles.currentPrice, { color: currColors.text }]}>
+              <ThemedText style={[styles.currentPrice, { color: currColors.text }]}>
                 {isPrivacyMode
                   ? '****'
-                  : `${item.contributionPercentage.toFixed(2)}%`}
-              </Text>
-              <Text
+                  : `${(item.contributionPercentage ?? 0).toFixed(2)}%`}
+              </ThemedText>
+              <ThemedText
                 style={[styles.tickerText, { color: currColors.textSecondary }]}
               >
                 {isPrivacyMode
                   ? '****'
                   : `${showCurrencySymbol ? '₹' : ''}${item.currentValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-              </Text>
+              </ThemedText>
             </>
           )}
         </View>
@@ -270,17 +271,17 @@ export default function AnalyticsDetailsScreen() {
               >
                 <HeaderIcon size={48} color={headerColor} strokeWidth={1.5} />
               </View>
-              <Text style={[styles.sectorTitle, { color: currColors.text }]}>
+              <ThemedText style={[styles.sectorTitle, { color: currColors.text }]}>
                 {decodeURIComponent(value || '')}
-              </Text>
-              <Text
+              </ThemedText>
+              <ThemedText
                 style={[
                   styles.typeSubtitle,
                   { color: currColors.textSecondary },
                 ]}
               >
                 {type}
-              </Text>
+              </ThemedText>
             </View>
           </SafeAreaView>
         </LinearGradient>
@@ -331,13 +332,13 @@ export default function AnalyticsDetailsScreen() {
                 }}
               >
                 <ArrowUpDown size={14} color={currColors.text} />
-                <Text style={[styles.viewModeText, { color: currColors.text }]}>
+                <ThemedText type="medium" style={[styles.viewModeText, { color: currColors.text }]}>
                   {viewMode === 'Invested'
                     ? 'Current (Invested)'
                     : viewMode === 'Returns'
                       ? 'Returns (%)'
                       : 'Contribution (Current)'}
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -351,14 +352,14 @@ export default function AnalyticsDetailsScreen() {
             bounces={false}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text
+                <ThemedText
                   style={[
                     styles.emptyText,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   No owned companies found
-                </Text>
+                </ThemedText>
               </View>
             }
           />
@@ -408,7 +409,6 @@ const styles = StyleSheet.create({
     fontSize: SCREEN_WIDTH > 400 ? 28 : 24,
     fontWeight: '500',
     letterSpacing: -0.5,
-    fontFamily: 'Outfit_500Medium',
   },
   typeSubtitle: {
     fontSize: 14,
@@ -416,7 +416,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    fontFamily: 'Outfit_400Regular',
   },
   listSection: {
     flex: 1,
@@ -437,7 +436,7 @@ const styles = StyleSheet.create({
   actionIconButton: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -445,26 +444,25 @@ const styles = StyleSheet.create({
   viewModeToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 20,
     borderWidth: 1,
-    gap: 6,
+    gap: 8,
   },
   viewModeText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   listContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     paddingBottom: 20,
   },
   companyItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    padding: 18,
     borderBottomWidth: 1,
   },
   itemLeft: {
@@ -484,16 +482,14 @@ const styles = StyleSheet.create({
   iconLetter: {
     fontSize: 18,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   infoCol: {
     flex: 1,
   },
   companyName: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '400',
     marginBottom: 2,
-    fontFamily: 'Outfit_500Medium',
   },
   tickerRow: {
     flexDirection: 'row',
@@ -501,8 +497,7 @@ const styles = StyleSheet.create({
   },
   tickerText: {
     fontSize: 12,
-    fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '400',
   },
   itemRight: {
     alignItems: 'flex-end',
@@ -511,7 +506,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 4,
-    fontFamily: 'Outfit_400Regular',
   },
   changeBadge: {
     flexDirection: 'row',
@@ -524,7 +518,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '400',
     marginLeft: 4,
-    fontFamily: 'Outfit_400Regular',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -532,6 +525,5 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    fontFamily: 'Outfit_400Regular',
   },
 });

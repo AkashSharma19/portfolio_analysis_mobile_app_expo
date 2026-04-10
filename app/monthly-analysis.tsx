@@ -11,10 +11,11 @@ import {
   Dimensions,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { BarChart } from 'react-native-gifted-charts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -90,7 +91,7 @@ export default function MonthlyAnalysisScreen() {
         frontColor: barColor,
         gradientColor: barColor,
         topLabelComponent: () => (
-          <Text
+          <ThemedText
             style={{
               color: currColors.textSecondary,
               fontSize: 8,
@@ -98,7 +99,7 @@ export default function MonthlyAnalysisScreen() {
             }}
           >
             {isPrivacyMode ? '****' : (item.investment / 1000).toFixed(0) + 'k'}
-          </Text>
+          </ThemedText>
         ),
       };
     });
@@ -150,9 +151,9 @@ export default function MonthlyAnalysisScreen() {
           style={[styles.header, { backgroundColor: currColors.background }]}
         >
           <BackButton />
-          <Text style={[styles.headerTitle, { color: currColors.text }]}>
+          <ThemedText style={[styles.headerTitle, { color: currColors.text }]}>
             Monthly Trend
-          </Text>
+          </ThemedText>
           <View style={{ width: 40 }} />
         </View>
         <ScrollView
@@ -169,14 +170,14 @@ export default function MonthlyAnalysisScreen() {
               ]}
             >
               <View style={styles.chartTitleRow}>
-                <Text
+                <ThemedText
                   style={[
                     styles.chartTitle,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   MO. INVESTMENT TREND
-                </Text>
+                </ThemedText>
                 <TrendingUp size={14} color={currColors.tint} />
               </View>
               <View style={styles.chartWrapper}>
@@ -195,10 +196,12 @@ export default function MonthlyAnalysisScreen() {
                     yAxisTextStyle={{
                       color: currColors.textSecondary,
                       fontSize: 10,
+                      fontFamily: 'Outfit_400Regular',
                     }}
                     xAxisLabelTextStyle={{
                       color: currColors.textSecondary,
                       fontSize: 10,
+                      fontFamily: 'Outfit_400Regular',
                     }}
                     formatYLabel={formatYAxisLabel}
                     maxValue={maximumValue}
@@ -216,7 +219,7 @@ export default function MonthlyAnalysisScreen() {
                           },
                         ]}
                       >
-                        <Text
+                        <ThemedText
                           style={{
                             color: '#FFF',
                             fontSize: 12,
@@ -225,14 +228,14 @@ export default function MonthlyAnalysisScreen() {
                         >
                           {showCurrencySymbol ? '₹' : ''}
                           {formatCurrency(item.value)}
-                        </Text>
+                        </ThemedText>
                       </View>
                     )}
                   />
                 ) : (
-                  <Text style={{ color: currColors.textSecondary }}>
+                  <ThemedText style={{ color: currColors.textSecondary }}>
                     No data available
-                  </Text>
+                  </ThemedText>
                 )}
               </View>
             </LinearGradient>
@@ -247,14 +250,14 @@ export default function MonthlyAnalysisScreen() {
               },
             ]}
           >
-            <Text
+            <ThemedText
               style={[
                 styles.innerSectionTitle,
                 { color: currColors.textSecondary },
               ]}
             >
               MONTHLY BREAKDOWN
-            </Text>
+            </ThemedText>
 
             {monthlyAnalysis.map((item, index) => {
               const isExpanded = expandedMonths.has(item.monthKey);
@@ -281,12 +284,12 @@ export default function MonthlyAnalysisScreen() {
                     activeOpacity={0.7}
                   >
                     <View style={styles.headerLeft}>
-                      <Text
+                      <ThemedText
                         style={[styles.monthText, { color: currColors.text }]}
                       >
                         {item.month}
-                      </Text>
-                      <Text
+                      </ThemedText>
+                      <ThemedText
                         style={[
                           styles.subText,
                           { color: currColors.textSecondary },
@@ -296,7 +299,7 @@ export default function MonthlyAnalysisScreen() {
                         {isPrivacyMode
                           ? '****'
                           : `${showCurrencySymbol ? '₹' : ''}${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: 'compact', compactDisplay: 'short' })}`}
-                      </Text>
+                      </ThemedText>
                     </View>
                     <View style={styles.headerRight}>
                       {item.percentageIncrease !== 0 && (
@@ -329,7 +332,7 @@ export default function MonthlyAnalysisScreen() {
                               ],
                             }}
                           />
-                          <Text
+                          <ThemedText
                             style={[
                               styles.growthText,
                               {
@@ -341,7 +344,7 @@ export default function MonthlyAnalysisScreen() {
                             ]}
                           >
                             {Math.abs(item.percentageIncrease).toFixed(2)}%
-                          </Text>
+                          </ThemedText>
                         </View>
                       )}
                       <View
@@ -391,7 +394,7 @@ export default function MonthlyAnalysisScreen() {
                                   },
                                 ]}
                               />
-                              <Text
+                              <ThemedText
                                 style={[
                                   styles.assetName,
                                   { color: currColors.textSecondary },
@@ -399,9 +402,9 @@ export default function MonthlyAnalysisScreen() {
                                 numberOfLines={1}
                               >
                                 {asset.name}
-                              </Text>
+                              </ThemedText>
                             </View>
-                            <Text
+                            <ThemedText
                               style={[
                                 styles.assetValue,
                                 { color: currColors.text },
@@ -410,7 +413,7 @@ export default function MonthlyAnalysisScreen() {
                               {isPrivacyMode
                                 ? '****'
                                 : `${showCurrencySymbol ? '₹' : ''}${asset.value.toLocaleString(undefined, { maximumFractionDigits: 0, notation: 'compact', compactDisplay: 'short' })}`}
-                            </Text>
+                            </ThemedText>
                           </View>
                         ))}
                       </View>
@@ -443,7 +446,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -469,7 +471,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_700Bold',
   },
   chartWrapper: {
     minHeight: 200,
@@ -504,7 +505,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: 12,
     marginLeft: 16,
-    fontFamily: 'Outfit_700Bold',
   },
   monthlyItemContainer: {
     borderBottomWidth: 1,
@@ -520,7 +520,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 2,
-    fontFamily: 'Outfit_400Regular',
   },
   headerLeft: {
     flex: 1,

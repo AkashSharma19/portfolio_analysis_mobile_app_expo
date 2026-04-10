@@ -1,6 +1,7 @@
 import { Shield, Scale, LayoutGrid } from 'lucide-react-native';
 import React from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, View } from 'react-native';
+import { ThemedText } from './ThemedText';
 import { Svg, Circle } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
@@ -72,21 +73,20 @@ const MiniMetric = ({
         </Svg>
       </View>
       <View>
-        <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '600', fontFamily: 'Outfit_600SemiBold' }}>
+        <ThemedText style={{ color: '#FFF', fontSize: 13, fontWeight: '600' }}>
           {score.toFixed(0)}
           {isPercent ? '%' : ''}
-        </Text>
-        <Text
+        </ThemedText>
+        <ThemedText
           style={{
             color: '#8E8E93',
             fontSize: 7,
             fontWeight: '700',
             letterSpacing: 0.5,
-            fontFamily: 'Outfit_700Bold',
           }}
         >
           {label}
-        </Text>
+        </ThemedText>
       </View>
     </View>
   );
@@ -130,9 +130,9 @@ export default function ShareableCard({ data }: ShareableCardProps) {
         <View style={styles.header}>
           <View style={styles.logoRow}>
             <LayoutGrid size={14} color="#0A84FF" />
-            <Text style={styles.brandTitle}>GAINBASE</Text>
+            <ThemedText style={styles.brandTitle}>GAINBASE</ThemedText>
           </View>
-          <Text style={styles.dateText}>
+          <ThemedText style={styles.dateText}>
             {new Date()
               .toLocaleDateString('en-IN', {
                 day: '2-digit',
@@ -140,16 +140,16 @@ export default function ShareableCard({ data }: ShareableCardProps) {
                 year: 'numeric',
               })
               .toUpperCase()}
-          </Text>
+          </ThemedText>
         </View>
 
         {/* Typography Hero */}
         <View style={styles.heroSection}>
-          <Text style={styles.heroValue}>
+          <ThemedText style={styles.heroValue}>
             {formatCurrency(data.totalValue)}
-          </Text>
+          </ThemedText>
           <View style={styles.subMetricRow}>
-            <Text
+            <ThemedText
               style={[
                 styles.subValue,
                 { color: isProfit ? '#34C759' : '#FF3B30' },
@@ -157,11 +157,11 @@ export default function ShareableCard({ data }: ShareableCardProps) {
             >
               {isProfit ? '+' : ''}
               {data.profitPercentage.toFixed(2)}% Total
-            </Text>
+            </ThemedText>
             <View style={styles.dot} />
-            <Text style={styles.subValue}>{data.xirr.toFixed(1)}% XIRR</Text>
+            <ThemedText style={styles.subValue}>{data.xirr.toFixed(1)}% XIRR</ThemedText>
             <View style={styles.dot} />
-            <Text
+            <ThemedText
               style={[
                 styles.subValue,
                 { color: isDayProfit ? '#34C759' : '#FF3B30' },
@@ -169,7 +169,7 @@ export default function ShareableCard({ data }: ShareableCardProps) {
             >
               {isDayProfit ? '+' : ''}
               {data.dayChangePercentage.toFixed(1)}% Day
-            </Text>
+            </ThemedText>
           </View>
         </View>
 
@@ -193,16 +193,16 @@ export default function ShareableCard({ data }: ShareableCardProps) {
           </View>
 
           <View style={styles.personaRow}>
-            <Text style={styles.personaLabel}>INVESTOR DNA</Text>
-            <Text style={styles.personaValue}>{persona.toUpperCase()}</Text>
+            <ThemedText style={styles.personaLabel}>INVESTOR DNA</ThemedText>
+            <ThemedText style={styles.personaValue}>{persona.toUpperCase()}</ThemedText>
           </View>
         </View>
 
         {/* Clean Footer Branding */}
         <View style={styles.footerBranding}>
-          <Text style={styles.footerText}>
+          <ThemedText style={styles.footerText}>
             PROUDLY INVESTING WITH GAINBASE.APP
-          </Text>
+          </ThemedText>
         </View>
       </View>
     </View>
@@ -241,14 +241,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 2,
-    fontFamily: 'Outfit_700Bold',
   },
   dateText: {
     color: '#48484A',
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.5,
-    fontFamily: 'Outfit_700Bold',
   },
   heroSection: {
     alignItems: 'center',
@@ -260,7 +258,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -1,
     marginBottom: 12,
-    fontFamily: 'Outfit_700Bold',
   },
   subMetricRow: {
     flexDirection: 'row',
@@ -271,7 +268,6 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     fontSize: 14,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   dot: {
     width: 3,
@@ -302,14 +298,12 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: '800',
     letterSpacing: 1,
-    fontFamily: 'Outfit_700Bold',
   },
   personaValue: {
     color: '#FFF',
     fontSize: 14,
     fontWeight: '600',
     letterSpacing: 0.5,
-    fontFamily: 'Outfit_600SemiBold',
   },
   footerBranding: {
     alignItems: 'center',
@@ -320,6 +314,5 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: '800',
     letterSpacing: 1.5,
-    fontFamily: 'Outfit_700Bold',
   },
 });

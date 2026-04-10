@@ -14,10 +14,12 @@ import {
   Image,
   ScrollView,
   StyleSheet,
-  Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { LineChart } from 'react-native-gifted-charts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -213,9 +215,9 @@ export default function StockDetailsScreen() {
             { backgroundColor: currColors.background },
           ]}
         >
-          <Text style={[styles.errorText, { color: currColors.text }]}>
+          <ThemedText style={[styles.errorText, { color: currColors.text }]}>
             Company details not found
-          </Text>
+          </ThemedText>
         </View>
       </SafeAreaView>
     );
@@ -233,12 +235,12 @@ export default function StockDetailsScreen() {
       <View style={[styles.header, { backgroundColor: currColors.background }]}>
         <BackButton />
         <View style={styles.headerTitle}>
-          <Text
+          <ThemedText
             style={[styles.companyNameText, { color: currColors.text }]}
             numberOfLines={2}
           >
             {holding.companyName}
-          </Text>
+          </ThemedText>
         </View>
         <View style={{ width: 40 }} />
       </View>
@@ -315,11 +317,11 @@ export default function StockDetailsScreen() {
           )}
           <View style={{ padding: 24 }}>
             <View style={styles.heroHeaderRow}>
-              <Text
+              <ThemedText
                 style={[styles.heroLabel, { color: currColors.textSecondary }]}
               >
                 {holding.quantity > 0 ? 'CURRENT VALUE' : 'CURRENT PRICE'}
-              </Text>
+              </ThemedText>
               {/* Brand Highlight in Price Card */}
               {holding.logo && (
                 <View
@@ -338,26 +340,26 @@ export default function StockDetailsScreen() {
               )}
             </View>
 
-            <Text style={[styles.heroValue, { color: currColors.text }]}>
+            <ThemedText style={[styles.heroValue, { color: currColors.text }]}>
               {isPrivacyMode
                 ? '****'
                 : `${showCurrencySymbol ? '₹' : ''}${(holding.quantity > 0 ? holding.currentValue : holding.currentPrice).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
-            </Text>
+            </ThemedText>
 
             <View
               style={[styles.dashedDivider, { borderColor: currColors.border }]}
             />
 
             <View style={styles.heroRow}>
-              <Text
+              <ThemedText
                 style={[
                   styles.heroRowLabel,
                   { color: currColors.textSecondary },
                 ]}
               >
                 {holding.quantity > 0 ? '1D returns' : '1D change'}
-              </Text>
-              <Text
+              </ThemedText>
+              <ThemedText
                 style={[
                   styles.heroRowValue,
                   {
@@ -372,20 +374,20 @@ export default function StockDetailsScreen() {
                 {isPrivacyMode
                   ? '****'
                   : `${holding.dayChange >= 0 ? '+' : ''}${showCurrencySymbol ? '₹' : ''}${Math.abs(holding.quantity > 0 ? holding.dayChange : holding.dayChange).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.dayChangePercentage).toFixed(2)}%)`}
-              </Text>
+              </ThemedText>
             </View>
 
             {holding.quantity > 0 && (
               <View style={styles.heroRow}>
-                <Text
+                <ThemedText
                   style={[
                     styles.heroRowLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Total returns
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[
                     styles.heroRowValue,
                     {
@@ -400,22 +402,22 @@ export default function StockDetailsScreen() {
                   {isPrivacyMode
                     ? '****'
                     : `${holding.pnl >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(holding.pnl).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(holding.pnlPercentage).toFixed(2)}%)`}
-                </Text>
+                </ThemedText>
               </View>
             )}
 
             {holding.quantity > 0 ? (
               <>
                 <View style={styles.heroRow}>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.heroRowLabel,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     Invested
-                  </Text>
-                  <Text
+                  </ThemedText>
+                  <ThemedText
                     style={[
                       styles.heroRowValueWhite,
                       { color: currColors.text },
@@ -424,38 +426,38 @@ export default function StockDetailsScreen() {
                     {isPrivacyMode
                       ? '****'
                       : `${showCurrencySymbol ? '₹' : ''}${holding.investedValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
-                  </Text>
+                  </ThemedText>
                 </View>
 
                 <View style={styles.heroRow}>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.heroRowLabel,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     Quantity
-                  </Text>
-                  <Text
+                  </ThemedText>
+                  <ThemedText
                     style={[
                       styles.heroRowValueWhite,
                       { color: currColors.text },
                     ]}
                   >
                     {holding.quantity}
-                  </Text>
+                  </ThemedText>
                 </View>
 
                 <View style={styles.heroRow}>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.heroRowLabel,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     Current Price
-                  </Text>
-                  <Text
+                  </ThemedText>
+                  <ThemedText
                     style={[
                       styles.heroRowValueWhite,
                       { color: currColors.text },
@@ -466,19 +468,19 @@ export default function StockDetailsScreen() {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 2,
                     })}
-                  </Text>
+                  </ThemedText>
                 </View>
 
                 <View style={styles.heroRow}>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.heroRowLabel,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     Avg. Price
-                  </Text>
-                  <Text
+                  </ThemedText>
+                  <ThemedText
                     style={[
                       styles.heroRowValueWhite,
                       { color: currColors.text },
@@ -487,20 +489,20 @@ export default function StockDetailsScreen() {
                     {isPrivacyMode
                       ? '****'
                       : `${showCurrencySymbol ? '₹' : ''}${holding.avgPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
-                  </Text>
+                  </ThemedText>
                 </View>
               </>
             ) : (
               <View style={styles.heroRow}>
-                <Text
+                <ThemedText
                   style={[
                     styles.heroRowLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Current Price
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[styles.heroRowValueWhite, { color: currColors.text }]}
                 >
                   {showCurrencySymbol ? '₹' : ''}
@@ -508,25 +510,25 @@ export default function StockDetailsScreen() {
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 2,
                   })}
-                </Text>
+                </ThemedText>
               </View>
             )}
 
             <View style={styles.heroRow}>
-              <Text
+              <ThemedText
                 style={[
                   styles.heroRowLabel,
                   { color: currColors.textSecondary },
                 ]}
               >
                 Sector
-              </Text>
-              <Text
+              </ThemedText>
+              <ThemedText
                 style={[styles.heroRowValueWhite, { color: currColors.text }]}
                 numberOfLines={1}
               >
                 {holding.sector}
-              </Text>
+              </ThemedText>
             </View>
           </View>
         </View>
@@ -546,26 +548,26 @@ export default function StockDetailsScreen() {
                 },
               ]}
             >
-              <Text
+              <ThemedText
                 style={[
                   styles.sectionTitle,
                   { color: currColors.textSecondary, marginBottom: 16 },
                 ]}
               >
                 52 WEEK RANGE
-              </Text>
+              </ThemedText>
 
               <View style={styles.rangeRowContainer}>
                 <View>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.rangeLabel,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     Low
-                  </Text>
-                  <Text
+                  </ThemedText>
+                  <ThemedText
                     style={[
                       styles.rangeValueCompact,
                       { color: currColors.text },
@@ -573,7 +575,7 @@ export default function StockDetailsScreen() {
                   >
                     {showCurrencySymbol ? '₹' : ''}
                     {holding.low52.toLocaleString('en-IN')}
-                  </Text>
+                  </ThemedText>
                 </View>
 
                 <View style={styles.rangeBarContainer}>
@@ -623,15 +625,15 @@ export default function StockDetailsScreen() {
                 </View>
 
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.rangeLabel,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     High
-                  </Text>
-                  <Text
+                  </ThemedText>
+                  <ThemedText
                     style={[
                       styles.rangeValueCompact,
                       { color: currColors.text },
@@ -639,7 +641,7 @@ export default function StockDetailsScreen() {
                   >
                     {showCurrencySymbol ? '₹' : ''}
                     {holding.high52.toLocaleString('en-IN')}
-                  </Text>
+                  </ThemedText>
                 </View>
               </View>
             </View>
@@ -649,11 +651,11 @@ export default function StockDetailsScreen() {
         {stockTransactions.length > 0 && (
           <>
             {/* Transactions History */}
-            <Text
+            <ThemedText
               style={[styles.sectionTitle, { color: currColors.textSecondary }]}
             >
               HISTORY
-            </Text>
+            </ThemedText>
             <View
               style={[
                 styles.historyList,
@@ -689,37 +691,37 @@ export default function StockDetailsScreen() {
                     )}
                   </View>
                   <View style={styles.historyInfo}>
-                    <Text
+                    <ThemedText
                       style={[styles.historyType, { color: currColors.text }]}
                     >
                       {item.type === 'BUY' ? 'Bought' : 'Sold'}
-                    </Text>
-                    <Text
+                    </ThemedText>
+                    <ThemedText
                       style={[
                         styles.historyDate,
                         { color: currColors.textSecondary },
                       ]}
                     >
                       {format(new Date(item.date), 'MMM dd, yyyy')}
-                    </Text>
+                    </ThemedText>
                   </View>
                   <View style={styles.historyAmount}>
-                    <Text
+                    <ThemedText
                       style={[styles.historyValue, { color: currColors.text }]}
                     >
                       {isPrivacyMode
                         ? '****'
                         : `${showCurrencySymbol ? '₹' : ''}${(item.quantity * item.price).toLocaleString()}`}
-                    </Text>
-                    <Text
+                    </ThemedText>
+                    <ThemedText
                       style={[
                         styles.historyDetails,
                         { color: currColors.textSecondary },
                       ]}
                     >
-                      {item.quantity} @{' '}
+                      Qty: {item.quantity} @{' '}
                       {isPrivacyMode ? '****' : item.price.toLocaleString()}
-                    </Text>
+                    </ThemedText>
                   </View>
                 </View>
               ))}
@@ -728,19 +730,19 @@ export default function StockDetailsScreen() {
         )}
 
         {/* News Section */}
-        <Text
+        <ThemedText
           style={[
             styles.sectionTitle,
             { color: currColors.textSecondary, marginTop: 24 },
           ]}
         >
           LATEST NEWS
-        </Text>
+        </ThemedText>
         {loadingNews ? (
           <View style={styles.newsLoadingContainer}>
-            <Text style={{ color: currColors.textSecondary, fontSize: 13 }}>
+            <ThemedText style={{ color: currColors.textSecondary, fontSize: 13 }}>
               Fetching latest updates...
-            </Text>
+            </ThemedText>
           </View>
         ) : news.length === 0 ? (
           <View
@@ -752,9 +754,9 @@ export default function StockDetailsScreen() {
               },
             ]}
           >
-            <Text style={{ color: currColors.textSecondary, fontSize: 13 }}>
+            <ThemedText style={{ color: currColors.textSecondary, fontSize: 13 }}>
               No recent news found for this company.
-            </Text>
+            </ThemedText>
           </View>
         ) : (
           <View
@@ -780,24 +782,24 @@ export default function StockDetailsScreen() {
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={{ flex: 1 }}>
                     <View style={styles.newsSourceRow}>
-                      <Text style={[styles.newsSource, { color: '#007AFF' }]}>
+                      <ThemedText style={[styles.newsSource, { color: '#007AFF' }]}>
                         {item.source.toUpperCase()}
-                      </Text>
-                      <Text
+                      </ThemedText>
+                      <ThemedText
                         style={[
                           styles.newsDate,
                           { color: currColors.textSecondary },
                         ]}
                       >
                         {item.pubDate.split(' ').slice(1, 4).join(' ')}
-                      </Text>
+                      </ThemedText>
                     </View>
-                    <Text
+                    <ThemedText
                       style={[styles.newsTitle, { color: currColors.text }]}
                       numberOfLines={3}
                     >
                       {item.title}
-                    </Text>
+                    </ThemedText>
                   </View>
                   {item.imageUrl && (
                     <Image
@@ -843,14 +845,12 @@ const styles = StyleSheet.create({
   symbol: {
     color: '#8E8E93',
     fontSize: 12,
-    fontFamily: 'Outfit_400Regular',
   },
   companyNameText: {
     color: '#FFF',
     fontSize: 17,
     fontWeight: '600',
     textAlign: 'center',
-    fontFamily: 'Outfit_600SemiBold',
   },
   scrollContent: {
     padding: 16,
@@ -864,7 +864,6 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#FFF',
     fontSize: 16,
-    fontFamily: 'Outfit_400Regular',
   },
   priceCard: {
     backgroundColor: '#1C1C1E',
@@ -882,13 +881,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    fontFamily: 'Outfit_700Bold',
   },
   currentPrice: {
     color: '#FFF',
     fontSize: 32,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   divider: {
     height: 1,
@@ -904,7 +901,6 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     fontSize: 12,
     marginBottom: 6,
-    fontFamily: 'Outfit_400Regular',
   },
   pnlValueContainer: {
     flexDirection: 'row',
@@ -914,7 +910,6 @@ const styles = StyleSheet.create({
   pnlValue: {
     fontSize: 18,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   sectionTitle: {
     color: '#8E8E93',
@@ -924,7 +919,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: 16,
     marginLeft: 4,
-    fontFamily: 'Outfit_600SemiBold',
   },
   historyList: {
     backgroundColor: '#1C1C1E',
@@ -956,12 +950,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 2,
-    fontFamily: 'Outfit_500Medium',
   },
   historyDate: {
     color: '#8E8E93',
     fontSize: 12,
-    fontFamily: 'Outfit_400Regular',
   },
   historyAmount: {
     alignItems: 'flex-end',
@@ -971,12 +963,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 2,
-    fontFamily: 'Outfit_500Medium',
   },
   historyDetails: {
     color: '#8E8E93',
     fontSize: 11,
-    fontFamily: 'Outfit_400Regular',
   },
   heroHeaderRow: {
     flexDirection: 'row',
@@ -990,14 +980,12 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_400Regular',
   },
   heroValue: {
     fontSize: 24,
     fontWeight: '400',
     color: '#FFF',
     marginBottom: 16,
-    fontFamily: 'Outfit_400Regular',
   },
   dashedDivider: {
     height: 1,
@@ -1016,18 +1004,15 @@ const styles = StyleSheet.create({
   heroRowLabel: {
     color: '#8E8E93',
     fontSize: 14,
-    fontFamily: 'Outfit_400Regular',
   },
   heroRowValue: {
     fontSize: 14,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   heroRowValueWhite: {
     fontSize: 14,
     fontWeight: '400',
     color: '#FFF',
-    fontFamily: 'Outfit_400Regular',
   },
   rangeCard: {
     backgroundColor: '#1C1C1E',
@@ -1046,12 +1031,10 @@ const styles = StyleSheet.create({
   rangeLabel: {
     fontSize: 10,
     marginBottom: 2,
-    fontFamily: 'Outfit_400Regular',
   },
   rangeValueCompact: {
     fontSize: 13,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   rangeBarContainer: {
     flex: 1,
@@ -1118,17 +1101,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,
-    fontFamily: 'Outfit_700Bold',
   },
   newsDate: {
     fontSize: 10,
-    fontFamily: 'Outfit_400Regular',
   },
   newsTitle: {
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
-    fontFamily: 'Outfit_500Medium',
   },
   newsLoadingContainer: {
     padding: 24,

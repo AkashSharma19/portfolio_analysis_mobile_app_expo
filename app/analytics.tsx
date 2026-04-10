@@ -29,10 +29,12 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { PieChart } from 'react-native-gifted-charts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -147,27 +149,27 @@ export default function AnalyticsScreen() {
             style={[styles.header, { backgroundColor: currColors.background }]}
           >
             <BackButton />
-            <Text style={[styles.headerTitle, { color: currColors.text }]}>
+            <ThemedText style={[styles.headerTitle, { color: currColors.text }]}>
               Analytics
-            </Text>
+            </ThemedText>
             <View style={{ width: 40 }} />
           </View>
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyText, { color: currColors.text }]}>
+            <ThemedText style={[styles.emptyText, { color: currColors.text }]}>
               No data available yet.
-            </Text>
-            <Text
+            </ThemedText>
+            <ThemedText
               style={[styles.emptySubtext, { color: currColors.textSecondary }]}
             >
               Add some transactions to see your portfolio analytics.
-            </Text>
+            </ThemedText>
           </View>
         </View>
       </SafeAreaView>
     );
   }
 
-  const dimensions: { id: Dimension; label: string; icon: any }[] = [
+  const dimensions: { id: Dimension; label: string; icon: React.FC<any> }[] = [
     { id: 'Sector', label: 'Sector', icon: LayoutGrid },
     { id: 'Company Name', label: 'Company', icon: Building2 },
     { id: 'Asset Type', label: 'Asset Type', icon: Layers },
@@ -186,9 +188,9 @@ export default function AnalyticsScreen() {
           style={[styles.header, { backgroundColor: currColors.background }]}
         >
           <BackButton />
-          <Text style={[styles.headerTitle, { color: currColors.text }]}>
+          <ThemedText style={[styles.headerTitle, { color: currColors.text }]}>
             Analytics
-          </Text>
+          </ThemedText>
           <View style={{ width: 40 }} />
         </View>
 
@@ -225,7 +227,7 @@ export default function AnalyticsScreen() {
                   color={isActive ? '#FFF' : currColors.textSecondary}
                   style={styles.selectorIcon}
                 />
-                <Text
+                <ThemedText
                   style={[
                     styles.selectorText,
                     { color: currColors.textSecondary },
@@ -233,7 +235,7 @@ export default function AnalyticsScreen() {
                   ]}
                 >
                   {dim.label}
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             );
           })}
@@ -271,10 +273,10 @@ export default function AnalyticsScreen() {
                     <View
                       style={{ justifyContent: 'center', alignItems: 'center' }}
                     >
-                      <Text style={{ fontSize: 20, color: currColors.text }}>
+                      <ThemedText style={{ fontSize: 20, color: currColors.text }}>
                         {allocation.length}
-                      </Text>
-                      <Text
+                      </ThemedText>
+                      <ThemedText
                         style={{
                           fontSize: 8,
                           color: currColors.textSecondary,
@@ -283,19 +285,19 @@ export default function AnalyticsScreen() {
                         }}
                       >
                         {selectedDimension.split(' ')[0]}s
-                      </Text>
+                      </ThemedText>
                     </View>
                   )}
                 />
               ) : (
-                <Text
+                <ThemedText
                   style={[
                     styles.noDataText,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Data unavailable
-                </Text>
+                </ThemedText>
               )}
             </View>
           </LinearGradient>
@@ -339,13 +341,13 @@ export default function AnalyticsScreen() {
               }}
             >
               <ArrowUpDown size={14} color={currColors.text} />
-              <Text style={[styles.viewModeText, { color: currColors.text }]}>
+              <ThemedText type="medium" style={[styles.viewModeText, { color: currColors.text }]}>
                 {holdingsViewMode === 'Current'
                   ? 'Current (Invested)'
                   : holdingsViewMode === 'Returns'
                     ? 'Returns (%)'
                     : 'Contribution (Current)'}
-              </Text>
+              </ThemedText>
             </TouchableOpacity>
           </View>
 
@@ -436,7 +438,7 @@ export default function AnalyticsScreen() {
                         );
                       })()}
                       <View style={styles.holdingInfo}>
-                        <Text
+                        <ThemedText
                           style={[
                             styles.holdingSymbol,
                             { color: currColors.text },
@@ -445,17 +447,17 @@ export default function AnalyticsScreen() {
                           ellipsizeMode="tail"
                         >
                           {item.name}
-                        </Text>
+                        </ThemedText>
                         {selectedDimension === 'Company Name' && (
-                          <Text
+                          <ThemedText
                             style={[
                               styles.holdingSub,
                               { color: currColors.textSecondary },
                             ]}
                             numberOfLines={1}
                           >
-                            Qty {item.quantity.toLocaleString()}
-                          </Text>
+                            Qty: {item.quantity.toLocaleString()}
+                          </ThemedText>
                         )}
                       </View>
                     </View>
@@ -463,7 +465,7 @@ export default function AnalyticsScreen() {
                     <View style={styles.holdingValues}>
                       {holdingsViewMode === 'Current' && (
                         <>
-                          <Text
+                          <ThemedText
                             style={[
                               styles.primaryValue,
                               { color: currColors.text },
@@ -472,8 +474,8 @@ export default function AnalyticsScreen() {
                             {isPrivacyMode
                               ? '****'
                               : `${showCurrencySymbol ? '₹' : ''}${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                          </Text>
-                          <Text
+                          </ThemedText>
+                          <ThemedText
                             style={[
                               styles.secondaryValue,
                               { color: currColors.textSecondary },
@@ -482,12 +484,12 @@ export default function AnalyticsScreen() {
                             {isPrivacyMode
                               ? '****'
                               : `${showCurrencySymbol ? '₹' : ''}${item.totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                          </Text>
+                          </ThemedText>
                         </>
                       )}
                       {holdingsViewMode === 'Returns' && (
                         <>
-                          <Text
+                          <ThemedText
                             style={[
                               styles.primaryValue,
                               { color: item.pnl >= 0 ? '#30D158' : '#FF453A' },
@@ -496,8 +498,8 @@ export default function AnalyticsScreen() {
                             {isPrivacyMode
                               ? '****'
                               : `${item.pnl >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(item.pnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                          </Text>
-                          <Text
+                          </ThemedText>
+                          <ThemedText
                             style={[
                               styles.secondaryValue,
                               { color: item.pnl >= 0 ? '#30D158' : '#FF453A' },
@@ -506,12 +508,12 @@ export default function AnalyticsScreen() {
                             {isPrivacyMode
                               ? '****'
                               : `${item.pnl >= 0 ? '+' : ''}${item.pnlPercentage.toFixed(2)}%`}
-                          </Text>
+                          </ThemedText>
                         </>
                       )}
                       {holdingsViewMode === 'Contribution' && (
                         <>
-                          <Text
+                          <ThemedText
                             style={[
                               styles.primaryValue,
                               { color: currColors.text },
@@ -520,8 +522,8 @@ export default function AnalyticsScreen() {
                             {isPrivacyMode
                               ? '****'
                               : `${item.percentage.toFixed(2)}%`}
-                          </Text>
-                          <Text
+                          </ThemedText>
+                          <ThemedText
                             style={[
                               styles.secondaryValue,
                               { color: currColors.textSecondary },
@@ -530,7 +532,7 @@ export default function AnalyticsScreen() {
                             {isPrivacyMode
                               ? '****'
                               : `${showCurrencySymbol ? '₹' : ''}${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                          </Text>
+                          </ThemedText>
                         </>
                       )}
                     </View>
@@ -585,7 +587,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 17,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   selectorBar: {
     paddingVertical: 12,
@@ -622,12 +623,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
     textAlign: 'center',
-    fontFamily: 'Outfit_500Medium',
   },
   selectorTextActive: {
     color: '#FFF',
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   scrollContent: {
     padding: 16,
@@ -649,7 +648,6 @@ const styles = StyleSheet.create({
   noDataText: {
     color: '#8E8E93',
     fontSize: 11,
-    fontFamily: 'Outfit_400Regular',
   },
   emptyState: {
     flex: 1,
@@ -662,14 +660,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '400',
     marginBottom: 8,
-    fontFamily: 'Outfit_400Regular',
   },
   emptySubtext: {
     color: '#8E8E93',
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 22,
-    fontFamily: 'Outfit_400Regular',
   },
   holdingsHeader: {
     flexDirection: 'row',
@@ -701,8 +697,7 @@ const styles = StyleSheet.create({
   viewModeText: {
     color: '#FFF',
     fontSize: 12,
-    fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
+    fontWeight: '500',
   },
   holdingsList: {
     backgroundColor: '#1C1C1E',
@@ -754,14 +749,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '400',
     flexShrink: 1,
-    fontFamily: 'Outfit_400Regular',
   },
   holdingSub: {
     color: '#8E8E93',
     fontSize: 12,
     marginTop: 2,
     flexShrink: 1,
-    fontFamily: 'Outfit_400Regular',
   },
   holdingValues: {
     alignItems: 'flex-end',
@@ -771,13 +764,11 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 15,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   secondaryValue: {
     color: '#8E8E93',
     fontSize: 12,
     marginTop: 2,
-    fontFamily: 'Outfit_400Regular',
   },
   contributionProgressBarContainer: {
     height: 3,

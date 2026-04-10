@@ -8,7 +8,8 @@ import {
   Scale,
 } from 'lucide-react-native';
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ThemedText } from './ThemedText';
 import { Circle, Svg } from 'react-native-svg';
 
 // ✨ Redesigned Donut Chart for Compact View
@@ -71,12 +72,12 @@ const WinLossDonut = ({
         />
       </Svg>
       <View style={styles.compactRateBox}>
-        <Text style={[styles.compactRateValue, { color: textColor }]}>
+        <ThemedText style={[styles.compactRateValue, { color: textColor }]}>
           {isPrivacyMode ? '**' : `${winRate.toFixed(0)}%`}
-        </Text>
-        <Text style={[styles.compactRateLabel, { color: '#8E8E93' }]}>
+        </ThemedText>
+        <ThemedText style={[styles.compactRateLabel, { color: '#8E8E93' }]}>
           WIN RATE
-        </Text>
+        </ThemedText>
       </View>
     </View>
   );
@@ -155,7 +156,7 @@ export default function WinLossCard({
         <View style={[styles.header, isCompact && { marginBottom: 0 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             {isCompact && <Scale size={12} color={currColors.textSecondary} />}
-            <Text
+            <ThemedText
               style={[
                 styles.title,
                 {
@@ -165,7 +166,7 @@ export default function WinLossCard({
               ]}
             >
               WIN / LOSS
-            </Text>
+            </ThemedText>
           </View>
           <View style={styles.headerRight}>
             <View
@@ -199,14 +200,14 @@ export default function WinLossCard({
               textColor={currColors.text}
             />
             <View style={[styles.compactFooter, { marginTop: 12 }]}>
-              <Text
+              <ThemedText
                 style={[
                   styles.compactFooterText,
                   { color: currColors.textSecondary },
                 ]}
               >
                 {stats.winners}W • {stats.losers}L
-              </Text>
+              </ThemedText>
             </View>
           </View>
         ) : (
@@ -214,17 +215,17 @@ export default function WinLossCard({
             <View style={styles.header}>
               <View style={styles.headerRight}>
                 <View style={styles.rateContainer}>
-                  <Text style={[styles.rateValue, { color: currColors.text }]}>
+                  <ThemedText style={[styles.rateValue, { color: currColors.text }]}>
                     {isPrivacyMode ? '****' : `${stats.winRate.toFixed(0)}%`}
-                  </Text>
-                  <Text
+                  </ThemedText>
+                  <ThemedText
                     style={[
                       styles.rateLabel,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     Win Rate
-                  </Text>
+                  </ThemedText>
                 </View>
               </View>
             </View>
@@ -257,14 +258,14 @@ export default function WinLossCard({
 
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <Text
+                <ThemedText
                   style={[
                     styles.statLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Winners
-                </Text>
+                </ThemedText>
                 <View
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
                 >
@@ -275,11 +276,11 @@ export default function WinLossCard({
                     ]}
                   >
                     <ArrowUpRight size={14} color="#4CAF50" />
-                    <Text style={[styles.statValue, { color: '#4CAF50' }]}>
+                    <ThemedText style={[styles.statValue, { color: '#4CAF50' }]}>
                       {isPrivacyMode ? '****' : stats.winners}
-                    </Text>
+                    </ThemedText>
                   </View>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.statAmount,
                       { color: '#4CAF50', marginTop: 0 },
@@ -290,19 +291,19 @@ export default function WinLossCard({
                     {isPrivacyMode
                       ? '****'
                       : `+${showCurrencySymbol ? '₹' : ''}${stats.winnersProfit.toLocaleString('en-IN', { maximumFractionDigits: 0, notation: 'compact', compactDisplay: 'short' })}`}
-                  </Text>
+                  </ThemedText>
                 </View>
               </View>
 
               <View style={styles.statItem}>
-                <Text
+                <ThemedText
                   style={[
                     styles.statLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Losers
-                </Text>
+                </ThemedText>
                 <View
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
                 >
@@ -313,11 +314,11 @@ export default function WinLossCard({
                     ]}
                   >
                     <ArrowDownRight size={14} color="#F44336" />
-                    <Text style={[styles.statValue, { color: '#F44336' }]}>
+                    <ThemedText style={[styles.statValue, { color: '#F44336' }]}>
                       {isPrivacyMode ? '****' : stats.losers}
-                    </Text>
+                    </ThemedText>
                   </View>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.statAmount,
                       { color: '#F44336', marginTop: 0 },
@@ -328,7 +329,7 @@ export default function WinLossCard({
                     {isPrivacyMode
                       ? '****'
                       : `-${showCurrencySymbol ? '₹' : ''}${Math.abs(stats.losersLoss).toLocaleString('en-IN', { maximumFractionDigits: 0, notation: 'compact', compactDisplay: 'short' })}`}
-                  </Text>
+                  </ThemedText>
                 </View>
               </View>
             </View>
@@ -375,7 +376,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
-    fontFamily: 'Outfit_700Bold',
   },
   rateContainer: {
     alignItems: 'flex-end',
@@ -384,12 +384,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '400',
     lineHeight: 24,
-    fontFamily: 'Outfit_400Regular',
   },
   rateLabel: {
     fontSize: 11,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   barContainer: {
     flexDirection: 'row',
@@ -428,19 +426,16 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   statLabel: {
     fontSize: 11,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   statAmount: {
     fontSize: 10,
     fontWeight: '500',
     marginTop: 0,
     flexShrink: 1,
-    fontFamily: 'Outfit_500Medium',
   },
   compactMain: {
     alignItems: 'center',
@@ -453,14 +448,12 @@ const styles = StyleSheet.create({
   compactRateValue: {
     fontSize: 22,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   compactRateLabel: {
     fontSize: 7,
     fontWeight: '700',
     letterSpacing: 0.5,
     marginTop: -2,
-    fontFamily: 'Outfit_700Bold',
   },
   compactFooter: {
     marginTop: 12,
@@ -469,6 +462,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 0.5,
-    fontFamily: 'Outfit_600SemiBold',
   },
 });

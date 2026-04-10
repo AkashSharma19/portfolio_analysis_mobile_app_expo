@@ -14,10 +14,11 @@ import React from 'react';
 import {
   Platform,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
@@ -38,10 +39,10 @@ function InsightsTabIcon({
       <Sparkles size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
       {showBadge && (
         <View style={tabStyles.badge}>
-          <Text style={tabStyles.badgeText}>
+          <ThemedText style={tabStyles.badgeText}>
             {badgeCount}
             {count > 9 ? '+' : ''}
-          </Text>
+          </ThemedText>
         </View>
       )}
     </View>

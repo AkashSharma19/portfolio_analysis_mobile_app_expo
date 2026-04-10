@@ -19,11 +19,12 @@ import {
   Image,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const IconMap: Record<string, any> = {
@@ -140,12 +141,12 @@ export default function InsightsScreen() {
           {/* Center: Company Name, Badge, Reason & Value */}
           <View style={styles.textBox}>
             <View style={styles.titleRow}>
-              <Text
+              <ThemedText
                 style={[styles.companyName, { color: currColors.text }]}
                 numberOfLines={1}
               >
                 {insight.title}
-              </Text>
+              </ThemedText>
             </View>
             {/* Badge pill + value pill side-by-side */}
             <View style={styles.pillRow}>
@@ -155,9 +156,9 @@ export default function InsightsScreen() {
                   { backgroundColor: `${insight.color}22` },
                 ]}
               >
-                <Text style={[styles.badgeText, { color: insight.color }]}>
+                <ThemedText style={[styles.badgeText, { color: insight.color }]}>
                   {insight.badge}
-                </Text>
+                </ThemedText>
               </View>
               <View
                 style={[
@@ -167,17 +168,17 @@ export default function InsightsScreen() {
                   },
                 ]}
               >
-                <Text style={[styles.valueText, { color: insight.color }]}>
+                <ThemedText style={[styles.valueText, { color: insight.color }]}>
                   {insight.value}
-                </Text>
+                </ThemedText>
               </View>
             </View>
             {/* Reason text — full width, no line limit */}
-            <Text
+            <ThemedText
               style={[styles.reasonText, { color: currColors.textSecondary }]}
             >
               {insight.reason}
-            </Text>
+            </ThemedText>
           </View>
         </View>
       </TouchableOpacity>
@@ -197,14 +198,14 @@ export default function InsightsScreen() {
         >
           <EmptyIcon size={32} color={config.color} />
         </View>
-        <Text style={[styles.emptyTitle, { color: currColors.text }]}>
+        <ThemedText style={[styles.emptyTitle, { color: currColors.text }]}>
           {config.emptyTitle}
-        </Text>
-        <Text
+        </ThemedText>
+        <ThemedText
           style={[styles.emptyMessage, { color: currColors.textSecondary }]}
         >
           {config.emptyMessage}
-        </Text>
+        </ThemedText>
       </View>
     );
   };
@@ -279,14 +280,14 @@ export default function InsightsScreen() {
                 setActiveTab(tab);
               }}
             >
-              <Text
+              <ThemedText
                 style={[
                   styles.tabText,
                   { color: isActive ? '#FFF' : currColors.textSecondary },
                 ]}
               >
                 {tab}
-              </Text>
+              </ThemedText>
               {tabCount > 0 && (
                 <View
                   style={[
@@ -298,14 +299,14 @@ export default function InsightsScreen() {
                     },
                   ]}
                 >
-                  <Text
+                  <ThemedText
                     style={[
                       styles.tabBadgeText,
                       { color: isActive ? '#FFF' : tabColor },
                     ]}
                   >
                     {tabCount}
-                  </Text>
+                  </ThemedText>
                 </View>
               )}
             </TouchableOpacity>
@@ -318,9 +319,9 @@ export default function InsightsScreen() {
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        <Text style={styles.sectionLabel}>
+        <ThemedText style={styles.sectionLabel}>
           {activeTab.toUpperCase()} OPPORTUNITIES
-        </Text>
+        </ThemedText>
 
         {filteredInsights.length > 0 ? (
           <View
@@ -392,7 +393,6 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 13,
-    fontFamily: 'Outfit_400Regular',
   },
   summaryDivider: {
     width: 1,
@@ -419,7 +419,6 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 13,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   tabBadge: {
     minWidth: 20,
@@ -432,7 +431,6 @@ const styles = StyleSheet.create({
   tabBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    fontFamily: 'Outfit_700Bold',
   },
   // Scroll
   scrollContent: {
@@ -447,7 +445,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: 8,
     marginTop: 4,
-    fontFamily: 'Outfit_700Bold',
   },
   // Insight card container
   insightCard: {
@@ -485,7 +482,6 @@ const styles = StyleSheet.create({
   companyName: {
     fontSize: 15,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   pillRow: {
     flexDirection: 'row',
@@ -502,12 +498,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.3,
-    fontFamily: 'Outfit_700Bold',
   },
   reasonText: {
     fontSize: 12,
     lineHeight: 17,
-    fontFamily: 'Outfit_400Regular',
   },
   valuePill: {
     paddingHorizontal: 9,
@@ -519,7 +513,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     textAlign: 'center',
-    fontFamily: 'Outfit_700Bold',
   },
   // Empty state
   emptyState: {
@@ -540,12 +533,10 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     textAlign: 'center',
-    fontFamily: 'Outfit_700Bold',
   },
   emptyMessage: {
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
-    fontFamily: 'Outfit_400Regular',
   },
 });

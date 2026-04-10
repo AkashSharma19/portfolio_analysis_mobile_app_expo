@@ -29,10 +29,11 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ViewShot from 'react-native-view-shot';
@@ -132,11 +133,9 @@ export default function PortfolioScreen() {
 
   const index1YReturn = useMemo(() => {
     if (!selectedIndexData || !selectedIndexData['Today - 365']) return 0;
-    return (
-      ((selectedIndexData['Current Value'] - selectedIndexData['Today - 365']) /
-        selectedIndexData['Today - 365']) *
-      100
-    );
+    const currentVal = selectedIndexData['Current Value'] as number;
+    const prevVal = selectedIndexData['Today - 365'] as number;
+    return ((currentVal - prevVal) / prevVal) * 100;
   }, [selectedIndexData]);
 
   const previewMonthlyAnalysis = useMemo(
@@ -290,14 +289,15 @@ export default function PortfolioScreen() {
               ]}
             >
               <View style={styles.heroHeaderRow}>
-                <Text
+                <ThemedText
+                  type="bold"
                   style={[
                     styles.heroLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   HOLDINGS ({holdings.length})
-                </Text>
+                </ThemedText>
                 <View style={styles.heroIcons}>
                   <TouchableOpacity
                     onPress={() => {
@@ -339,11 +339,11 @@ export default function PortfolioScreen() {
                 </View>
               </View>
 
-              <Text style={[styles.heroValue, { color: currColors.text }]}>
+              <ThemedText style={[styles.heroValue, { color: currColors.text }]}>
                 {isPrivacyMode
                   ? '****'
                   : `${showCurrencySymbol ? '₹' : ''}${summary.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
-              </Text>
+              </ThemedText>
 
               {/* Last Synced Indicator */}
               {syncLabel && (
@@ -358,14 +358,15 @@ export default function PortfolioScreen() {
                       { backgroundColor: isStale ? '#FF9500' : '#34C759' },
                     ]}
                   />
-                  <Text
+                  <ThemedText
+                    type="medium"
                     style={[
                       styles.syncLabel,
                       { color: isStale ? '#FF9500' : currColors.textSecondary },
                     ]}
                   >
                     {syncLabel}
-                  </Text>
+                  </ThemedText>
                 </TouchableOpacity>
               )}
 
@@ -377,15 +378,15 @@ export default function PortfolioScreen() {
               />
 
               <View style={styles.heroRow}>
-                <Text
+                <ThemedText
                   style={[
                     styles.heroRowLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   1D returns
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[
                     styles.heroRowValue,
                     {
@@ -400,19 +401,19 @@ export default function PortfolioScreen() {
                   {isPrivacyMode
                     ? '****'
                     : `${summary.dayChange >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(summary.dayChange).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(summary.dayChangePercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)`}
-                </Text>
+                </ThemedText>
               </View>
 
               <View style={styles.heroRow}>
-                <Text
+                <ThemedText
                   style={[
                     styles.heroRowLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Total returns
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[
                     styles.heroRowValue,
                     {
@@ -427,19 +428,19 @@ export default function PortfolioScreen() {
                   {isPrivacyMode
                     ? '****'
                     : `${summary.profitAmount >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(summary.profitAmount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${Math.abs(summary.profitPercentage).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%)`}
-                </Text>
+                </ThemedText>
               </View>
 
               <View style={styles.heroRow}>
-                <Text
+                <ThemedText
                   style={[
                     styles.heroRowLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Realized returns
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[
                     styles.heroRowValue,
                     {
@@ -454,19 +455,19 @@ export default function PortfolioScreen() {
                   {isPrivacyMode
                     ? '****'
                     : `${summary.realizedReturn >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(summary.realizedReturn).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
-                </Text>
+                </ThemedText>
               </View>
 
               <View style={styles.heroRow}>
-                <Text
+                <ThemedText
                   style={[
                     styles.heroRowLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Unrealized returns
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[
                     styles.heroRowValue,
                     {
@@ -481,37 +482,37 @@ export default function PortfolioScreen() {
                   {isPrivacyMode
                     ? '****'
                     : `${summary.unrealizedReturn >= 0 ? '+' : '-'}${showCurrencySymbol ? '₹' : ''}${Math.abs(summary.unrealizedReturn).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
-                </Text>
+                </ThemedText>
               </View>
 
               <View style={styles.heroRow}>
-                <Text
+                <ThemedText
                   style={[
                     styles.heroRowLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Invested
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[styles.heroRowValueWhite, { color: currColors.text }]}
                 >
                   {isPrivacyMode
                     ? '****'
                     : `${showCurrencySymbol ? '₹' : ''}${summary.totalCost.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
-                </Text>
+                </ThemedText>
               </View>
 
               <View style={styles.heroRow}>
-                <Text
+                <ThemedText
                   style={[
                     styles.heroRowLabel,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   XIRR
-                </Text>
-                <Text
+                </ThemedText>
+                <ThemedText
                   style={[
                     styles.heroRowValueWhite,
                     {
@@ -526,7 +527,7 @@ export default function PortfolioScreen() {
                   {isPrivacyMode
                     ? '****'
                     : `${summary.xirr.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`}
-                </Text>
+                </ThemedText>
               </View>
 
               <TouchableOpacity
@@ -537,14 +538,14 @@ export default function PortfolioScreen() {
                 style={[styles.heroRow, { marginBottom: 0 }]}
               >
                 <View>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.comparisonText,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     vs {selectedIndexData?.['Company Name'] || 'Index'}
-                  </Text>
+                  </ThemedText>
                   <View
                     style={{
                       position: 'absolute',
@@ -558,7 +559,7 @@ export default function PortfolioScreen() {
                     }}
                   />
                 </View>
-                <Text
+                <ThemedText
                   style={[
                     styles.comparisonValue,
                     { color: currColors.textSecondary },
@@ -567,9 +568,9 @@ export default function PortfolioScreen() {
                   {isPrivacyMode ? (
                     '****'
                   ) : (
-                    <Text>
+                    <ThemedText>
                       PF XIRR{' '}
-                      <Text
+                      <ThemedText
                         style={{
                           color:
                             summary.xirr < 0
@@ -578,11 +579,11 @@ export default function PortfolioScreen() {
                         }}
                       >
                         {summary.xirr.toFixed(2)}%
-                      </Text>{' '}
+                      </ThemedText>{' '}
                       / Idx {index1YReturn.toFixed(2)}%
-                    </Text>
+                    </ThemedText>
                   )}
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -630,14 +631,14 @@ export default function PortfolioScreen() {
                 ]}
               >
                 <View style={[styles.headerWithAction]}>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.innerSectionTitle,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     YEARLY TREND
-                  </Text>
+                  </ThemedText>
                   {yearlyAnalysis.length > 3 && (
                     <TouchableOpacity
                       onPress={() => {
@@ -679,15 +680,15 @@ export default function PortfolioScreen() {
                         activeOpacity={0.7}
                       >
                         <View style={styles.headerLeft}>
-                          <Text
+                          <ThemedText
                             style={[
                               styles.yearText,
                               { color: currColors.text },
                             ]}
                           >
                             {item.year}
-                          </Text>
-                          <Text
+                          </ThemedText>
+                          <ThemedText
                             style={[
                               styles.subText,
                               { color: currColors.textSecondary },
@@ -697,7 +698,7 @@ export default function PortfolioScreen() {
                             {isPrivacyMode
                               ? '****'
                               : `${showCurrencySymbol ? '₹' : ''}${item.averageMonthlyInvestment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: 'compact', compactDisplay: 'short' })}`}
-                          </Text>
+                          </ThemedText>
                         </View>
 
                         <View style={styles.headerRight}>
@@ -731,7 +732,7 @@ export default function PortfolioScreen() {
                                   ],
                                 }}
                               />
-                              <Text
+                              <ThemedText
                                 style={[
                                   styles.growthText,
                                   {
@@ -743,7 +744,7 @@ export default function PortfolioScreen() {
                                 ]}
                               >
                                 {Math.abs(item.percentageIncrease).toFixed(2)}%
-                              </Text>
+                              </ThemedText>
                             </View>
                           )}
                           <View
@@ -793,7 +794,7 @@ export default function PortfolioScreen() {
                                       },
                                     ]}
                                   />
-                                  <Text
+                                  <ThemedText
                                     style={[
                                       styles.assetName,
                                       { color: currColors.textSecondary },
@@ -801,9 +802,9 @@ export default function PortfolioScreen() {
                                     numberOfLines={1}
                                   >
                                     {asset.name}
-                                  </Text>
+                                  </ThemedText>
                                 </View>
-                                <Text
+                                <ThemedText
                                   style={[
                                     styles.assetValue,
                                     { color: currColors.text },
@@ -812,7 +813,7 @@ export default function PortfolioScreen() {
                                   {isPrivacyMode
                                     ? '****'
                                     : `${showCurrencySymbol ? '₹' : ''}${asset.value.toLocaleString(undefined, { maximumFractionDigits: 0, notation: 'compact', compactDisplay: 'short' })}`}
-                                </Text>
+                                </ThemedText>
                               </View>
                             ))}
                           </View>
@@ -832,14 +833,14 @@ export default function PortfolioScreen() {
                   },
                 ]}
               >
-                <Text
+                <ThemedText
                   style={[
                     styles.placeholderText,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Not enough data for yearly trend
-                </Text>
+                </ThemedText>
               </View>
             )}
           </View>
@@ -857,14 +858,14 @@ export default function PortfolioScreen() {
                 ]}
               >
                 <View style={[styles.headerWithAction]}>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.innerSectionTitle,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     MONTHLY TREND
-                  </Text>
+                  </ThemedText>
                   {monthlyAnalysis.length > 3 && (
                     <TouchableOpacity
                       onPress={() => {
@@ -899,12 +900,12 @@ export default function PortfolioScreen() {
                     ]}
                   >
                     <View style={styles.headerLeft}>
-                      <Text
+                      <ThemedText
                         style={[styles.monthText, { color: currColors.text }]}
                       >
                         {item.month}
-                      </Text>
-                      <Text
+                      </ThemedText>
+                      <ThemedText
                         style={[
                           styles.subText,
                           { color: currColors.textSecondary },
@@ -914,7 +915,7 @@ export default function PortfolioScreen() {
                         {isPrivacyMode
                           ? '****'
                           : `${showCurrencySymbol ? '₹' : ''}${item.investment.toLocaleString(undefined, { maximumFractionDigits: 0, notation: 'compact', compactDisplay: 'short' })}`}
-                      </Text>
+                      </ThemedText>
                     </View>
                     {item.percentageIncrease !== 0 && (
                       <View
@@ -944,7 +945,7 @@ export default function PortfolioScreen() {
                             ],
                           }}
                         />
-                        <Text
+                        <ThemedText
                           style={[
                             styles.growthText,
                             {
@@ -956,7 +957,7 @@ export default function PortfolioScreen() {
                           ]}
                         >
                           {Math.abs(item.percentageIncrease).toFixed(2)}%
-                        </Text>
+                        </ThemedText>
                       </View>
                     )}
                   </View>
@@ -972,14 +973,14 @@ export default function PortfolioScreen() {
                   },
                 ]}
               >
-                <Text
+                <ThemedText
                   style={[
                     styles.placeholderText,
                     { color: currColors.textSecondary },
                   ]}
                 >
                   Not enough data for monthly trend
-                </Text>
+                </ThemedText>
               </View>
             )}
           </View>
@@ -1041,7 +1042,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_700Bold',
   },
   heroIcons: {
     flexDirection: 'row',
@@ -1058,7 +1058,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '400',
     marginBottom: 16,
-    fontFamily: 'Outfit_400Regular',
   },
   dashedDivider: {
     height: 1,
@@ -1076,17 +1075,14 @@ const styles = StyleSheet.create({
   heroRowLabel: {
     color: '#8E8E93',
     fontSize: 14,
-    fontFamily: 'Outfit_400Regular',
   },
   heroRowValue: {
     fontSize: 14,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   heroRowValueWhite: {
     fontSize: 14,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   comparisonText: {
     fontSize: 14,
@@ -1095,7 +1091,6 @@ const styles = StyleSheet.create({
   comparisonValue: {
     fontSize: 14,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
 
   section: {
@@ -1106,7 +1101,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '400',
     marginBottom: 16,
-    fontFamily: 'Outfit_400Regular',
   },
   chartPlaceholder: {
     height: 180,
@@ -1136,7 +1130,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: 12,
     marginLeft: 16,
-    fontFamily: 'Outfit_700Bold',
   },
   dashboardRow: {
     flexDirection: 'row',
@@ -1181,7 +1174,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 2,
-    fontFamily: 'Outfit_400Regular',
   },
   subText: {
     color: '#8E8E93',
@@ -1236,7 +1228,6 @@ const styles = StyleSheet.create({
   assetValue: {
     fontSize: 12,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   emptyCard: {
     height: 150,
@@ -1289,7 +1280,6 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: 18,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   sheetSubtitle: {
     fontSize: 14,
@@ -1306,7 +1296,6 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   communityCard: {
     flexDirection: 'row',
@@ -1321,7 +1310,6 @@ const styles = StyleSheet.create({
   communityText: {
     fontSize: 14,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   filterChip: {
     paddingHorizontal: 16,
@@ -1369,7 +1357,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    fontFamily: 'Outfit_700Bold',
   },
   deltaContainer: {
     marginBottom: 20,
@@ -1388,13 +1375,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     marginLeft: 6,
-    fontFamily: 'Outfit_700Bold',
   },
   deltaSummary: {
     fontSize: 15,
     fontWeight: '500',
     lineHeight: 22,
-    fontFamily: 'Outfit_500Medium',
   },
   syncRow: {
     flexDirection: 'row',
@@ -1410,6 +1395,5 @@ const styles = StyleSheet.create({
   syncLabel: {
     fontSize: 11,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
 });

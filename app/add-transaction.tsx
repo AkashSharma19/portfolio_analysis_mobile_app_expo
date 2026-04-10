@@ -17,11 +17,12 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddTransactionScreen() {
@@ -155,15 +156,15 @@ export default function AddTransactionScreen() {
             onPress={() => router.back()}
             style={styles.cancelButton}
           >
-            <Text style={[styles.headerButtonText, { color: currColors.tint }]}>
+            <ThemedText style={[styles.headerButtonText, { color: currColors.tint }]}>
               Cancel
-            </Text>
+            </ThemedText>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: currColors.text }]}>
+          <ThemedText style={[styles.headerTitle, { color: currColors.text }]}>
             {editingTransaction ? 'Edit Transaction' : 'Add Transaction'}
-          </Text>
+          </ThemedText>
           <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-            <Text
+            <ThemedText
               style={[
                 styles.headerButtonText,
                 styles.saveButtonText,
@@ -171,7 +172,7 @@ export default function AddTransactionScreen() {
               ]}
             >
               Save
-            </Text>
+            </ThemedText>
           </TouchableOpacity>
         </View>
 
@@ -199,7 +200,7 @@ export default function AddTransactionScreen() {
                   ]}
                   onPress={() => setType('BUY')}
                 >
-                  <Text
+                  <ThemedText
                     style={[
                       styles.typeText,
                       type === 'BUY' && styles.typeTextActive,
@@ -207,7 +208,7 @@ export default function AddTransactionScreen() {
                     ]}
                   >
                     Buy
-                  </Text>
+                  </ThemedText>
                 </Pressable>
                 <Pressable
                   style={[
@@ -216,7 +217,7 @@ export default function AddTransactionScreen() {
                   ]}
                   onPress={() => setType('SELL')}
                 >
-                  <Text
+                  <ThemedText
                     style={[
                       styles.typeText,
                       type === 'SELL' && styles.typeTextActive,
@@ -224,17 +225,17 @@ export default function AddTransactionScreen() {
                     ]}
                   >
                     Sell
-                  </Text>
+                  </ThemedText>
                 </Pressable>
               </View>
             </View>
 
             {/* ASSET DETAILS GROUP */}
-            <Text
+            <ThemedText
               style={[styles.groupLabel, { color: currColors.textSecondary }]}
             >
               ASSET DETAILS
-            </Text>
+            </ThemedText>
             <View
               style={[styles.formGroup, { backgroundColor: currColors.card }]}
             >
@@ -246,11 +247,11 @@ export default function AddTransactionScreen() {
                 ]}
                 onPress={() => setShowSymbolModal(true)}
               >
-                <Text style={[styles.label, { color: currColors.text }]}>
+                <ThemedText style={[styles.label, { color: currColors.text }]}>
                   Symbol
-                </Text>
+                </ThemedText>
                 <View style={styles.valueContainer}>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.valueText,
                       !symbol && styles.placeholderText,
@@ -262,7 +263,7 @@ export default function AddTransactionScreen() {
                     ]}
                   >
                     {symbol || 'Select'}
-                  </Text>
+                  </ThemedText>
                   <ChevronRight
                     size={16}
                     color={currColors.border}
@@ -278,14 +279,14 @@ export default function AddTransactionScreen() {
                     { borderBottomColor: currColors.border },
                   ]}
                 >
-                  <Text
+                  <ThemedText
                     style={[
                       styles.companyName,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     {selectedTicker['Company Name']}
-                  </Text>
+                  </ThemedText>
                 </View>
               )}
 
@@ -295,9 +296,9 @@ export default function AddTransactionScreen() {
                   { borderBottomColor: currColors.border },
                 ]}
               >
-                <Text style={[styles.label, { color: currColors.text }]}>
+                <ThemedText style={[styles.label, { color: currColors.text }]}>
                   Quantity
-                </Text>
+                </ThemedText>
                 <TextInput
                   style={[styles.input, { color: currColors.text }]}
                   placeholder="0"
@@ -310,9 +311,9 @@ export default function AddTransactionScreen() {
               </View>
 
               <View style={[styles.formRow, styles.formRowLast]}>
-                <Text style={[styles.label, { color: currColors.text }]}>
+                <ThemedText style={[styles.label, { color: currColors.text }]}>
                   Price
-                </Text>
+                </ThemedText>
                 <View
                   style={{
                     flexDirection: 'row',
@@ -339,11 +340,11 @@ export default function AddTransactionScreen() {
             </View>
 
             {/* TRANSACTION DETAILS GROUP */}
-            <Text
+            <ThemedText
               style={[styles.groupLabel, { color: currColors.textSecondary }]}
             >
               TRANSACTION DETAILS
-            </Text>
+            </ThemedText>
             <View
               style={[styles.formGroup, { backgroundColor: currColors.card }]}
             >
@@ -354,9 +355,9 @@ export default function AddTransactionScreen() {
                   { borderBottomColor: currColors.border },
                 ]}
               >
-                <Text style={[styles.label, { color: currColors.text }]}>
+                <ThemedText style={[styles.label, { color: currColors.text }]}>
                   Date
-                </Text>
+                </ThemedText>
                 <View style={{ flex: 1 }}>
                   {Platform.OS === 'ios' ? (
                     <View style={{ alignItems: 'flex-end' }}>
@@ -377,11 +378,11 @@ export default function AddTransactionScreen() {
                       onPress={() => setShowDatePicker(true)}
                       style={{ alignItems: 'flex-end' }}
                     >
-                      <Text
+                      <ThemedText
                         style={[styles.valueText, { color: currColors.text }]}
                       >
                         {date.toLocaleDateString()}
-                      </Text>
+                      </ThemedText>
                     </Pressable>
                   )}
                 </View>
@@ -403,11 +404,11 @@ export default function AddTransactionScreen() {
                   setShowBrokerModal(true);
                 }}
               >
-                <Text style={[styles.label, { color: currColors.text }]}>
+                <ThemedText style={[styles.label, { color: currColors.text }]}>
                   Broker
-                </Text>
+                </ThemedText>
                 <View style={styles.valueContainer}>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.valueText,
                       !broker && styles.placeholderText,
@@ -419,7 +420,7 @@ export default function AddTransactionScreen() {
                     ]}
                   >
                     {broker || 'Optional'}
-                  </Text>
+                  </ThemedText>
                   <ChevronRight
                     size={16}
                     color={currColors.border}
@@ -454,9 +455,9 @@ export default function AddTransactionScreen() {
               },
             ]}
           >
-            <Text style={[styles.modalTitle, { color: currColors.text }]}>
+            <ThemedText style={[styles.modalTitle, { color: currColors.text }]}>
               Select Asset
-            </Text>
+            </ThemedText>
             <TouchableOpacity
               onPress={() => setShowSymbolModal(false)}
               style={styles.modalCloseButton}
@@ -503,27 +504,27 @@ export default function AddTransactionScreen() {
                 onPress={() => selectTicker(item)}
               >
                 <View>
-                  <Text
+                  <ThemedText
                     style={[styles.tickerSymbol, { color: currColors.text }]}
                   >
                     {item.Tickers}
-                  </Text>
-                  <Text
+                  </ThemedText>
+                  <ThemedText
                     style={[
                       styles.companyNameList,
                       { color: currColors.textSecondary },
                     ]}
                   >
                     {item['Company Name']}
-                  </Text>
+                  </ThemedText>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text
+                  <ThemedText
                     style={[styles.tickerPrice, { color: currColors.text }]}
                   >
                     {showCurrencySymbol ? '₹' : ''}
                     {item['Current Value']}
-                  </Text>
+                  </ThemedText>
                   {symbol === item.Tickers && (
                     <Check
                       size={16}
@@ -561,9 +562,9 @@ export default function AddTransactionScreen() {
               },
             ]}
           >
-            <Text style={[styles.modalTitle, { color: currColors.text }]}>
+            <ThemedText style={[styles.modalTitle, { color: currColors.text }]}>
               Select Broker
-            </Text>
+            </ThemedText>
             <TouchableOpacity
               onPress={() => setShowBrokerModal(false)}
               style={styles.modalCloseButton}
@@ -612,9 +613,9 @@ export default function AddTransactionScreen() {
                   setShowBrokerModal(false);
                 }}
               >
-                <Text style={[styles.tickerSymbol, { color: currColors.tint }]}>
+                <ThemedText style={[styles.tickerSymbol, { color: currColors.tint }]}>
                   Use "{searchQuery}"
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             )}
 
@@ -635,11 +636,11 @@ export default function AddTransactionScreen() {
                     setShowBrokerModal(false);
                   }}
                 >
-                  <Text
+                  <ThemedText
                     style={[styles.tickerSymbol, { color: currColors.text }]}
                   >
                     {b}
-                  </Text>
+                  </ThemedText>
                   {broker === b && <Check size={16} color={currColors.tint} />}
                 </TouchableOpacity>
               ))}
@@ -672,7 +673,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 17,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   cancelButton: {
     paddingVertical: 8,
@@ -719,7 +719,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FFF',
-    fontFamily: 'Outfit_600SemiBold',
   },
   typeTextActive: {
     color: '#000', // Black text on colored background
@@ -763,7 +762,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     color: '#FFF',
-    fontFamily: 'Outfit_400Regular',
   },
   valueContainer: {
     flexDirection: 'row',
@@ -772,7 +770,6 @@ const styles = StyleSheet.create({
   valueText: {
     fontSize: 16,
     color: '#FFF',
-    fontFamily: 'Outfit_400Regular',
   },
   placeholderText: {
     color: '#8E8E93',
@@ -782,6 +779,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFF',
     padding: 0,
+    fontFamily: 'Outfit_400Regular',
   },
   currencyPrefix: {
     fontSize: 16,
@@ -810,7 +808,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 17,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   modalCloseButton: {
     padding: 4,
@@ -829,6 +826,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     color: '#FFF',
     fontSize: 16,
+    fontFamily: 'Outfit_400Regular',
   },
   tickerList: {
     paddingBottom: 40,
@@ -846,7 +844,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFF',
-    fontFamily: 'Outfit_600SemiBold',
   },
   companyNameList: {
     fontSize: 12,

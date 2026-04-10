@@ -18,11 +18,12 @@ import {
   ScrollView,
   SectionList,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { RectButton, Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -57,9 +58,9 @@ const TransactionIcon = memo(
             />
           </View>
         ) : (
-          <Text style={[styles.iconLetter, { color: currColors.text }]}>
+          <ThemedText style={[styles.iconLetter, { color: currColors.text }]}>
             {symbolLetter}
-          </Text>
+          </ThemedText>
         )}
         <View
           style={[
@@ -107,14 +108,14 @@ const TransactionItem = memo(
           onPress={() => onEdit(item.id)}
         >
           <Edit2 size={20} color="#FFF" />
-          <Text style={styles.actionText}>Edit</Text>
+          <ThemedText style={styles.actionText}>Edit</ThemedText>
         </RectButton>
         <RectButton
           style={[styles.actionButton, styles.deleteButton]}
           onPress={() => onDelete(item.id)}
         >
           <Trash2 size={20} color="#FFF" />
-          <Text style={styles.actionText}>Delete</Text>
+          <ThemedText style={styles.actionText}>Delete</ThemedText>
         </RectButton>
       </View>
     );
@@ -143,14 +144,14 @@ const TransactionItem = memo(
           />
 
           <View style={styles.infoCol}>
-            <Text
+            <ThemedText
               style={[styles.symbolText, { color: currColors.text }]}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {displayName}
-            </Text>
-            <Text
+            </ThemedText>
+            <ThemedText
               style={[styles.dateText, { color: currColors.textSecondary }]}
             >
               {format(
@@ -161,20 +162,20 @@ const TransactionItem = memo(
                 ),
                 'MMM dd',
               )}
-            </Text>
+            </ThemedText>
           </View>
 
           <View style={styles.rightCol}>
-            <Text style={[styles.amountText, { color: currColors.text }]}>
+            <ThemedText style={[styles.amountText, { color: currColors.text }]}>
               {isPrivacyMode
                 ? '****'
                 : `${item.currency === 'USD' ? '$' : showCurrencySymbol ? '₹' : ''}${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            </Text>
-            <Text
+            </ThemedText>
+            <ThemedText
               style={[styles.quantityText, { color: currColors.textSecondary }]}
             >
               Qty: {item.quantity}
-            </Text>
+            </ThemedText>
           </View>
         </View>
       </Swipeable>
@@ -288,9 +289,9 @@ export default function HistoryScreen() {
     <View
       style={[styles.sectionHeader, { backgroundColor: currColors.background }]}
     >
-      <Text style={[styles.sectionTitle, { color: currColors.text }]}>
+      <ThemedText style={[styles.sectionTitle, { color: currColors.text }]}>
         {title}
-      </Text>
+      </ThemedText>
     </View>
   );
 
@@ -358,7 +359,7 @@ export default function HistoryScreen() {
               }}
               style={styles.tabItem}
             >
-              <Text
+              <ThemedText
                 style={[
                   styles.tabText,
                   {
@@ -371,7 +372,7 @@ export default function HistoryScreen() {
                 ]}
               >
                 {category}
-              </Text>
+              </ThemedText>
               {activeCategory === category && (
                 <View
                   style={[
@@ -388,11 +389,11 @@ export default function HistoryScreen() {
       <View style={styles.container}>
         {filteredTransactions.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text
+            <ThemedText
               style={[styles.emptyText, { color: currColors.textSecondary }]}
             >
               No transactions found.
-            </Text>
+            </ThemedText>
           </View>
         ) : (
           <SectionList
@@ -457,7 +458,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   tabsContainer: {
     marginBottom: 10,
@@ -475,7 +475,6 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 16,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   activeTabText: {
     fontWeight: '400',
@@ -495,7 +494,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   listContent: {
     paddingBottom: 40,
@@ -518,7 +516,6 @@ const styles = StyleSheet.create({
   iconLetter: {
     fontSize: 18,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   badgeContainer: {
     position: 'absolute',
@@ -539,11 +536,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 2,
-    fontFamily: 'Outfit_400Regular',
   },
   dateText: {
     fontSize: 12,
-    fontFamily: 'Outfit_400Regular',
   },
   rightCol: {
     alignItems: 'flex-end',
@@ -553,11 +548,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 2,
-    fontFamily: 'Outfit_400Regular',
   },
   quantityText: {
     fontSize: 12,
-    fontFamily: 'Outfit_400Regular',
   },
   rightActions: {
     flexDirection: 'row',
@@ -579,7 +572,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 11,
     marginTop: 4,
-    fontFamily: 'Outfit_400Regular',
   },
   emptyState: {
     flex: 1,
@@ -588,6 +580,5 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    fontFamily: 'Outfit_400Regular',
   },
 });

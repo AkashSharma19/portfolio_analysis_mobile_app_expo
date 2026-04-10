@@ -17,10 +17,11 @@ import {
   FlatList,
   Image,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '../../constants/Colors';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
@@ -141,40 +142,40 @@ export default function SectorDetailsScreen() {
                 />
               </View>
             ) : (
-              <Text
+              <ThemedText
                 style={[
                   styles.iconLetter,
                   { color: CHART_COLORS[index % CHART_COLORS.length] },
                 ]}
               >
                 {companyName[0]?.toUpperCase() || '?'}
-              </Text>
+              </ThemedText>
             )}
           </View>
           <View style={styles.infoCol}>
-            <Text
+            <ThemedText
               style={[styles.companyName, { color: currColors.text }]}
               numberOfLines={1}
             >
               {companyName}
-            </Text>
+            </ThemedText>
             <View style={styles.tickerRow}>
-              <Text
+              <ThemedText
                 style={[styles.tickerText, { color: currColors.textSecondary }]}
               >
                 {item.Tickers?.split(':').pop() || item.Tickers}
-              </Text>
+              </ThemedText>
             </View>
           </View>
         </View>
         <View style={styles.itemRight}>
-          <Text style={[styles.currentPrice, { color: currColors.text }]}>
+          <ThemedText style={[styles.currentPrice, { color: currColors.text }]}>
             {showCurrencySymbol ? '₹' : ''}
             {currentValue.toLocaleString('en-IN', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
-          </Text>
+          </ThemedText>
           <View
             style={[
               styles.changeBadge,
@@ -192,14 +193,14 @@ export default function SectorDetailsScreen() {
                 transform: [{ rotate: isPositive ? '0deg' : '180deg' }],
               }}
             />
-            <Text
+            <ThemedText
               style={[
                 styles.changeText,
                 { color: isPositive ? '#4CAF50' : '#F44336' },
               ]}
             >
               {Math.abs(changePercentage).toFixed(2)}%
-            </Text>
+            </ThemedText>
           </View>
         </View>
       </TouchableOpacity>
@@ -244,9 +245,9 @@ export default function SectorDetailsScreen() {
               >
                 <SectorIcon size={48} color={sectorColor} strokeWidth={1.5} />
               </View>
-              <Text style={[styles.sectorTitle, { color: currColors.text }]}>
+              <ThemedText style={[styles.sectorTitle, { color: currColors.text }]}>
                 {sector}
-              </Text>
+              </ThemedText>
             </View>
           </SafeAreaView>
         </LinearGradient>
@@ -298,13 +299,13 @@ export default function SectorDetailsScreen() {
                 }}
               >
                 <ArrowUpDown size={14} color={currColors.text} />
-                <Text style={[styles.viewModeText, { color: currColors.text }]}>
+                <ThemedText type="medium" style={[styles.viewModeText, { color: currColors.text }]}>
                   {viewMode === 'Price'
                     ? 'Current price'
                     : viewMode === 'DailyChange'
                       ? 'Daily change'
                       : 'Name'}
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -364,7 +365,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -0.5,
     marginBottom: 8,
-    fontFamily: 'Outfit_500Medium',
   },
 
   listSection: {
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   actionIconButton: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -394,25 +394,25 @@ const styles = StyleSheet.create({
   viewModeToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 20,
     borderWidth: 1,
-    gap: 6,
+    gap: 8,
   },
   viewModeText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
   },
   listContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     paddingBottom: 20,
   },
   companyItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    padding: 18,
     borderBottomWidth: 1,
   },
   itemLeft: {
@@ -438,9 +438,8 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '400',
     marginBottom: 2,
-    fontFamily: 'Outfit_500Medium',
   },
   tickerRow: {
     flexDirection: 'row',
@@ -448,8 +447,7 @@ const styles = StyleSheet.create({
   },
   tickerText: {
     fontSize: 12,
-    fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '400',
   },
   itemRight: {
     alignItems: 'flex-end',

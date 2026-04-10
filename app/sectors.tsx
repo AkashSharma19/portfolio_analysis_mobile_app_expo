@@ -11,11 +11,12 @@ import {
   Dimensions,
   FlatList,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -56,9 +57,9 @@ export default function SectorsScreen() {
         <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
           <SectorIcon size={20} color={color} />
         </View>
-        <Text style={[styles.sectorName, { color: currColors.text }]}>
+        <ThemedText style={[styles.sectorName, { color: currColors.text }]}>
           {sName}
-        </Text>
+        </ThemedText>
         <Ionicons
           name="chevron-forward"
           size={18}
@@ -77,9 +78,9 @@ export default function SectorsScreen() {
 
       <View style={[styles.header, { backgroundColor: currColors.background }]}>
         <BackButton />
-        <Text style={[styles.headerTitle, { color: currColors.text }]}>
+        <ThemedText style={[styles.headerTitle, { color: currColors.text }]}>
           All Sectors
-        </Text>
+        </ThemedText>
         <View style={{ width: 40 }} />
       </View>
 
@@ -119,11 +120,11 @@ export default function SectorsScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text
+            <ThemedText
               style={[styles.emptyText, { color: currColors.textSecondary }]}
             >
               No sectors found
-            </Text>
+            </ThemedText>
           </View>
         }
       />
@@ -146,7 +147,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   searchContainer: {
     paddingHorizontal: 16,
@@ -191,7 +191,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
-    fontFamily: 'Outfit_500Medium',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -199,6 +198,5 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    fontFamily: 'Outfit_400Regular',
   },
 });

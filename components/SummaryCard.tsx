@@ -3,7 +3,8 @@ import Colors from '@/constants/Colors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { TrendingDown, TrendingUp } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { ThemedText } from './ThemedText';
 
 interface SummaryCardProps {
   label: string;
@@ -29,14 +30,14 @@ export const SummaryCard = ({
 
   return (
     <View style={[styles.card, { backgroundColor: currColors.card }]}>
-      <Text style={[styles.label, { color: currColors.textSecondary }]}>
+      <ThemedText style={[styles.label, { color: currColors.textSecondary }]}>
         {label}
-      </Text>
-      <Text style={[styles.value, { color: currColors.text }]}>
+      </ThemedText>
+      <ThemedText style={[styles.value, { color: currColors.text }]}>
         {isPercentage ? '' : showCurrencySymbol ? '₹' : ''}
         {value}
         {isPercentage ? '%' : ''}
-      </Text>
+      </ThemedText>
       {trend !== undefined && (
         <View style={styles.trendContainer}>
           {isPositive ? (
@@ -44,14 +45,14 @@ export const SummaryCard = ({
           ) : (
             <TrendingDown size={14} color="#F44336" />
           )}
-          <Text
+          <ThemedText
             style={[
               styles.trendText,
               { color: isPositive ? '#4CAF50' : '#F44336' },
             ]}
           >
             {Math.abs(trend).toFixed(1)}%
-          </Text>
+          </ThemedText>
         </View>
       )}
     </View>

@@ -20,14 +20,8 @@ export interface Ticker {
   'Yesterday Close'?: number;
   High52?: number;
   Low52?: number;
-  'Today - 2'?: number;
-  'Today - 3'?: number;
-  'Today - 4'?: number;
-  'Today - 5'?: number;
-  'Today - 6'?: number;
-  'Today - 7'?: number;
-  'Today - 365'?: number;
   Logo?: string;
+  [key: string]: string | number | undefined | null; // Support for dynamic 'Today - X' keys
 }
 
 export interface PortfolioSummary {
@@ -42,6 +36,7 @@ export interface PortfolioSummary {
   realizedReturn: number;
   unrealizedReturn: number;
   oneYearReturn?: number;
+  netInvested?: number;
 }
 export interface YearlyAnalysis {
   year: number;
@@ -69,7 +64,7 @@ export interface Holding {
   currentValue: number;
   pnl: number;
   pnlPercentage: number;
-  contributionPercentage: number;
+  contributionPercentage?: number;
   assetType: string;
   sector: string;
   broker: string;

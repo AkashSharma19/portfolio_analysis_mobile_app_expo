@@ -15,10 +15,11 @@ import React from 'react';
 import {
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PortfolioHealthFormulaScreen() {
@@ -38,10 +39,10 @@ export default function PortfolioHealthFormulaScreen() {
           <Icon size={20} color={c.tint} />
         </View>
         <View style={styles.titleBox}>
-          <Text style={[styles.sectionTitle, { color: c.text }]}>{title}</Text>
-          <Text style={[styles.pointsText, { color: c.textSecondary }]}>
+          <ThemedText style={[styles.sectionTitle, { color: c.text }]}>{title}</ThemedText>
+          <ThemedText style={[styles.pointsText, { color: c.textSecondary }]}>
             Max {points} Points
-          </Text>
+          </ThemedText>
         </View>
       </View>
       <View style={styles.sectionDivider} />
@@ -56,10 +57,10 @@ export default function PortfolioHealthFormulaScreen() {
         !isLast && { borderBottomWidth: 1, borderBottomColor: c.border },
       ]}
     >
-      <Text style={[styles.formulaLabel, { color: c.textSecondary }]}>
+      <ThemedText style={[styles.formulaLabel, { color: c.textSecondary }]}>
         {label}
-      </Text>
-      <Text style={[styles.formulaValue, { color: c.text }]}>{value}</Text>
+      </ThemedText>
+      <ThemedText style={[styles.formulaValue, { color: c.text }]}>{value}</ThemedText>
     </View>
   );
 
@@ -70,9 +71,9 @@ export default function PortfolioHealthFormulaScreen() {
     >
       <View style={[styles.header, { backgroundColor: c.background }]}>
         <BackButton />
-        <Text style={[styles.headerTitle, { color: c.text }]}>
+        <ThemedText style={[styles.headerTitle, { color: c.text }]}>
           Scoring Formula
-        </Text>
+        </ThemedText>
         <View style={{ width: 40 }} />
       </View>
 
@@ -81,36 +82,36 @@ export default function PortfolioHealthFormulaScreen() {
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        <Text style={[styles.introText, { color: c.textSecondary }]}>
+        <ThemedText style={[styles.introText, { color: c.textSecondary }]}>
           Your Portfolio Health Score is calculated based on five advanced
           dimensions to provide a deep assessment of diversification, risk, and
           performance.
-        </Text>
+        </ThemedText>
 
         {/* 1. Diversity & Asset Mix */}
         <Section icon={LayoutGrid} title="Diversity & Asset Mix" points={25}>
-          <Text style={[styles.description, { color: c.textSecondary }]}>
+          <ThemedText style={[styles.description, { color: c.textSecondary }]}>
             Evaluates breadth across sectors, market caps (Large/Mid/Small/ETF),
             and stock count.
-          </Text>
+          </ThemedText>
           <View style={styles.subHeader}>
-            <Text style={[styles.subTitle, { color: c.text }]}>
+            <ThemedText style={[styles.subTitle, { color: c.text }]}>
               Stock Count
-            </Text>
+            </ThemedText>
           </View>
           <Row label="12+ Stocks" value="9 pts" />
           <Row label="8 - 11 Stocks" value="7 pts" />
           <View style={styles.subHeader}>
-            <Text style={[styles.subTitle, { color: c.text }]}>
+            <ThemedText style={[styles.subTitle, { color: c.text }]}>
               Sectors Reach
-            </Text>
+            </ThemedText>
           </View>
           <Row label="6+ Sectors" value="8 pts" />
           <Row label="4 - 5 Sectors" value="6 pts" />
           <View style={styles.subHeader}>
-            <Text style={[styles.subTitle, { color: c.text }]}>
+            <ThemedText style={[styles.subTitle, { color: c.text }]}>
               Asset Type mix
-            </Text>
+            </ThemedText>
           </View>
           <Row label="4 Types (L/M/S/ETF)" value="8 pts" />
           <Row label="3 Types" value="6 pts" isLast />
@@ -118,21 +119,21 @@ export default function PortfolioHealthFormulaScreen() {
 
         {/* 2. Concentration Risk */}
         <Section icon={PieChart} title="Concentration Risk" points={20}>
-          <Text style={[styles.description, { color: c.textSecondary }]}>
+          <ThemedText style={[styles.description, { color: c.textSecondary }]}>
             Focuses on the weight of single largest stock and the top 3 combined
             weight.
-          </Text>
+          </ThemedText>
           <View style={styles.subHeader}>
-            <Text style={[styles.subTitle, { color: c.text }]}>
+            <ThemedText style={[styles.subTitle, { color: c.text }]}>
               Single Largest Stock
-            </Text>
+            </ThemedText>
           </View>
           <Row label="< 15% Weight" value="12 pts" />
           <Row label="15% - 25% Weight" value="8 pts" />
           <View style={styles.subHeader}>
-            <Text style={[styles.subTitle, { color: c.text }]}>
+            <ThemedText style={[styles.subTitle, { color: c.text }]}>
               Top 3 Combined
-            </Text>
+            </ThemedText>
           </View>
           <Row label="< 40% Weight" value="8 pts" />
           <Row label="40% - 60% Weight" value="5 pts" isLast />
@@ -140,17 +141,17 @@ export default function PortfolioHealthFormulaScreen() {
 
         {/* 3. Performance Quality */}
         <Section icon={TrendingUp} title="Performance Quality" points={20}>
-          <Text style={[styles.description, { color: c.textSecondary }]}>
+          <ThemedText style={[styles.description, { color: c.textSecondary }]}>
             Assesses long-term returns (XIRR) and 'Win Ratio' (percentage of
             profitable stocks).
-          </Text>
+          </ThemedText>
           <View style={styles.subHeader}>
-            <Text style={[styles.subTitle, { color: c.text }]}>XIRR Yield</Text>
+            <ThemedText style={[styles.subTitle, { color: c.text }]}>XIRR Yield</ThemedText>
           </View>
           <Row label="> 18% XIRR" value="12 pts" />
           <Row label="12% - 18% XIRR" value="9 pts" />
           <View style={styles.subHeader}>
-            <Text style={[styles.subTitle, { color: c.text }]}>Win Ratio</Text>
+            <ThemedText style={[styles.subTitle, { color: c.text }]}>Win Ratio</ThemedText>
           </View>
           <Row label="> 80% Profitable" value="8 pts" />
           <Row label="60% - 80% Profitable" value="6 pts" isLast />
@@ -158,21 +159,21 @@ export default function PortfolioHealthFormulaScreen() {
 
         {/* 4. Short-term Stability */}
         <Section icon={Shield} title="Short-term Stability" points={20}>
-          <Text style={[styles.description, { color: c.textSecondary }]}>
+          <ThemedText style={[styles.description, { color: c.textSecondary }]}>
             Uses 7-day volatility analysis and positioning relative to 52-week
             highs/lows.
-          </Text>
+          </ThemedText>
           <View style={styles.subHeader}>
-            <Text style={[styles.subTitle, { color: c.text }]}>
+            <ThemedText style={[styles.subTitle, { color: c.text }]}>
               7-Day Volatility
-            </Text>
+            </ThemedText>
           </View>
           <Row label="< 1.0% (Stable)" value="12 pts" />
           <Row label="1.0% - 2.0% (Moderate)" value="8 pts" />
           <View style={styles.subHeader}>
-            <Text style={[styles.subTitle, { color: c.text }]}>
+            <ThemedText style={[styles.subTitle, { color: c.text }]}>
               52W Range Pos
-            </Text>
+            </ThemedText>
           </View>
           <Row label="Bottom 30% (Advantageous)" value="8 pts" />
           <Row label="30% - 60% (Mid Range)" value="5 pts" isLast />
@@ -180,10 +181,10 @@ export default function PortfolioHealthFormulaScreen() {
 
         {/* 5. Absolute Profit */}
         <Section icon={Box} title="Absolute Profit" points={15}>
-          <Text style={[styles.description, { color: c.textSecondary }]}>
+          <ThemedText style={[styles.description, { color: c.textSecondary }]}>
             Evaluates the total absolute gain/loss percentage of your entire
             portfolio.
-          </Text>
+          </ThemedText>
           <Row label="> 25% Profit" value="15 pts" />
           <Row label="15% - 25% Profit" value="12 pts" />
           <Row label="5% - 15% Profit" value="8 pts" />
@@ -192,41 +193,41 @@ export default function PortfolioHealthFormulaScreen() {
         </Section>
 
         <View style={styles.gradeSection}>
-          <Text style={[styles.gradeTitle, { color: c.text }]}>
+          <ThemedText style={[styles.gradeTitle, { color: c.text }]}>
             Final Grade
-          </Text>
+          </ThemedText>
           <View style={styles.gradeRow}>
             <View style={[styles.gradeChip, { backgroundColor: '#34C75922' }]}>
-              <Text style={[styles.gradeLabel, { color: '#34C759' }]}>
+              <ThemedText style={[styles.gradeLabel, { color: '#34C759' }]}>
                 EXCELLENT
-              </Text>
-              <Text style={[styles.gradeRange, { color: '#34C759' }]}>
+              </ThemedText>
+              <ThemedText style={[styles.gradeRange, { color: '#34C759' }]}>
                 80 - 100
-              </Text>
+              </ThemedText>
             </View>
             <View style={[styles.gradeChip, { backgroundColor: '#5AC8FA22' }]}>
-              <Text style={[styles.gradeLabel, { color: '#5AC8FA' }]}>
+              <ThemedText style={[styles.gradeLabel, { color: '#5AC8FA' }]}>
                 GOOD
-              </Text>
-              <Text style={[styles.gradeRange, { color: '#5AC8FA' }]}>
+              </ThemedText>
+              <ThemedText style={[styles.gradeRange, { color: '#5AC8FA' }]}>
                 60 - 79
-              </Text>
+              </ThemedText>
             </View>
             <View style={[styles.gradeChip, { backgroundColor: '#FF950022' }]}>
-              <Text style={[styles.gradeLabel, { color: '#FF9500' }]}>
+              <ThemedText style={[styles.gradeLabel, { color: '#FF9500' }]}>
                 FAIR
-              </Text>
-              <Text style={[styles.gradeRange, { color: '#FF9500' }]}>
+              </ThemedText>
+              <ThemedText style={[styles.gradeRange, { color: '#FF9500' }]}>
                 40 - 59
-              </Text>
+              </ThemedText>
             </View>
             <View style={[styles.gradeChip, { backgroundColor: '#FF3B3022' }]}>
-              <Text style={[styles.gradeLabel, { color: '#FF3B30' }]}>
+              <ThemedText style={[styles.gradeLabel, { color: '#FF3B30' }]}>
                 POOR
-              </Text>
-              <Text style={[styles.gradeRange, { color: '#FF3B30' }]}>
+              </ThemedText>
+              <ThemedText style={[styles.gradeRange, { color: '#FF3B30' }]}>
                 0 - 39
-              </Text>
+              </ThemedText>
             </View>
           </View>
         </View>
@@ -247,7 +248,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   scrollContent: { padding: 20, paddingBottom: 40 },
   introText: {
@@ -255,7 +255,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 24,
     paddingHorizontal: 4,
-    fontFamily: 'Outfit_400Regular',
   },
   sectionCard: {
     borderRadius: 20,
@@ -280,7 +279,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   pointsText: {
     fontSize: 10,
@@ -288,7 +286,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginTop: 2,
-    fontFamily: 'Outfit_700Bold',
   },
   sectionDivider: {
     height: 1,
@@ -299,7 +296,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     marginBottom: 16,
-    fontFamily: 'Outfit_400Regular',
   },
   formulaRow: {
     flexDirection: 'row',
@@ -309,12 +305,10 @@ const styles = StyleSheet.create({
   formulaLabel: {
     fontSize: 13,
     fontWeight: '400',
-    fontFamily: 'Outfit_400Regular',
   },
   formulaValue: {
     fontSize: 13,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
   subHeader: { marginTop: 12, marginBottom: 4 },
   subTitle: {
@@ -323,14 +317,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
     opacity: 0.6,
-    fontFamily: 'Outfit_700Bold',
   },
   gradeSection: { marginTop: 12, paddingHorizontal: 4 },
   gradeTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 16,
-    fontFamily: 'Outfit_600SemiBold',
   },
   gradeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   gradeChip: {
@@ -344,11 +336,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
-    fontFamily: 'Outfit_700Bold',
   },
   gradeRange: {
     fontSize: 14,
     fontWeight: '600',
-    fontFamily: 'Outfit_600SemiBold',
   },
 });

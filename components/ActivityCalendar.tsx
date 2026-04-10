@@ -4,7 +4,8 @@ import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Transaction } from '@/types';
 import { format, parseISO } from 'date-fns';
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { ThemedText } from './ThemedText';
 import { Calendar, DateData } from 'react-native-calendars';
 
 interface ActivityCalendarProps {
@@ -61,16 +62,16 @@ export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
         {/* Top: Sell (Negative) */}
         <View style={styles.statContainer}>
           {sellValue > 0 && (
-            <Text style={styles.sellText} numberOfLines={1}>
+            <ThemedText style={styles.sellText} numberOfLines={1}>
               {isPrivacyMode
                 ? '****'
                 : `-${sellValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
-            </Text>
+            </ThemedText>
           )}
         </View>
 
         {/* Center: Date */}
-        <Text
+        <ThemedText
           style={[
             styles.dayText,
             { color: currColors.text },
@@ -81,16 +82,16 @@ export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
           ]}
         >
           {day.day}
-        </Text>
+        </ThemedText>
 
         {/* Bottom: Buy (Positive) */}
         <View style={styles.statContainer}>
           {buyValue > 0 && (
-            <Text style={styles.buyText} numberOfLines={1}>
+            <ThemedText style={styles.buyText} numberOfLines={1}>
               {isPrivacyMode
                 ? '****'
                 : `+${buyValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
-            </Text>
+            </ThemedText>
           )}
         </View>
       </View>
@@ -104,9 +105,9 @@ export const ActivityCalendar = ({ transactions }: ActivityCalendarProps) => {
         { backgroundColor: currColors.card, borderColor: currColors.border },
       ]}
     >
-      <Text style={[styles.title, { color: currColors.textSecondary }]}>
+      <ThemedText style={[styles.title, { color: currColors.textSecondary }]}>
         CALENDAR VIEW
-      </Text>
+      </ThemedText>
       <Calendar
         key={`calendar-${theme}`}
         dayComponent={({
@@ -173,12 +174,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 0,
-    fontFamily: 'Outfit_500Medium',
   },
   todayText: {
     color: '#2ac4c7', // Cyan-ish for today
     fontWeight: '700',
-    fontFamily: 'Outfit_700Bold',
   },
   disabledText: {
     color: '#444',
@@ -193,13 +192,11 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: '#8E8E93', // Gray as requested for sells (or use Red #FF453A if preferred)
     textAlign: 'center',
-    fontFamily: 'Outfit_400Regular',
   },
   buyText: {
     fontSize: 7,
     color: '#2ac4c7', // Cyan/Green for buys
     textAlign: 'center',
-    fontFamily: 'Outfit_400Regular',
   },
   title: {
     fontSize: 10,
@@ -207,6 +204,5 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 12,
-    fontFamily: 'Outfit_700Bold',
   },
 });
