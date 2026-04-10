@@ -6,63 +6,81 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 interface SummaryCardProps {
-    label: string;
-    value: string;
-    trend?: number;
-    prefix?: string;
+  label: string;
+  value: string;
+  trend?: number;
+  prefix?: string;
 }
 
-export const SummaryCard = ({ label, value, trend, prefix = '$' }: SummaryCardProps) => {
-    const isPositive = trend !== undefined && trend >= 0;
-    const isPercentage = label.includes('%') || label === 'XIRR';
+export const SummaryCard = ({
+  label,
+  value,
+  trend,
+  prefix = '$',
+}: SummaryCardProps) => {
+  const isPositive = trend !== undefined && trend >= 0;
+  const isPercentage = label.includes('%') || label === 'XIRR';
 
-    const theme = useColorScheme() ?? 'dark';
-    const currColors = Colors[theme];
-    const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
+  const theme = useColorScheme() ?? 'dark';
+  const currColors = Colors[theme];
+  const showCurrencySymbol = usePortfolioStore(
+    (state) => state.showCurrencySymbol,
+  );
 
-    return (
-        <View style={[styles.card, { backgroundColor: currColors.card }]}>
-            <Text style={[styles.label, { color: currColors.textSecondary }]}>{label}</Text>
-            <Text style={[styles.value, { color: currColors.text }]}>{isPercentage ? '' : (showCurrencySymbol ? '₹' : '')}{value}{isPercentage ? '%' : ''}</Text>
-            {trend !== undefined && (
-                <View style={styles.trendContainer}>
-                    {isPositive ? (
-                        <TrendingUp size={14} color="#4CAF50" />
-                    ) : (
-                        <TrendingDown size={14} color="#F44336" />
-                    )}
-                    <Text style={[styles.trendText, { color: isPositive ? '#4CAF50' : '#F44336' }]}>
-                        {Math.abs(trend).toFixed(1)}%
-                    </Text>
-                </View>
-            )}
+  return (
+    <View style={[styles.card, { backgroundColor: currColors.card }]}>
+      <Text style={[styles.label, { color: currColors.textSecondary }]}>
+        {label}
+      </Text>
+      <Text style={[styles.value, { color: currColors.text }]}>
+        {isPercentage ? '' : showCurrencySymbol ? '₹' : ''}
+        {value}
+        {isPercentage ? '%' : ''}
+      </Text>
+      {trend !== undefined && (
+        <View style={styles.trendContainer}>
+          {isPositive ? (
+            <TrendingUp size={14} color="#4CAF50" />
+          ) : (
+            <TrendingDown size={14} color="#F44336" />
+          )}
+          <Text
+            style={[
+              styles.trendText,
+              { color: isPositive ? '#4CAF50' : '#F44336' },
+            ]}
+          >
+            {Math.abs(trend).toFixed(1)}%
+          </Text>
         </View>
-    );
+      )}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    card: {
-        borderRadius: 12,
-        padding: 16,
-        width: '48%',
-        marginBottom: 16,
-    },
-    label: {
-        fontSize: 12,
-        marginBottom: 8,
-    },
-    value: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    trendContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 8,
-        gap: 4,
-    },
-    trendText: {
-        fontSize: 12,
-        fontWeight: '600',
-    },
+  card: {
+    borderRadius: 12,
+    padding: 16,
+    width: '48%',
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  value: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  trendContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 4,
+  },
+  trendText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
 });

@@ -2,14 +2,33 @@
 import { useInsights } from '@/hooks/useInsights';
 import * as Haptics from 'expo-haptics';
 import { Tabs, useRouter } from 'expo-router';
-import { Compass, History, Plus, Sparkles, User, Wallet } from 'lucide-react-native';
+import {
+  Compass,
+  History,
+  Plus,
+  Sparkles,
+  User,
+  Wallet,
+} from 'lucide-react-native';
 import React from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 
-function InsightsTabIcon({ color, focused }: { color: string; focused: boolean }) {
+function InsightsTabIcon({
+  color,
+  focused,
+}: {
+  color: string;
+  focused: boolean;
+}) {
   const { count } = useInsights();
   const badgeCount = Math.min(count, 9);
   const showBadge = count > 0;
@@ -19,7 +38,10 @@ function InsightsTabIcon({ color, focused }: { color: string; focused: boolean }
       <Sparkles size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
       {showBadge && (
         <View style={tabStyles.badge}>
-          <Text style={tabStyles.badgeText}>{badgeCount}{count > 9 ? '+' : ''}</Text>
+          <Text style={tabStyles.badgeText}>
+            {badgeCount}
+            {count > 9 ? '+' : ''}
+          </Text>
         </View>
       )}
     </View>
@@ -98,8 +120,10 @@ export default function TabLayout() {
             fontWeight: '500',
             marginTop: 4,
             marginBottom: 2,
-          }
-        }}>
+            fontFamily: 'Outfit_500Medium',
+          },
+        }}
+      >
         <Tabs.Screen
           name="index"
           options={{
@@ -131,7 +155,11 @@ export default function TabLayout() {
           options={{
             title: 'History',
             tabBarIcon: ({ color, focused }) => (
-              <History size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+              <History
+                size={24}
+                color={color}
+                strokeWidth={focused ? 2.5 : 2}
+              />
             ),
           }}
         />
@@ -140,7 +168,11 @@ export default function TabLayout() {
           options={{
             title: 'Explore',
             tabBarIcon: ({ color, focused }) => (
-              <Compass size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+              <Compass
+                size={24}
+                color={color}
+                strokeWidth={focused ? 2.5 : 2}
+              />
             ),
           }}
         />
@@ -182,6 +214,5 @@ export default function TabLayout() {
         <Plus size={30} color="#FFF" strokeWidth={2} />
       </TouchableOpacity>
     </View>
-
   );
 }

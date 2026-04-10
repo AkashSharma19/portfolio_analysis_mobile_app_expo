@@ -1,6 +1,16 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from '@react-navigation/native';
+import {
+  useFonts,
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+} from '@expo-google-fonts/outfit';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -15,7 +25,7 @@ import { registerBackgroundFetchAsync } from '../tasks/backgroundFetch';
 
 export {
   // Catch any errors thrown by the Layout component.
-  ErrorBoundary
+  ErrorBoundary,
 } from 'expo-router';
 
 export const unstable_settings = {
@@ -30,6 +40,10 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
@@ -72,22 +86,74 @@ function RootLayoutNav() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor }}>
       <ThemeProvider value={theme}>
         <StatusBar style={colorScheme === 'light' ? 'dark' : 'light'} />
-        <Stack screenOptions={{ contentStyle: { backgroundColor } }}>
+        <Stack
+          screenOptions={{
+            contentStyle: { backgroundColor },
+            headerStyle: { backgroundColor },
+            headerTintColor: currColors.text,
+            headerTitleStyle: {
+              fontFamily: 'Outfit_600SemiBold',
+              fontSize: 17,
+            },
+          }}
+        >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="add-transaction" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="monthly-analysis" options={{ animation: 'slide_from_right', headerShown: false }} />
-          <Stack.Screen name="yearly-analysis" options={{ animation: 'slide_from_right', headerShown: false }} />
-          <Stack.Screen name="stock-details/[symbol]" options={{ animation: 'slide_from_right', headerShown: false }} />
-          <Stack.Screen name="analytics" options={{ animation: 'slide_from_right', headerShown: false }} />
-          <Stack.Screen name="forecast-details" options={{ animation: 'slide_from_right', headerShown: false }} />
-          <Stack.Screen name="win-loss-details" options={{ animation: 'slide_from_right', headerShown: false }} />
-          <Stack.Screen name="settings" options={{ animation: 'slide_from_right', headerShown: false }} />
-          <Stack.Screen name="insights" options={{ animation: 'slide_from_right', headerShown: false }} />
-          <Stack.Screen name="index-comparison" options={{ animation: 'slide_from_right', headerShown: false }} />
-          <Stack.Screen name="portfolio-health" options={{ animation: 'slide_from_right', headerShown: false }} />
-          <Stack.Screen name="portfolio-health-formula" options={{ animation: 'slide_from_right', headerShown: false }} />
-          <Stack.Screen name="sectors" options={{ animation: 'slide_from_right', headerShown: true }} />
-          <Stack.Screen name="sector-details/[sector]" options={{ animation: 'slide_from_right', headerShown: false }} />
+          <Stack.Screen
+            name="add-transaction"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+          <Stack.Screen
+            name="monthly-analysis"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="yearly-analysis"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="stock-details/[symbol]"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="analytics"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="forecast-details"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="win-loss-details"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="settings"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="insights"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="index-comparison"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="portfolio-health"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="portfolio-health-formula"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="sectors"
+            options={{ animation: 'slide_from_right', headerShown: true }}
+          />
+          <Stack.Screen
+            name="sector-details/[sector]"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

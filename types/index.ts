@@ -16,7 +16,7 @@ export interface Ticker {
   'Current Value': number;
   'Company Name': string;
   'Asset Type'?: string;
-  'Sector'?: string;
+  Sector?: string;
   'Yesterday Close'?: number;
   High52?: number;
   Low52?: number;

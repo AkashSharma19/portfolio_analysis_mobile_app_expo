@@ -6,115 +6,192 @@ import { Ionicons } from '@expo/vector-icons';
 import { format, parseISO } from 'date-fns';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { ArrowDownLeft, ArrowUpRight, Edit2, Trash2 } from 'lucide-react-native';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Edit2,
+  Trash2,
+} from 'lucide-react-native';
 import React, { memo, useMemo, useState } from 'react';
-import { Image, ScrollView, SectionList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Image,
+  ScrollView,
+  SectionList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { RectButton, Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // STANDALONE COMPONENTS FOR PERFORMANCE
-const TransactionIcon = memo(({ ticker, isBuy, symbol, currColors }: { ticker?: Ticker, isBuy: boolean, symbol: string, currColors: any }) => {
-  const symbolLetter = ticker?.['Company Name']?.[0]?.toUpperCase() || symbol[0]?.toUpperCase() || '?';
+const TransactionIcon = memo(
+  ({
+    ticker,
+    isBuy,
+    symbol,
+    currColors,
+  }: {
+    ticker?: Ticker;
+    isBuy: boolean;
+    symbol: string;
+    currColors: any;
+  }) => {
+    const symbolLetter =
+      ticker?.['Company Name']?.[0]?.toUpperCase() ||
+      symbol[0]?.toUpperCase() ||
+      '?';
 
-  return (
-    <View style={[styles.assetIcon, { backgroundColor: currColors.card }]}>
-      {ticker?.Logo ? (
-        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 2 }}>
-          <Image
-            source={{ uri: ticker.Logo }}
-            style={{ width: 40, height: 40, borderRadius: 10 }}
-            resizeMode="contain"
-          />
-        </View>
-      ) : (
-        <Text style={[styles.iconLetter, { color: currColors.text }]}>
-          {symbolLetter}
-        </Text>
-      )}
-      <View style={[styles.badgeContainer, { backgroundColor: isBuy ? '#34C759' : '#FF3B30' }]}>
-        {isBuy ? (
-          <ArrowDownLeft size={8} color="#FFF" strokeWidth={3} />
+    return (
+      <View style={[styles.assetIcon, { backgroundColor: currColors.card }]}>
+        {ticker?.Logo ? (
+          <View
+            style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 2 }}
+          >
+            <Image
+              source={{ uri: ticker.Logo }}
+              style={{ width: 40, height: 40, borderRadius: 10 }}
+              resizeMode="contain"
+            />
+          </View>
         ) : (
-          <ArrowUpRight size={8} color="#FFF" strokeWidth={3} />
+          <Text style={[styles.iconLetter, { color: currColors.text }]}>
+            {symbolLetter}
+          </Text>
         )}
-      </View>
-    </View>
-  );
-});
-
-const TransactionItem = memo(({
-  item,
-  ticker,
-  onEdit,
-  onDelete,
-  isPrivacyMode,
-  showCurrencySymbol,
-  currColors
-}: {
-  item: Transaction,
-  ticker?: Ticker,
-  onEdit: (id: string) => void,
-  onDelete: (id: string) => void,
-  isPrivacyMode: boolean,
-  showCurrencySymbol: boolean,
-  currColors: any
-}) => {
-  const isBuy = item.type === 'BUY';
-  const totalValue = item.quantity * item.price;
-  const displayName = ticker?.['Company Name'] || item.symbol;
-
-  const renderRightActions = () => (
-    <View style={styles.rightActions}>
-      <RectButton
-        style={[styles.actionButton, styles.editButton]}
-        onPress={() => onEdit(item.id)}
-      >
-        <Edit2 size={20} color="#FFF" />
-        <Text style={styles.actionText}>Edit</Text>
-      </RectButton>
-      <RectButton
-        style={[styles.actionButton, styles.deleteButton]}
-        onPress={() => onDelete(item.id)}
-      >
-        <Trash2 size={20} color="#FFF" />
-        <Text style={styles.actionText}>Delete</Text>
-      </RectButton>
-    </View>
-  );
-
-  return (
-    <Swipeable
-      renderRightActions={renderRightActions}
-      friction={1}
-      rightThreshold={30}
-      overshootRight={false}
-    >
-      <View style={[styles.transactionItem, { borderBottomColor: currColors.border, backgroundColor: currColors.background }]}>
-        <TransactionIcon ticker={ticker} isBuy={isBuy} symbol={item.symbol} currColors={currColors} />
-
-        <View style={styles.infoCol}>
-          <Text style={[styles.symbolText, { color: currColors.text }]} numberOfLines={1} ellipsizeMode="tail">
-            {displayName}
-          </Text>
-          <Text style={[styles.dateText, { color: currColors.textSecondary }]}>{format(parseISO(typeof item.date === 'string' ? item.date : new Date(item.date).toISOString()), 'MMM dd')}</Text>
-        </View>
-
-        <View style={styles.rightCol}>
-          <Text style={[styles.amountText, { color: currColors.text }]}>
-            {isPrivacyMode ? '****' : `${item.currency === 'USD' ? '$' : (showCurrencySymbol ? '₹' : '')}${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          </Text>
-          <Text style={[styles.quantityText, { color: currColors.textSecondary }]}>
-            {item.quantity} {item.symbol.length > 4 ? 'units' : 'shares'}
-          </Text>
+        <View
+          style={[
+            styles.badgeContainer,
+            { backgroundColor: isBuy ? '#34C759' : '#FF3B30' },
+          ]}
+        >
+          {isBuy ? (
+            <ArrowDownLeft size={8} color="#FFF" strokeWidth={3} />
+          ) : (
+            <ArrowUpRight size={8} color="#FFF" strokeWidth={3} />
+          )}
         </View>
       </View>
-    </Swipeable>
-  );
-});
+    );
+  },
+);
+
+const TransactionItem = memo(
+  ({
+    item,
+    ticker,
+    onEdit,
+    onDelete,
+    isPrivacyMode,
+    showCurrencySymbol,
+    currColors,
+  }: {
+    item: Transaction;
+    ticker?: Ticker;
+    onEdit: (id: string) => void;
+    onDelete: (id: string) => void;
+    isPrivacyMode: boolean;
+    showCurrencySymbol: boolean;
+    currColors: any;
+  }) => {
+    const isBuy = item.type === 'BUY';
+    const totalValue = item.quantity * item.price;
+    const displayName = ticker?.['Company Name'] || item.symbol;
+
+    const renderRightActions = () => (
+      <View style={styles.rightActions}>
+        <RectButton
+          style={[styles.actionButton, styles.editButton]}
+          onPress={() => onEdit(item.id)}
+        >
+          <Edit2 size={20} color="#FFF" />
+          <Text style={styles.actionText}>Edit</Text>
+        </RectButton>
+        <RectButton
+          style={[styles.actionButton, styles.deleteButton]}
+          onPress={() => onDelete(item.id)}
+        >
+          <Trash2 size={20} color="#FFF" />
+          <Text style={styles.actionText}>Delete</Text>
+        </RectButton>
+      </View>
+    );
+
+    return (
+      <Swipeable
+        renderRightActions={renderRightActions}
+        friction={1}
+        rightThreshold={30}
+        overshootRight={false}
+      >
+        <View
+          style={[
+            styles.transactionItem,
+            {
+              borderBottomColor: currColors.border,
+              backgroundColor: currColors.background,
+            },
+          ]}
+        >
+          <TransactionIcon
+            ticker={ticker}
+            isBuy={isBuy}
+            symbol={item.symbol}
+            currColors={currColors}
+          />
+
+          <View style={styles.infoCol}>
+            <Text
+              style={[styles.symbolText, { color: currColors.text }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {displayName}
+            </Text>
+            <Text
+              style={[styles.dateText, { color: currColors.textSecondary }]}
+            >
+              {format(
+                parseISO(
+                  typeof item.date === 'string'
+                    ? item.date
+                    : new Date(item.date).toISOString(),
+                ),
+                'MMM dd',
+              )}
+            </Text>
+          </View>
+
+          <View style={styles.rightCol}>
+            <Text style={[styles.amountText, { color: currColors.text }]}>
+              {isPrivacyMode
+                ? '****'
+                : `${item.currency === 'USD' ? '$' : showCurrencySymbol ? '₹' : ''}${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            </Text>
+            <Text
+              style={[styles.quantityText, { color: currColors.textSecondary }]}
+            >
+              Qty: {item.quantity}
+            </Text>
+          </View>
+        </View>
+      </Swipeable>
+    );
+  },
+);
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const { transactions, tickers, removeTransaction, isPrivacyMode, showCurrencySymbol, getAllocationData } = usePortfolioStore();
+  const {
+    transactions,
+    tickers,
+    removeTransaction,
+    isPrivacyMode,
+    showCurrencySymbol,
+    getAllocationData,
+  } = usePortfolioStore();
 
   const colorScheme = useColorScheme() ?? 'dark';
   const currColors = Colors[colorScheme];
@@ -124,13 +201,13 @@ export default function HistoryScreen() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const tickerMap = useMemo(() => {
-    return new Map(tickers.map(t => [t.Tickers.toUpperCase(), t]));
+    return new Map(tickers.map((t) => [t.Tickers.toUpperCase(), t]));
   }, [tickers]);
 
   const categories = useMemo(() => {
     // Allocation Data is already sorted by value in the store
     const allocation = getAllocationData('Asset Type');
-    return ['All', ...allocation.map(a => a.name)];
+    return ['All', ...allocation.map((a) => a.name)];
   }, [getAllocationData, transactions, tickers]);
 
   const filteredTransactions = useMemo(() => {
@@ -138,7 +215,7 @@ export default function HistoryScreen() {
 
     // Category Filter
     if (activeCategory !== 'All') {
-      result = result.filter(t => {
+      result = result.filter((t) => {
         const ticker = tickerMap.get(t.symbol.toUpperCase());
         return ticker?.['Asset Type'] === activeCategory;
       });
@@ -147,7 +224,7 @@ export default function HistoryScreen() {
     // Search Filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(t => {
+      result = result.filter((t) => {
         const ticker = tickerMap.get(t.symbol.toUpperCase());
         const companyName = ticker?.['Company Name'] || t.symbol;
         return (
@@ -163,8 +240,10 @@ export default function HistoryScreen() {
   const groupedTransactions = useMemo(() => {
     const groups: { [key: string]: Transaction[] } = {};
 
-    filteredTransactions.forEach(t => {
-      const date = parseISO(typeof t.date === 'string' ? t.date : new Date(t.date).toISOString());
+    filteredTransactions.forEach((t) => {
+      const date = parseISO(
+        typeof t.date === 'string' ? t.date : new Date(t.date).toISOString(),
+      );
       const monthYear = format(date, 'MMMM yyyy');
       if (!groups[monthYear]) {
         groups[monthYear] = [];
@@ -172,7 +251,7 @@ export default function HistoryScreen() {
       groups[monthYear].push(t);
     });
 
-    return Object.keys(groups).map(monthYear => ({
+    return Object.keys(groups).map((monthYear) => ({
       title: monthYear,
       data: groups[monthYear],
     }));
@@ -201,19 +280,40 @@ export default function HistoryScreen() {
     );
   };
 
-  const renderSectionHeader = ({ section: { title } }: { section: { title: string } }) => (
-    <View style={[styles.sectionHeader, { backgroundColor: currColors.background }]}>
-      <Text style={[styles.sectionTitle, { color: currColors.text }]}>{title}</Text>
+  const renderSectionHeader = ({
+    section: { title },
+  }: {
+    section: { title: string };
+  }) => (
+    <View
+      style={[styles.sectionHeader, { backgroundColor: currColors.background }]}
+    >
+      <Text style={[styles.sectionTitle, { color: currColors.text }]}>
+        {title}
+      </Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: currColors.background }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: currColors.background }]}
+      edges={['top', 'left', 'right']}
+    >
       {/* Search Header */}
       <View style={styles.header}>
         <View style={styles.searchContainerOuter}>
-          <View style={[styles.searchContainer, { backgroundColor: currColors.card }]}>
-            <Ionicons name="search" size={20} color={currColors.textSecondary} style={styles.searchIcon} />
+          <View
+            style={[
+              styles.searchContainer,
+              { backgroundColor: currColors.card },
+            ]}
+          >
+            <Ionicons
+              name="search"
+              size={20}
+              color={currColors.textSecondary}
+              style={styles.searchIcon}
+            />
             <TextInput
               style={[styles.searchInput, { color: currColors.text }]}
               placeholder="Search companies or symbols"
@@ -226,8 +326,15 @@ export default function HistoryScreen() {
               onBlur={() => setIsSearchFocused(false)}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-                <Ionicons name="close-circle" size={18} color={currColors.textSecondary} />
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                style={styles.clearButton}
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={18}
+                  color={currColors.textSecondary}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -236,7 +343,12 @@ export default function HistoryScreen() {
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll} bounces={false}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsScroll}
+          bounces={false}
+        >
           {categories.map((category) => (
             <TouchableOpacity
               key={category}
@@ -246,14 +358,28 @@ export default function HistoryScreen() {
               }}
               style={styles.tabItem}
             >
-              <Text style={[
-                styles.tabText,
-                { color: activeCategory === category ? currColors.text : currColors.textSecondary },
-                activeCategory === category && styles.activeTabText
-              ]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  {
+                    color:
+                      activeCategory === category
+                        ? currColors.text
+                        : currColors.textSecondary,
+                  },
+                  activeCategory === category && styles.activeTabText,
+                ]}
+              >
                 {category}
               </Text>
-              {activeCategory === category && <View style={[styles.activeIndicator, { backgroundColor: currColors.text }]} />}
+              {activeCategory === category && (
+                <View
+                  style={[
+                    styles.activeIndicator,
+                    { backgroundColor: currColors.text },
+                  ]}
+                />
+              )}
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -262,7 +388,11 @@ export default function HistoryScreen() {
       <View style={styles.container}>
         {filteredTransactions.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyText, { color: currColors.textSecondary }]}>No transactions found.</Text>
+            <Text
+              style={[styles.emptyText, { color: currColors.textSecondary }]}
+            >
+              No transactions found.
+            </Text>
           </View>
         ) : (
           <SectionList
@@ -313,6 +443,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     height: '100%',
+    fontFamily: 'Outfit_400Regular',
   },
   clearButton: {
     padding: 4,
@@ -326,6 +457,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   tabsContainer: {
     marginBottom: 10,
@@ -343,6 +475,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 16,
     fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   activeTabText: {
     fontWeight: '400',
@@ -362,6 +495,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   listContent: {
     paddingBottom: 40,
@@ -384,6 +518,7 @@ const styles = StyleSheet.create({
   iconLetter: {
     fontSize: 18,
     fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   badgeContainer: {
     position: 'absolute',
@@ -404,9 +539,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 2,
+    fontFamily: 'Outfit_400Regular',
   },
   dateText: {
     fontSize: 12,
+    fontFamily: 'Outfit_400Regular',
   },
   rightCol: {
     alignItems: 'flex-end',
@@ -416,9 +553,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 2,
+    fontFamily: 'Outfit_400Regular',
   },
   quantityText: {
     fontSize: 12,
+    fontFamily: 'Outfit_400Regular',
   },
   rightActions: {
     flexDirection: 'row',
@@ -440,6 +579,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 11,
     marginTop: 4,
+    fontFamily: 'Outfit_400Regular',
   },
   emptyState: {
     flex: 1,
@@ -448,5 +588,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
+    fontFamily: 'Outfit_400Regular',
   },
 });

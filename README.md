@@ -5,12 +5,14 @@ A comprehensive iOS portfolio tracking application built with React Native and E
 ## 📱 Features
 
 ### Portfolio Overview
+
 - **Real-time Holdings Tracking**: Monitor your entire portfolio with live price updates
 - **Privacy Mode**: Toggle sensitive financial information visibility with a single tap
 - **Multi-metric Dashboard**: Track total value, 1-day returns, total returns, realized/unrealized returns, invested amount, and XIRR
 - **Custom Branding**: Support for custom header logo and external links
 
 ### Advanced Analytics
+
 - **Multi-dimensional Analysis**: View portfolio breakdown by:
   - Sector
   - Company
@@ -21,6 +23,7 @@ A comprehensive iOS portfolio tracking application built with React Native and E
 - **Company Deep Dives**: Detailed stock-level analysis with company logos
 
 ### Performance Insights
+
 - **Top Movers**: Track your best and worst performing holdings
 - **Win/Loss Analysis**: Visualize winning vs losing positions
 - **Activity Calendar**: Heat map of your trading activity
@@ -29,12 +32,14 @@ A comprehensive iOS portfolio tracking application built with React Native and E
 - **Portfolio Forecasting**: Project future portfolio value based on historical performance
 
 ### Transaction Management
+
 - **Easy Transaction Entry**: Add buy/sell transactions with a clean, intuitive interface
 - **Multi-broker Support**: Track investments across different brokers (Upstox, Groww, IND Money, etc.)
 - **CSV Import**: Bulk import transactions from Excel/CSV files
 - **Transaction History**: Complete audit trail of all portfolio activities
 
 ### Sharing & Export
+
 - **Shareable Performance Cards**: Generate beautiful cards showcasing your portfolio performance
 - **Export Functionality**: Share portfolio snapshots with others
 - **Custom Currency Display**: Toggle between showing/hiding currency symbols
@@ -47,11 +52,11 @@ A comprehensive iOS portfolio tracking application built with React Native and E
 - **Database**: Expo SQLite (~16.0.10)
 - **Charts**: React Native Gifted Charts (~1.4.70)
 - **Icons**: Lucide React Native (~0.563.0)
-- **UI Components**: 
+- **UI Components**:
   - React Native Gesture Handler (~2.28.0)
   - React Native Reanimated (~4.1.1)
   - Expo Linear Gradient (~15.0.8)
-- **Data Processing**: 
+- **Data Processing**:
   - XLSX (~0.18.5) for Excel file handling
   - Lodash (~4.17.23) for data manipulation
   - date-fns (~4.1.0) for date operations
@@ -69,17 +74,20 @@ A comprehensive iOS portfolio tracking application built with React Native and E
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd Portfolio_ios_app
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Start the development server**
+
    ```bash
    npm start
    ```
@@ -146,15 +154,19 @@ The app uses SQLite for local data storage. All portfolio data is stored securel
 ## 🎨 Features in Detail
 
 ### XIRR Calculation
+
 The app calculates Extended Internal Rate of Return (XIRR) to provide accurate annualized return metrics accounting for the timing and size of cash flows.
 
 ### Real-time Price Updates
+
 Stock prices are automatically refreshed every 5 minutes when the app is active, with manual refresh available via pull-to-refresh gesture.
 
 ### Background Processing
+
 Utilizes Expo Background Fetch and Task Manager for periodic data updates even when the app is in the background.
 
 ### Haptic Feedback
+
 Enhanced user experience with tactile feedback on all interactive elements.
 
 ## 📱 Platform Support
