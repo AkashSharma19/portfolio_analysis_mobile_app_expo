@@ -421,6 +421,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             high52: ticker?.High52,
             low52: ticker?.Low52,
             logo: ticker?.Logo,
+            marketCap: ticker?.['Market Cap'],
             broker:
               sortedTransactions
                 .filter((t) => t.symbol.trim().toUpperCase() === symbol)

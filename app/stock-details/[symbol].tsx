@@ -2,6 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { format } from 'date-fns';
+import { formatIndianNumber } from '@/lib/finance';
 import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { BackButton } from '@/components/BackButton';
@@ -84,6 +85,7 @@ export default function StockDetailsScreen() {
         high52: ticker.High52,
         low52: ticker.Low52,
         logo: ticker.Logo,
+        marketCap: ticker['Market Cap'],
       };
     }
     return null;
@@ -279,7 +281,7 @@ export default function StockDetailsScreen() {
               pointerEvents="none"
             >
               <View
-                style={{ opacity: 0.15, transform: [{ translateY: 40 }] }}
+                style={{ opacity: 0.15 }}
                 pointerEvents="none"
               >
                 <LineChart
@@ -305,46 +307,54 @@ export default function StockDetailsScreen() {
                   yAxisOffset={
                     Math.min(...chartData.map((d) => d.value)) * 0.95
                   }
-                  height={320}
+                  height={500}
                   width={SCREEN_WIDTH - 20}
                   adjustToWidth={true}
                   initialSpacing={0}
                   endSpacing={0}
                   disableScroll={true}
+                  overflowBottom={0}
+                  hideOrigin
+                  xAxisThickness={0}
+                  yAxisThickness={0}
                 />
               </View>
             </View>
           )}
           <View style={{ padding: 24 }}>
-            <View style={styles.heroHeaderRow}>
-              <ThemedText
-                style={[styles.heroLabel, { color: currColors.textSecondary }]}
-              >
-                {holding.quantity > 0 ? 'CURRENT VALUE' : 'CURRENT PRICE'}
-              </ThemedText>
-              {/* Brand Highlight in Price Card */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <View style={{ flex: 1 }}>
+                <View style={[styles.heroHeaderRow, { marginBottom: 4, justifyContent: 'flex-start' }]}>
+                  <ThemedText
+                    style={[styles.heroLabel, { color: currColors.textSecondary }]}
+                  >
+                    {holding.quantity > 0 ? 'CURRENT VALUE' : 'CURRENT PRICE'}
+                  </ThemedText>
+                </View>
+                <ThemedText style={[styles.heroValue, { color: currColors.text, marginBottom: 0 }]}>
+                  {isPrivacyMode
+                    ? '****'
+                    : `${showCurrencySymbol ? '₹' : ''}${(holding.quantity > 0 ? holding.currentValue : holding.currentPrice).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
+                </ThemedText>
+              </View>
+
               {holding.logo && (
                 <View
                   style={{
                     backgroundColor: '#FFFFFF',
                     borderRadius: 12,
                     padding: 4,
+                    marginLeft: 16,
                   }}
                 >
                   <Image
                     source={{ uri: holding.logo }}
-                    style={{ width: 40, height: 40, borderRadius: 8 }} // Prominent 40x40 logo
+                    style={{ width: 44, height: 44, borderRadius: 8 }}
                     resizeMode="contain"
                   />
                 </View>
               )}
             </View>
-
-            <ThemedText style={[styles.heroValue, { color: currColors.text }]}>
-              {isPrivacyMode
-                ? '****'
-                : `${showCurrencySymbol ? '₹' : ''}${(holding.quantity > 0 ? holding.currentValue : holding.currentPrice).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
-            </ThemedText>
 
             <View
               style={[styles.dashedDivider, { borderColor: currColors.border }]}
@@ -514,6 +524,24 @@ export default function StockDetailsScreen() {
               </View>
             )}
 
+            {holding.marketCap && (
+              <View style={styles.heroRow}>
+                <ThemedText
+                  style={[
+                    styles.heroRowLabel,
+                    { color: currColors.textSecondary },
+                  ]}
+                >
+                  Market Cap
+                </ThemedText>
+                <ThemedText
+                  style={[styles.heroRowValueWhite, { color: currColors.text }]}
+                >
+                  {formatIndianNumber(holding.marketCap)}
+                </ThemedText>
+              </View>
+            )}
+
             <View style={styles.heroRow}>
               <ThemedText
                 style={[
@@ -530,6 +558,7 @@ export default function StockDetailsScreen() {
                 {holding.sector}
               </ThemedText>
             </View>
+
           </View>
         </View>
 

@@ -21,6 +21,7 @@ export interface Ticker {
   High52?: number;
   Low52?: number;
   Logo?: string;
+  'Market Cap'?: string | number;
   [key: string]: string | number | undefined | null; // Support for dynamic 'Today - X' keys
 }
 
@@ -73,6 +74,7 @@ export interface Holding {
   high52?: number;
   low52?: number;
   logo?: string;
+  marketCap?: string | number;
 }
 
 export interface AllocationItem {

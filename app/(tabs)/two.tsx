@@ -85,6 +85,7 @@ const TransactionItem = memo(
     ticker,
     onEdit,
     onDelete,
+    onPress,
     isPrivacyMode,
     showCurrencySymbol,
     currColors,
@@ -93,6 +94,7 @@ const TransactionItem = memo(
     ticker?: Ticker;
     onEdit: (id: string) => void;
     onDelete: (id: string) => void;
+    onPress: (symbol: string) => void;
     isPrivacyMode: boolean;
     showCurrencySymbol: boolean;
     currColors: any;
@@ -127,7 +129,9 @@ const TransactionItem = memo(
         rightThreshold={30}
         overshootRight={false}
       >
-        <View
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => onPress(item.symbol)}
           style={[
             styles.transactionItem,
             {
@@ -177,7 +181,7 @@ const TransactionItem = memo(
               Qty: {item.quantity}
             </ThemedText>
           </View>
-        </View>
+        </TouchableOpacity>
       </Swipeable>
     );
   },
@@ -267,6 +271,11 @@ export default function HistoryScreen() {
     removeTransaction(id);
   };
 
+  const handlePressSymbol = (symbol: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/stock-details/${symbol}`);
+  };
+
   const renderItem = ({ item }: { item: Transaction }) => {
     return (
       <TransactionItem
@@ -274,6 +283,7 @@ export default function HistoryScreen() {
         ticker={tickerMap.get(item.symbol.toUpperCase())}
         onEdit={handleEdit}
         onDelete={handleRemove}
+        onPress={handlePressSymbol}
         isPrivacyMode={isPrivacyMode}
         showCurrencySymbol={showCurrencySymbol}
         currColors={currColors}

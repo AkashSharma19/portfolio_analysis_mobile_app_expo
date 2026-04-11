@@ -102,3 +102,18 @@ export function calculateProjectionSeries(
   }
   return dataPoints;
 }
+
+export function formatIndianNumber(num: number | string | undefined | null): string {
+  if (num === null || num === undefined) return 'N/A';
+  const val = typeof num === 'string' ? parseFloat(num.replace(/,/g, '')) : num;
+  if (isNaN(val)) return String(num);
+
+  if (val >= 10000000) {
+    return (val / 10000000).toFixed(2) + ' Cr';
+  } else if (val >= 100000) {
+    return (val / 100000).toFixed(2) + ' L';
+  } else if (val >= 1000) {
+    return (val / 1000).toFixed(2) + ' K';
+  }
+  return val.toFixed(2);
+}
