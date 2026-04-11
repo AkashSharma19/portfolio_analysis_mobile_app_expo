@@ -142,8 +142,8 @@ export default function PortfolioHealthFormulaScreen() {
         {/* 3. Performance Quality */}
         <Section icon={TrendingUp} title="Performance Quality" points={20}>
           <ThemedText style={[styles.description, { color: c.textSecondary }]}>
-            Assesses long-term returns (XIRR) and 'Win Ratio' (percentage of
-            profitable stocks).
+            Assesses long-term returns (XIRR), 'Win Ratio', and Sharpe Ratio 
+            (risk-adjusted performance).
           </ThemedText>
           <View style={styles.subHeader}>
             <ThemedText style={[styles.subTitle, { color: c.text }]}>XIRR Yield</ThemedText>
@@ -154,7 +154,15 @@ export default function PortfolioHealthFormulaScreen() {
             <ThemedText style={[styles.subTitle, { color: c.text }]}>Win Ratio</ThemedText>
           </View>
           <Row label="> 80% Profitable" value="8 pts" />
-          <Row label="60% - 80% Profitable" value="6 pts" isLast />
+          <Row label="60% - 80% Profitable" value="6 pts" />
+          <View style={styles.subHeader}>
+            <ThemedText style={[styles.subTitle, { color: c.text }]}>Sharpe Ratio</ThemedText>
+          </View>
+          <ThemedText style={[styles.formulaLabel, { color: c.textSecondary, fontSize: 11, marginBottom: 8, paddingHorizontal: 4 }]}>
+            Calculated as (Return - 6.5%) / Annualized Volatility. Measures efficiency.
+          </ThemedText>
+          <Row label="> 1.5 Sharpe" value="Excellent" />
+          <Row label="0.8 - 1.5 Sharpe" value="Fair" isLast />
         </Section>
 
         {/* 4. Short-term Stability */}

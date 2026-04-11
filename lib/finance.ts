@@ -37,33 +37,40 @@ export function calculateProjection(
   annualReturn: number,
   monthlySIP: number,
   years: number,
+  stepUpPercent: number = 0,
+  inflationRate: number = 0.06,
+  isInflationAdjusted: boolean = false,
 ) {
-  const r = annualReturn / 12;
-  const n = years * 12;
+  let totalFutureValue = currentVal;
+  let totalInvested = currentVal;
+  let currentMonthlySIP = monthlySIP;
 
-  // Compound interest for current principal + future value of an annuity (SIP)
-  const principalFutureValue = currentVal * Math.pow(1 + r, n);
-  const sipFutureValue =
-    monthlySIP > 0
-      ? r === 0
-        ? monthlySIP * n
-        : (monthlySIP * (Math.pow(1 + r, n) - 1)) / r
-      : 0;
+  const inflationFactor = isInflationAdjusted ? 1 + inflationRate : 1;
 
-  const totalFutureValue = principalFutureValue + sipFutureValue;
-  const totalInvested = currentVal + monthlySIP * n;
+  for (let year = 1; year <= years; year++) {
+    // Apply returns and SIP for 12 months
+    for (let month = 1; month <= 12; month++) {
+      totalFutureValue = totalFutureValue * Math.pow(1 + annualReturn, 1 / 12) + currentMonthlySIP;
+      totalInvested += currentMonthlySIP;
+    }
+    // Apply step-up at the end of each year
+    currentMonthlySIP = currentMonthlySIP * (1 + stepUpPercent / 100);
+  }
+
   const estimatedGains = totalFutureValue - totalInvested;
   const multiplier = totalFutureValue / totalInvested;
-
-  // Inflation adjustment (standard 6%)
-  const inflationRate = 0.06;
+  
+  // If not already adjusted in the loop, we can do it at the end for simple "current value today"
   const presentValue = totalFutureValue / Math.pow(1 + inflationRate, years);
 
+  // If inflation adjusted mode is ON, we return the discounted future value as the primary value
+  const displayValue = isInflationAdjusted ? presentValue : totalFutureValue;
+
   return {
-    totalFutureValue,
+    totalFutureValue: displayValue,
     totalInvested,
-    estimatedGains,
-    multiplier,
+    estimatedGains: isInflationAdjusted ? presentValue - totalInvested : estimatedGains,
+    multiplier: isInflationAdjusted ? presentValue / totalInvested : multiplier,
     presentValue,
   };
 }
@@ -73,31 +80,44 @@ export function calculateProjectionSeries(
   annualReturn: number,
   monthlySIP: number,
   years: number,
+  stepUpPercent: number = 0,
+  inflationRate: number = 0.06,
+  isInflationAdjusted: boolean = false,
 ) {
   const dataPoints = [];
-  const r = annualReturn / 12; // Monthly rate
+  let totalFutureValue = currentVal;
+  let currentMonthlySIP = monthlySIP;
+  let totalInvested = currentVal;
 
-  for (let year = 0; year <= years; year++) {
-    const n = year * 12;
+  dataPoints.push({
+    year: 0,
+    value: currentVal,
+    label: 'Now',
+    totalInvested: currentVal,
+    estimatedGains: 0,
+    multiplier: 1,
+  });
 
-    // Investment Value Logic
-    const principalFutureValue = currentVal * Math.pow(1 + r, n);
+  for (let year = 1; year <= years; year++) {
+    for (let month = 1; month <= 12; month++) {
+      totalFutureValue = totalFutureValue * Math.pow(1 + annualReturn, 1 / 12) + currentMonthlySIP;
+      totalInvested += currentMonthlySIP;
+    }
+    
+    // Apply step-up for NEXT year
+    currentMonthlySIP = currentMonthlySIP * (1 + stepUpPercent / 100);
 
-    // SIP Calculation (End of period)
-    const sipFutureValue =
-      monthlySIP > 0
-        ? r === 0
-          ? monthlySIP * n
-          : (monthlySIP * (Math.pow(1 + r, n) - 1)) / r
-        : 0;
-
-    const totalFutureValue = principalFutureValue + sipFutureValue;
+    const valToPush = isInflationAdjusted 
+      ? totalFutureValue / Math.pow(1 + inflationRate, year)
+      : totalFutureValue;
 
     dataPoints.push({
       year,
-      value: totalFutureValue,
-      label: year === 0 ? 'Now' : `+${year}y`,
-      dataPointText: Math.round(totalFutureValue / 1000) + 'k',
+      value: valToPush,
+      label: `+${year}y`,
+      totalInvested,
+      estimatedGains: valToPush - totalInvested,
+      multiplier: valToPush / totalInvested,
     });
   }
   return dataPoints;

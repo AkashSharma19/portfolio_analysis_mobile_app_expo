@@ -46,6 +46,16 @@ interface PortfolioState {
   toggleWatchlist: (ticker: string) => void;
   forecastYears: number;
   setForecastYears: (years: number) => void;
+  targetCorpus: number;
+  setTargetCorpus: (corpus: number) => void;
+  sipStepUp: number;
+  setSipStepUp: (stepUp: number) => void;
+  manualMonthlySIP: number | null;
+  setManualMonthlySIP: (sip: number | null) => void;
+  isInflationAdjusted: boolean;
+  setIsInflationAdjusted: (isAdjusted: boolean) => void;
+  activeScenarios: string[];
+  toggleScenario: (scenario: string) => void;
   defaultIndex: string;
   setDefaultIndex: (ticker: string) => void;
   lastSyncedAt: number | null;
@@ -662,6 +672,22 @@ export const usePortfolioStore = create<PortfolioState>()(
         }),
       forecastYears: 15,
       setForecastYears: (years) => set({ forecastYears: years }),
+      targetCorpus: 50000000,
+      setTargetCorpus: (targetCorpus) => set({ targetCorpus }),
+      sipStepUp: 10,
+      setSipStepUp: (sipStepUp) => set({ sipStepUp }),
+      manualMonthlySIP: null,
+      setManualMonthlySIP: (manualMonthlySIP) => set({ manualMonthlySIP }),
+      isInflationAdjusted: false,
+      setIsInflationAdjusted: (isInflationAdjusted) =>
+        set({ isInflationAdjusted }),
+      activeScenarios: ['base', 'bull', 'bear'],
+      toggleScenario: (scenario) =>
+        set((state) => ({
+          activeScenarios: state.activeScenarios.includes(scenario)
+            ? state.activeScenarios.filter((s) => s !== scenario)
+            : [...state.activeScenarios, scenario],
+        })),
       defaultIndex: 'INDEXNSE:NIFTY_50',
       setDefaultIndex: (ticker) => set({ defaultIndex: ticker }),
       lastSyncedAt: null,

@@ -1,439 +1,309 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
-import { calculateProjection, calculateProjectionSeries } from '@/lib/finance';
+import { calculateProjectionSeries, formatIndianNumber } from '@/lib/finance';
 
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { BackButton } from '@/components/BackButton';
-import { Info } from 'lucide-react-native';
+import { Target, TrendingUp, Calculator } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import {
-  Alert,
   Dimensions,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
+  TextInput,
+  Switch,
 } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { LineChart } from 'react-native-gifted-charts';
-
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function ForecastDetailsScreen() {
   const router = useRouter();
   const theme = useColorScheme() ?? 'dark';
-  const currColors = Colors[theme];
+  const c = Colors[theme];
 
   const calculateSummary = usePortfolioStore((state) => state.calculateSummary);
-  const getYearlyAnalysis = usePortfolioStore(
-    (state) => state.getYearlyAnalysis,
-  );
-  const showCurrencySymbol = usePortfolioStore(
-    (state) => state.showCurrencySymbol,
-  );
+  const getYearlyAnalysis = usePortfolioStore((state) => state.getYearlyAnalysis);
+  const showCurrencySymbol = usePortfolioStore((state) => state.showCurrencySymbol);
   const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
   const transactions = usePortfolioStore((state) => state.transactions);
   const tickers = usePortfolioStore((state) => state.tickers);
+  
+  // Forecast States from Store
   const years = usePortfolioStore((state) => state.forecastYears);
   const setYears = usePortfolioStore((state) => state.setForecastYears);
+  const targetGoal = usePortfolioStore((state) => state.targetCorpus);
+  const setTargetGoal = usePortfolioStore((state) => state.setTargetCorpus);
+  const sipStepUp = usePortfolioStore((state) => state.sipStepUp);
+  const setSipStepUp = usePortfolioStore((state) => state.setSipStepUp);
+  const manualMonthlySIP = usePortfolioStore((state) => state.manualMonthlySIP);
+  const setManualMonthlySIP = usePortfolioStore((state) => state.setManualMonthlySIP);
+  const isInflationAdjusted = usePortfolioStore((state) => state.isInflationAdjusted);
+  const setIsInflationAdjusted = usePortfolioStore((state) => state.setIsInflationAdjusted);
 
-  const summary = useMemo(
-    () => calculateSummary(),
-    [transactions, calculateSummary, tickers],
-  );
-  const yearlyAnalysis = useMemo(
-    () => getYearlyAnalysis(),
-    [transactions, getYearlyAnalysis, tickers],
-  );
+  const [tempGoal, setTempGoal] = useState(targetGoal.toString());
 
-  const currentYear = new Date().getFullYear();
-  const [activePoint, setActivePoint] = useState<any>(null);
+  const formatShorthand = (numStr: string) => {
+    const num = parseInt(numStr.replace(/[^0-9]/g, ''));
+    if (isNaN(num) || num < 10000) return '';
+    
+    if (num >= 10000000) {
+      const cr = num / 10000000;
+      return `(${cr % 1 === 0 ? cr : cr.toFixed(2)}Cr)`;
+    }
+    if (num >= 100000) {
+      const l = num / 100000;
+      return `(${l % 1 === 0 ? l : l.toFixed(2)}L)`;
+    }
+    if (num >= 10000) {
+      const k = num / 1000;
+      return `(${k % 1 === 0 ? k : k.toFixed(1)}K)`;
+    }
+    return '';
+  };
 
-  const annualReturn = useMemo(() => {
-    return (summary.xirr || 0) / 100;
-  }, [summary.xirr]);
+  const summary = useMemo(() => calculateSummary(), [transactions, tickers]);
+  const yearlyAnalysis = useMemo(() => getYearlyAnalysis(), [transactions, tickers]);
 
-  const monthlySIP = useMemo(() => {
-    if (yearlyAnalysis.length === 0) return 0;
-    return yearlyAnalysis[0].averageMonthlyInvestment || 0;
+  const xirr = useMemo(() => (summary.xirr || 0) / 100, [summary.xirr]);
+  
+  const calculatedMonthlySIP = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const currentYearData = yearlyAnalysis.find(a => a.year === currentYear);
+    return currentYearData ? currentYearData.averageMonthlyInvestment : 0;
   }, [yearlyAnalysis]);
 
-  const projection = useMemo(() => {
-    return calculateProjection(
+  const monthlySIP = manualMonthlySIP !== null ? manualMonthlySIP : calculatedMonthlySIP;
+
+  const handleManualSIPChange = (val: string) => {
+    const num = parseInt(val.replace(/[^0-9]/g, ''));
+    if (!isNaN(num)) {
+      setManualMonthlySIP(num);
+    } else {
+      setManualMonthlySIP(null);
+    }
+  };
+
+  const handleGoalChange = (val: string) => {
+    const num = parseInt(val.replace(/[^0-9]/g, ''));
+    if (!isNaN(num)) setTargetGoal(num);
+  };
+
+  // Base Case data generation (Always Nominal for the main chart)
+  const chartData = useMemo(() => {
+    const data = calculateProjectionSeries(
       summary.totalValue,
-      annualReturn,
+      xirr,
       monthlySIP,
       years,
+      sipStepUp,
+      0.06,
+      false // Always nominal
     );
-  }, [summary.totalValue, annualReturn, monthlySIP, years]);
+    
+    return data.map(p => ({
+      value: p.value,
+      label: '',
+      year: p.year,
+      data: p,
+    }));
+  }, [summary.totalValue, xirr, monthlySIP, years, sipStepUp]);
 
-  const displayPoint = activePoint || {
-    value: projection.totalFutureValue,
-    year: years,
-    multiplier: projection.multiplier,
-    presentValue: projection.presentValue,
-    totalInvested: projection.totalInvested,
-    estimatedGains: projection.estimatedGains,
-  };
+  // Calculate Goal Milestone
+  const goalYear = useMemo(() => {
+    const baseData = calculateProjectionSeries(summary.totalValue, xirr, monthlySIP, 100, sipStepUp, 0.06, false);
+    const reachYear = baseData.find(p => p.value >= targetGoal);
+    return reachYear ? reachYear.year : null;
+  }, [summary.totalValue, xirr, monthlySIP, targetGoal, sipStepUp]);
 
-  const formatValue = (val: number) => {
-    return val.toLocaleString('en-IN', {
-      maximumFractionDigits: 0,
-    });
-  };
-
-  const yearTabs = [1, 5, 10, 25];
-
-  const handleCustomPress = () => {
-    Alert.prompt(
-      'Custom Horizon',
-      'How many years do you want to forecast?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Set',
-          onPress: (text: string | undefined) => {
-            const val = parseInt(text || '');
-            if (!isNaN(val) && val > 0 && val <= 100) {
-              Haptics.selectionAsync();
-              setYears(val);
-              setActivePoint(null);
-            }
-          },
-        },
-      ],
-      'plain-text',
-      years.toString(),
-      'number-pad',
-    );
-  };
-
-  const isPredefined = yearTabs.includes(years);
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: currColors.background }]}
-      edges={['top', 'left', 'right']}
-    >
-      <View style={[styles.header, { backgroundColor: currColors.background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]} edges={['top', 'left', 'right']}>
+      <View style={[styles.header, { backgroundColor: c.background }]}>
         <BackButton />
-        <ThemedText style={[styles.headerTitle, { color: currColors.text }]}>
-          Portfolio Forecast
-        </ThemedText>
-        <View style={{ width: 40 }} />
+        <ThemedText style={[styles.headerTitle, { color: c.text }]}>Portfolio Forecast</ThemedText>
+        <View style={{ width: 40 }} /> 
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false} 
         bounces={false}
+        overScrollMode="never"
       >
-        {/* DYNAMIC GRAPH UNIT */}
-        <View style={{ marginBottom: 32 }}>
-          {/* Header overlayed/integrated with graph */}
-          <View style={[styles.graphStatsContainer, { marginBottom: 0 }]}>
-            <View style={styles.headerTopRow}>
-              <ThemedText
-                style={[styles.heroLabel, { color: currColors.textSecondary }]}
-              >
-                {activePoint
-                  ? `PROJECTED BY ${currentYear + activePoint.year}`
-                  : `PROJECTED BY ${currentYear + years}`}
-              </ThemedText>
-              <View
-                style={[
-                  styles.multiplierBadge,
-                  {
-                    backgroundColor:
-                      theme === 'dark'
-                        ? 'rgba(255,255,255,0.1)'
-                        : 'rgba(0, 122, 255, 0.1)',
-                    borderColor:
-                      theme === 'dark'
-                        ? 'rgba(255,255,255,0.2)'
-                        : 'rgba(0, 122, 255, 0.2)',
-                    borderWidth: 1,
-                  },
-                ]}
-              >
-                <ThemedText style={[styles.badgeText, { color: currColors.tint }]}>
-                  {displayPoint.multiplier.toFixed(1)}x Growth
+        
+        {/* TOP STATUS - GOAL PROGRESS */}
+        <View style={[styles.goalHeader, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={styles.goalTop}>
+            <View>
+              <ThemedText style={[styles.tinyLabel, { color: c.textSecondary }]}>TARGET MILESTONE</ThemedText>
+              <View style={[styles.inlineInputGroup, { borderBottomWidth: 1, borderBottomColor: c.border }]}>
+                <ThemedText style={[styles.goalTitle, { color: c.textSecondary, marginRight: 2 }]}>₹</ThemedText>
+                <TextInput
+                  style={[styles.goalTitle, { color: c.text, padding: 0 }]}
+                  keyboardType="numeric"
+                  value={tempGoal}
+                  onChangeText={setTempGoal}
+                  onEndEditing={(e) => {
+                    handleGoalChange(e.nativeEvent.text);
+                    setTempGoal(e.nativeEvent.text);
+                  }}
+                />
+                <ThemedText style={[styles.shorthandText, { color: c.tint }]}>
+                  {formatShorthand(tempGoal)}
                 </ThemedText>
               </View>
             </View>
+            <View style={[styles.etaBadge, { backgroundColor: goalYear ? '#4CAF5022' : c.cardSecondary }]}>
+              <Target size={14} color={goalYear ? '#4CAF50' : c.textSecondary} />
+              <ThemedText style={[styles.etaText, { color: goalYear ? '#4CAF50' : c.textSecondary }]}>
+                {goalYear ? `ETA: ${new Date().getFullYear() + goalYear}` : 'Out of Reach'}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={[styles.progressTrack, { backgroundColor: c.cardSecondary }]}>
+            <View style={[styles.progressFill, { 
+              width: `${Math.min(100, (summary.totalValue / targetGoal) * 100)}%`,
+              backgroundColor: c.tint 
+            }]} />
+          </View>
+          <ThemedText style={[styles.progressText, { color: c.textSecondary }]}>
+            {((summary.totalValue / targetGoal) * 100).toFixed(1)}% ({isPrivacyMode ? '****' : formatIndianNumber(summary.totalValue)}) of your goal reached today
+          </ThemedText>
+        </View>
 
-            <ThemedText
-              style={[
-                styles.heroValue,
-                {
-                  color: currColors.text,
-                  fontSize: 28,
-                  marginBottom: 0,
-                  letterSpacing: -1,
-                },
-              ]}
-            >
-              {isPrivacyMode
-                ? '****'
-                : `${showCurrencySymbol ? '₹' : ''}${formatValue(displayPoint.value)}`}
-            </ThemedText>
-
-            <ThemedText
-              style={[
-                styles.inflationNote,
-                {
-                  color: currColors.textSecondary,
-                  textAlign: 'left',
-                  opacity: 0.5,
-                  fontSize: 12,
-                },
-              ]}
-            >
-              ≈ {showCurrencySymbol ? '₹' : ''}
-              {formatValue(displayPoint.presentValue)} today
-            </ThemedText>
+        {/* HERO PROJECTION UNIT */}
+        <View style={styles.heroUnit}>
+          <View style={styles.heroRow}>
+            <View>
+              <ThemedText style={[styles.tinyLabel, { color: c.textSecondary }]}>
+                PROJECTED VAL (+{years}Y)
+              </ThemedText>
+              <ThemedText style={[styles.heroValue, { color: c.text }]}>
+                {isPrivacyMode ? '****' : formatIndianNumber(chartData[years]?.value || 0)}
+              </ThemedText>
+              <View style={styles.inflationTag}>
+                <TrendingUp size={12} color="#5AC8FA" />
+                <ThemedText style={styles.inflationTagText}>
+                  ~ {isPrivacyMode ? '****' : formatIndianNumber((chartData[years]?.value || 0) / Math.pow(1.06, years))} in today's value
+                </ThemedText>
+              </View>
+            </View>
           </View>
 
-          <View
-            style={{ alignItems: 'center', marginTop: -25 }}
-            onTouchEnd={() => {
-              setTimeout(() => {
-                Haptics.selectionAsync();
-                setActivePoint(null);
-              }, 50);
-            }}
-            onTouchCancel={() => {
-              setActivePoint(null);
-            }}
-          >
+          <View style={styles.chartContainer}>
             <LineChart
-              key={years} // Force re-mount on horizon change
-              data={calculateProjectionSeries(
-                summary.totalValue,
-                annualReturn,
-                monthlySIP,
-                years,
-              ).map((p) => {
-                const totalInvested =
-                  summary.totalValue + monthlySIP * p.year * 12;
-                return {
-                  value: p.value,
-                  label: '',
-                  hideDataPoint: true,
-                  year: p.year,
-                  presentValue: p.value / Math.pow(1.06, p.year),
-                  multiplier: p.value / totalInvested,
-                  totalInvested: totalInvested,
-                  estimatedGains: p.value - totalInvested,
-                };
-              })}
-              width={Dimensions.get('window').width - 40}
+              data={chartData}
+              width={SCREEN_WIDTH - 40}
               height={220}
-              spacing={
-                years > 0 ? (Dimensions.get('window').width - 80) / years : 0
-              }
+              spacing={(SCREEN_WIDTH - 60) / years}
               initialSpacing={10}
-              color={currColors.tint}
-              thickness={2}
-              startFillColor="rgba(0, 122, 255, 0.2)"
-              endFillColor="rgba(0, 122, 255, 0.01)"
-              startOpacity={0.9}
-              endOpacity={0.2}
+              color={c.tint}
+              thickness={3}
+              startFillColor={c.tint + '33'}
+              endFillColor="transparent"
+              startOpacity={0.4}
+              endOpacity={0.1}
               areaChart
               hideRules
               hideYAxisText
               hideAxesAndRules
               curved
               isAnimated
-              animationDuration={1200}
-              pointerConfig={{
-                pointerStripHeight: 160,
-                pointerStripColor: currColors.textSecondary,
-                pointerStripWidth: 2,
-                pointerColor: currColors.textSecondary,
-                radius: 6,
-                activatePointersOnLongPress: false,
-                autoAdjustPointerLabelPosition: false,
-                pointerLabelComponent: (items: any) => {
-                  if (!items || items.length === 0 || !items[0]) return null;
-                  const item = items[0];
-                  setTimeout(() => {
-                    if (!activePoint || activePoint.year !== item.year) {
-                      setActivePoint({
-                        value: item.value,
-                        year: item.year,
-                        multiplier: item.multiplier,
-                        presentValue: item.presentValue,
-                        totalInvested: item.totalInvested,
-                        estimatedGains: item.estimatedGains,
-                      });
-                    }
-                  }, 0);
-                  return null;
-                },
-              }}
+              animationDuration={800}
+              disableScroll={true}
             />
           </View>
+        </View>
 
-          {/* YEAR TABS */}
-          <View
-            style={[
-              styles.tabsContainer,
-              {
-                backgroundColor: currColors.card + '50',
-                borderColor: currColors.border,
-              },
-            ]}
-          >
-            {yearTabs.map((y) => (
+        {/* SIP STEP UP TABS */}
+        <View style={styles.horizonSection}>
+          <ThemedText style={[styles.tinyLabel, { color: c.textSecondary, marginBottom: 12 }]}>ANNUAL SIP STEP-UP</ThemedText>
+          <View style={[styles.tabsContainer, { backgroundColor: c.card, borderColor: c.border }]}>
+            {[0, 5, 10, 15, 20].map((val) => (
+              <TouchableOpacity
+                key={val}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setSipStepUp(val);
+                }}
+                style={[styles.tabButton, sipStepUp === val && { backgroundColor: c.tint }]}
+              >
+                <ThemedText style={[styles.tabText, { color: sipStepUp === val ? '#000' : c.textSecondary }]}>{val}%</ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* TIME HORIZON TABS */}
+        <View style={styles.horizonSection}>
+          <ThemedText style={[styles.tinyLabel, { color: c.textSecondary, marginBottom: 12 }]}>FORECAST HORIZON</ThemedText>
+          <View style={[styles.tabsContainer, { backgroundColor: c.card, borderColor: c.border }]}>
+            {[5, 10, 15, 25, 40].map((y) => (
               <TouchableOpacity
                 key={y}
                 onPress={() => {
                   Haptics.selectionAsync();
                   setYears(y);
-                  setActivePoint(null);
                 }}
-                style={[
-                  styles.tabButton,
-                  years === y && { backgroundColor: currColors.tint },
-                ]}
+                style={[styles.tabButton, years === y && { backgroundColor: c.tint }]}
               >
-                <ThemedText
-                  style={[
-                    styles.tabText,
-                    {
-                      color:
-                        years === y
-                          ? theme === 'dark'
-                            ? '#000'
-                            : '#FFF'
-                          : currColors.textSecondary,
-                    },
-                  ]}
-                >
-                  {y}Y
-                </ThemedText>
+                <ThemedText style={[styles.tabText, { color: years === y ? '#000' : c.textSecondary }]}>{y}Y</ThemedText>
               </TouchableOpacity>
             ))}
-            <TouchableOpacity
-              onPress={handleCustomPress}
-              style={[
-                styles.tabButton,
-                !isPredefined && { backgroundColor: currColors.tint },
-              ]}
-            >
-              <ThemedText
-                style={[
-                  styles.tabText,
-                  {
-                    color: !isPredefined
-                      ? theme === 'dark'
-                        ? '#000'
-                        : '#FFF'
-                      : currColors.textSecondary,
-                  },
-                ]}
-              >
-                {isPredefined ? 'Custom' : `${years}Y`}
-              </ThemedText>
-            </TouchableOpacity>
           </View>
         </View>
 
-        <ThemedText
-          style={[styles.sectionTitle, { color: currColors.textSecondary }]}
-        >
-          PROJECTION BREAKDOWN
-        </ThemedText>
-        <View
-          style={[
-            styles.dataCard,
-            {
-              backgroundColor: currColors.card,
-              borderColor: currColors.border,
-            },
-          ]}
-        >
+        {/* PROJECTION BREAKDOWN */}
+        <ThemedText style={[styles.tinyLabel, { color: c.textSecondary, marginBottom: 12, marginLeft: 4 }]}>PROJECTION BREAKDOWN</ThemedText>
+        <View style={[styles.dataCard, { backgroundColor: c.card, borderColor: c.border }]}>
           <View style={styles.dataRow}>
-            <ThemedText
-              style={[styles.dataLabel, { color: currColors.textSecondary }]}
-            >
-              Current Value
-            </ThemedText>
-            <ThemedText style={[styles.dataValue, { color: currColors.text }]}>
-              {isPrivacyMode
-                ? '****'
-                : `${showCurrencySymbol ? '₹' : ''}${formatValue(summary.totalValue)}`}
+            <ThemedText style={[styles.dataLabel, { color: c.textSecondary }]}>Current Value</ThemedText>
+            <ThemedText style={[styles.dataValue, { color: c.text }]}>
+              {isPrivacyMode ? '****' : formatIndianNumber(summary.totalValue)}
             </ThemedText>
           </View>
           <View style={styles.dataRow}>
-            <ThemedText
-              style={[styles.dataLabel, { color: currColors.textSecondary }]}
-            >
-              Monthly Investment
-            </ThemedText>
-            <ThemedText style={[styles.dataValue, { color: currColors.text }]}>
-              {isPrivacyMode
-                ? '****'
-                : `${showCurrencySymbol ? '₹' : ''}${formatValue(monthlySIP)}`}
-            </ThemedText>
-          </View>
-          <View
-            style={[
-              styles.horizontalDivider,
-              { backgroundColor: currColors.border },
-            ]}
-          />
-          <View style={styles.dataRow}>
-            <ThemedText
-              style={[styles.dataLabel, { color: currColors.textSecondary }]}
-            >
-              Current XIRR
-            </ThemedText>
-            <ThemedText
-              style={[
-                styles.dataValue,
-                { color: annualReturn < 0 ? '#F44336' : '#4CAF50' },
-              ]}
-            >
-              {(annualReturn * 100).toFixed(2)}%
+            <ThemedText style={[styles.dataLabel, { color: c.textSecondary }]}>Monthly Investment</ThemedText>
+            <ThemedText style={[styles.dataValue, { color: c.text }]}>
+              {isPrivacyMode ? '****' : formatIndianNumber(monthlySIP)}
             </ThemedText>
           </View>
           <View style={styles.dataRow}>
-            <ThemedText
-              style={[styles.dataLabel, { color: currColors.textSecondary }]}
-            >
-              Total Invested Capital
+            <ThemedText style={[styles.dataLabel, { color: c.textSecondary }]}>Current Portfolio XIRR</ThemedText>
+            <ThemedText style={[styles.dataValue, { color: c.text }]}>
+              {(xirr * 100).toFixed(2)}%
             </ThemedText>
-            <ThemedText style={[styles.dataValue, { color: currColors.text }]}>
-              {isPrivacyMode
-                ? '****'
-                : `${showCurrencySymbol ? '₹' : ''}${formatValue(displayPoint.totalInvested)}`}
+          </View>
+          <View style={styles.dividerMini} />
+          <View style={styles.dataRow}>
+            <ThemedText style={[styles.dataLabel, { color: c.textSecondary }]}>Total Invested Capital</ThemedText>
+            <ThemedText style={[styles.dataValue, { color: c.text }]}>
+              {isPrivacyMode ? '****' : formatIndianNumber(chartData[years]?.data?.totalInvested || 0)}
             </ThemedText>
           </View>
           <View style={styles.dataRow}>
-            <ThemedText
-              style={[styles.dataLabel, { color: currColors.textSecondary }]}
-            >
-              Est. Capital Gains
-            </ThemedText>
+            <ThemedText style={[styles.dataLabel, { color: c.textSecondary }]}>Est. Capital Gains</ThemedText>
             <ThemedText style={[styles.dataValue, { color: '#4CAF50' }]}>
-              {isPrivacyMode
-                ? '****'
-                : `+${showCurrencySymbol ? '₹' : ''}${formatValue(displayPoint.estimatedGains)}`}
+              {isPrivacyMode ? '****' : `+${formatIndianNumber(chartData[years]?.data?.estimatedGains || 0)}`}
             </ThemedText>
           </View>
         </View>
 
-        <View style={styles.infoBox}>
-          <Info size={16} color={currColors.textSecondary} />
-          <ThemedText style={[styles.infoText, { color: currColors.textSecondary }]}>
-            Projections are based on your current portfolio XIRR and average
-            monthly investment. Past performance does not guarantee future
-            results.
+        {/* DISCLAIMER */}
+        <View style={styles.disclaimerBox}>
+          <Calculator size={14} color={c.textSecondary} />
+          <ThemedText style={[styles.disclaimerText, { color: c.textSecondary }]}>
+            Calculations are based on monthly compounding. Goal ETA assumes returns align with your Base scenario. 
+            Past performance is not a guarantee of future returns.
           </ThemedText>
         </View>
       </ScrollView>
@@ -442,9 +312,7 @@ export default function ForecastDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
+  safeArea: { flex: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -454,81 +322,250 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  scrollContent: {
+  scrollContent: { padding: 20, paddingBottom: 60 },
+  goalHeader: {
     padding: 20,
-    paddingBottom: 40,
+    borderRadius: 24,
+    borderWidth: 1,
+    marginBottom: 24,
   },
-  graphStatsContainer: {
-    paddingHorizontal: 10,
-    marginBottom: 8,
-  },
-  headerTopRow: {
+  goalTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
-  heroLabel: {
+  tinyLabel: {
     fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginBottom: 4,
+  },
+  goalTitle: {
+    fontSize: 24,
     fontWeight: '700',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
   },
-  heroValue: {
-    fontSize: 32,
-    fontWeight: '400',
-    marginBottom: 6,
-    letterSpacing: -0.5,
+  inlineInputGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
   },
-  multiplierBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  badgeText: {
-    fontSize: 11,
+  shorthandText: {
+    fontSize: 20,
     fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  inflationNote: {
-    fontSize: 13,
+    marginLeft: 6,
     opacity: 0.8,
   },
-  sectionTitle: {
-    fontSize: 10,
-    fontWeight: '500',
-    letterSpacing: 1,
-    marginBottom: 12,
-    marginLeft: 4,
-    textTransform: 'uppercase',
-  },
-  tabsContainer: {
+  etaBadge: {
     flexDirection: 'row',
-    marginTop: -15,
-    padding: 6,
-    borderRadius: 16,
-    borderWidth: 1,
+    alignItems: 'center',
     gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
-  tabButton: {
+  etaText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  heroUnit: {
+    marginBottom: 32,
+  },
+  heroRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 20,
+    paddingHorizontal: 4,
+  },
+  heroValue: {
+    fontSize: 36,
+    fontWeight: '800',
+    letterSpacing: -1,
+  },
+  activePointIndicator: {
+    alignItems: 'flex-end',
+  },
+  activeYear: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  inflationTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  inflationTagText: {
+    fontSize: 12,
+    color: '#5AC8FA',
+    fontWeight: '600',
+  },
+  chartContainer: {
+    alignItems: 'center',
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  controlsCard: {
+    padding: 24,
+    borderRadius: 24,
+    borderWidth: 1,
+    marginBottom: 32,
+  },
+  controlHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 20,
+  },
+  controlTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+    opacity: 0.6,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 10,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  inputValueDisplay: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  textInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  textInput: {
     flex: 1,
-    paddingVertical: 10,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  tabRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  tabMini: {
+    flex: 1,
+    height: 36,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabText: {
+  tabMiniText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(120,120,128,0.1)',
+    marginVertical: 20,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  toggleLabelGroup: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+    flex: 1,
+  },
+  toggleDesc: {
+    fontSize: 12,
+    opacity: 0.6,
+  },
+  horizonSection: {
+    marginBottom: 32,
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    padding: 4,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  disclaimerBox: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 4,
+  },
+  disclaimerText: {
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
+    fontStyle: 'italic',
   },
   dataCard: {
     borderRadius: 20,
     borderWidth: 1,
     padding: 24,
-    gap: 20,
-    marginBottom: 32,
+    gap: 16,
+    marginBottom: 20,
   },
   dataRow: {
     flexDirection: 'row',
@@ -541,31 +578,11 @@ const styles = StyleSheet.create({
   },
   dataValue: {
     fontSize: 13,
-    fontWeight: '400',
-    letterSpacing: 0,
+    fontWeight: '700',
   },
-  horizontalDivider: {
+  dividerMini: {
     height: 1,
-    width: '100%',
+    backgroundColor: 'rgba(120,120,128,0.08)',
     marginVertical: 4,
-    opacity: 0.5,
-  },
-  verticalDivider: {
-    width: 1,
-    height: 40,
-    marginHorizontal: 24,
-  },
-  infoBox: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 16,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 16,
-    marginTop: -8,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 11,
-    lineHeight: 16,
   },
 });

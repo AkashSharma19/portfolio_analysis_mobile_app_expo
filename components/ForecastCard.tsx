@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
-import { calculateProjection } from '@/lib/finance';
+import { calculateProjection, formatIndianNumber } from '@/lib/finance';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { ArrowRight } from 'lucide-react-native';
 import React, { useMemo } from 'react';
@@ -28,16 +28,19 @@ export const ForecastCard = ({
   );
   const isPrivacyMode = usePortfolioStore((state) => state.isPrivacyMode);
 
+  const sipStepUp = usePortfolioStore((state) => state.sipStepUp);
+  const manualMonthlySIP = usePortfolioStore((state) => state.manualMonthlySIP);
+
   // Derived values from user data
   const annualReturn = useMemo(() => {
     return (summary.xirr || 0) / 100;
   }, [summary.xirr]);
 
   const monthlySIP = useMemo(() => {
+    if (manualMonthlySIP !== null) return manualMonthlySIP;
     if (yearlyAnalysis.length === 0) return 0;
-    // Get the average monthly investment from the most recent year
     return yearlyAnalysis[0].averageMonthlyInvestment || 0;
-  }, [yearlyAnalysis]);
+  }, [yearlyAnalysis, manualMonthlySIP]);
 
   const projection = useMemo(() => {
     return calculateProjection(
@@ -45,16 +48,9 @@ export const ForecastCard = ({
       annualReturn,
       monthlySIP,
       years,
+      sipStepUp
     );
-  }, [summary.totalValue, annualReturn, monthlySIP, years]);
-
-  const formatValue = (val: number) => {
-    return val.toLocaleString('en-IN', {
-      maximumFractionDigits: 0,
-      notation: 'compact',
-      compactDisplay: 'short',
-    });
-  };
+  }, [summary.totalValue, annualReturn, monthlySIP, years, sipStepUp]);
 
   return (
     <TouchableOpacity
@@ -74,13 +70,13 @@ export const ForecastCard = ({
             <ThemedText style={[styles.mainValue, { color: currColors.text }]}>
               {isPrivacyMode
                 ? '****'
-                : `${showCurrencySymbol ? '₹' : ''}${formatValue(projection.totalFutureValue)}`}
+                : `${showCurrencySymbol ? '₹' : ''}${formatIndianNumber(projection.totalFutureValue)}`}
             </ThemedText>
             <ThemedText
               style={[styles.subValue, { color: currColors.textSecondary }]}
             >
               Worth {showCurrencySymbol ? '₹' : ''}
-              {formatValue(projection.presentValue)} today
+              {formatIndianNumber(projection.presentValue)} today
             </ThemedText>
           </View>
           <View style={styles.rightContent}>
