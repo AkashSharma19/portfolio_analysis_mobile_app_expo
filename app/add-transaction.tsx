@@ -11,6 +11,7 @@ import { Check, ChevronRight, Search, X } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -59,6 +60,30 @@ export default function AddTransactionScreen() {
   const [showBrokerModal, setShowBrokerModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Calculate holdings map for badges and guards
+  const holdingsMap = useMemo(() => {
+    const map = new Map<string, number>();
+    transactions.forEach((t) => {
+      const sym = t.symbol.toUpperCase();
+      const current = map.get(sym) || 0;
+      if (t.type === 'BUY') map.set(sym, current + t.quantity);
+      else map.set(sym, Math.max(0, current - t.quantity));
+    });
+    return map;
+  }, [transactions]);
+
+  const currentSymbolHolding = useMemo(() => {
+    if (!symbol) return 0;
+    return holdingsMap.get(symbol.toUpperCase()) || 0;
+  }, [symbol, holdingsMap]);
+
+  const isOverselling = useMemo(() => {
+    if (type !== 'SELL') return false;
+    const qty = parseFloat(quantity);
+    if (isNaN(qty)) return false;
+    return qty > currentSymbolHolding;
+  }, [type, quantity, currentSymbolHolding]);
+
   // Initial load
   useEffect(() => {
     fetchTickers();
@@ -73,10 +98,10 @@ export default function AddTransactionScreen() {
     }
   }, [editingTransaction]);
 
-  const selectedTicker = useMemo(
-    () => tickers.find((t) => t.Tickers === symbol),
-    [symbol, tickers],
-  );
+  const selectedTicker = useMemo(() => {
+    const sym = symbol.toUpperCase();
+    return tickers.find((t) => t.Tickers.toUpperCase() === sym);
+  }, [symbol, tickers]);
 
   const filteredTickers = useMemo(() => {
     if (!searchQuery) return tickers;
@@ -93,7 +118,7 @@ export default function AddTransactionScreen() {
   }, [transactions]);
 
   const handleSave = () => {
-    if (!symbol || !quantity || price === '') return;
+    if (!symbol || !quantity || price === '' || isOverselling) return;
 
     const transactionData = {
       id: editingTransaction
@@ -275,18 +300,43 @@ export default function AddTransactionScreen() {
               {selectedTicker && (
                 <View
                   style={[
-                    styles.companyInfoRow,
-                    { borderBottomColor: currColors.border },
+                    styles.assetSummaryRow,
+                    { borderBottomColor: currColors.border, backgroundColor: currColors.cardSecondary },
                   ]}
                 >
-                  <ThemedText
-                    style={[
-                      styles.companyName,
-                      { color: currColors.textSecondary },
-                    ]}
-                  >
-                    {selectedTicker['Company Name']}
-                  </ThemedText>
+                  {selectedTicker.Logo ? (
+                    <View style={styles.assetSummaryLogoContainer}>
+                      <Image
+                        source={{ uri: selectedTicker.Logo }}
+                        style={styles.assetSummaryLogo}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  ) : (
+                    <View
+                      style={[
+                        styles.assetSummaryLogoPlaceholder,
+                        { backgroundColor: currColors.border },
+                      ]}
+                    >
+                      <ThemedText
+                        style={[styles.logoLetterSmall, { color: currColors.text }]}
+                      >
+                        {selectedTicker.Tickers[0]}
+                      </ThemedText>
+                    </View>
+                  )}
+                  <View style={styles.assetSummaryInfo}>
+                    <ThemedText
+                      style={[styles.assetCompanyName, { color: currColors.textSecondary }]}
+                      numberOfLines={1}
+                    >
+                      {selectedTicker['Company Name']}
+                    </ThemedText>
+                    <ThemedText style={[styles.assetTypeTag, { color: currColors.tint }]}>
+                      {selectedTicker['Asset Type'] || 'Stock'} • {selectedTicker.Sector || 'Market'}
+                    </ThemedText>
+                  </View>
                 </View>
               )}
 
@@ -296,11 +346,26 @@ export default function AddTransactionScreen() {
                   { borderBottomColor: currColors.border },
                 ]}
               >
-                <ThemedText style={[styles.label, { color: currColors.text }]}>
-                  Quantity
-                </ThemedText>
+                <View>
+                  <ThemedText style={[styles.label, { color: currColors.text }]}>
+                    Quantity
+                  </ThemedText>
+                  {type === 'SELL' && (
+                    <ThemedText
+                      style={[
+                        styles.availableLabel,
+                        { color: isOverselling ? '#FF453A' : currColors.textSecondary },
+                      ]}
+                    >
+                      Available: {currentSymbolHolding}
+                    </ThemedText>
+                  )}
+                </View>
                 <TextInput
-                  style={[styles.input, { color: currColors.text }]}
+                  style={[
+                    styles.input,
+                    { color: isOverselling ? '#FF453A' : currColors.text },
+                  ]}
                   placeholder="0"
                   placeholderTextColor={currColors.textSecondary}
                   value={quantity}
@@ -337,6 +402,27 @@ export default function AddTransactionScreen() {
                   />
                 </View>
               </View>
+
+              {/* LIVE TOTAL VALUE */}
+              {!isNaN(parseFloat(price)) && !isNaN(parseFloat(quantity)) && parseFloat(price) > 0 && parseFloat(quantity) > 0 && (
+                <View
+                  style={[
+                    styles.formRow,
+                    { borderTopWidth: 0.5, borderTopColor: currColors.border, minHeight: 40 },
+                  ]}
+                >
+                  <ThemedText style={[styles.totalLabel, { color: currColors.textSecondary }]}>
+                    ESTIMATED TOTAL
+                  </ThemedText>
+                  <ThemedText style={[styles.totalValue, { color: currColors.tint, fontWeight: '700' }]}>
+                    {showCurrencySymbol ? '₹' : ''}
+                    {(parseFloat(price) * parseFloat(quantity)).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </ThemedText>
+                </View>
+              )}
             </View>
 
             {/* TRANSACTION DETAILS GROUP */}
@@ -429,6 +515,36 @@ export default function AddTransactionScreen() {
                 </View>
               </TouchableOpacity>
             </View>
+
+            {/* QUICK BROKER CHIPS */}
+            {existingBrokers.length > 0 && (
+              <View style={styles.chipsContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {existingBrokers.map((b) => (
+                    <TouchableOpacity
+                      key={b}
+                      onPress={() => setBroker(b)}
+                      style={[
+                        styles.chip,
+                        {
+                          backgroundColor: broker === b ? currColors.tint : currColors.card,
+                          borderColor: currColors.border,
+                        },
+                      ]}
+                    >
+                      <ThemedText
+                        style={[
+                          styles.chipText,
+                          { color: broker === b ? (colorScheme === 'dark' ? '#000' : '#FFF') : currColors.text },
+                        ]}
+                      >
+                        {b}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -495,46 +611,93 @@ export default function AddTransactionScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.tickerItem,
-                  { borderBottomColor: currColors.border },
-                ]}
-                onPress={() => selectTicker(item)}
-              >
-                <View>
-                  <ThemedText
-                    style={[styles.tickerSymbol, { color: currColors.text }]}
-                  >
-                    {item.Tickers}
-                  </ThemedText>
-                  <ThemedText
-                    style={[
-                      styles.companyNameList,
-                      { color: currColors.textSecondary },
-                    ]}
-                  >
-                    {item['Company Name']}
-                  </ThemedText>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <ThemedText
-                    style={[styles.tickerPrice, { color: currColors.text }]}
-                  >
-                    {showCurrencySymbol ? '₹' : ''}
-                    {item['Current Value']}
-                  </ThemedText>
-                  {symbol === item.Tickers && (
-                    <Check
-                      size={16}
-                      color={currColors.tint}
-                      style={{ marginTop: 4 }}
-                    />
-                  )}
-                </View>
-              </TouchableOpacity>
-            )}
+            renderItem={({ item }) => {
+              const holdingQty = holdingsMap.get(item.Tickers.toUpperCase()) || 0;
+              return (
+                <TouchableOpacity
+                  style={[
+                    styles.tickerItem,
+                    { borderBottomColor: currColors.border },
+                  ]}
+                  onPress={() => selectTicker(item)}
+                >
+                  <View style={styles.tickerLeft}>
+                    {item.Logo ? (
+                      <View style={styles.modalLogoContainer}>
+                        <Image
+                          source={{ uri: item.Logo }}
+                          style={styles.modalLogo}
+                          resizeMode="contain"
+                        />
+                      </View>
+                    ) : (
+                      <View
+                        style={[
+                          styles.modalLogoPlaceholder,
+                          { backgroundColor: currColors.cardSecondary },
+                        ]}
+                      >
+                        <ThemedText
+                          style={[styles.logoLetter, { color: currColors.text }]}
+                        >
+                          {item.Tickers[0]}
+                        </ThemedText>
+                      </View>
+                    )}
+                    <View style={styles.tickerNames}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <ThemedText
+                          style={[styles.tickerSymbol, { color: currColors.text }]}
+                        >
+                          {item.Tickers}
+                        </ThemedText>
+                        {holdingQty > 0 && (
+                          <View
+                            style={[
+                              styles.holdingBadge,
+                              { backgroundColor: currColors.cardSecondary },
+                            ]}
+                          >
+                            <ThemedText
+                              style={[
+                                styles.holdingBadgeText,
+                                { color: currColors.textSecondary },
+                              ]}
+                            >
+                              Holding: {holdingQty}
+                            </ThemedText>
+                          </View>
+                        )}
+                      </View>
+                      <ThemedText
+                        style={[
+                          styles.companyNameList,
+                          { color: currColors.textSecondary },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {item['Company Name']}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <ThemedText
+                      style={[styles.tickerPrice, { color: currColors.text }]}
+                    >
+                      {showCurrencySymbol ? '₹' : ''}
+                      {item['Current Value']}
+                    </ThemedText>
+                    {symbol.toUpperCase() === item.Tickers.toUpperCase() && (
+                      <Check
+                        size={16}
+                        color={currColors.tint}
+                        style={{ marginTop: 4 }}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
             contentContainerStyle={styles.tickerList}
           />
         </View>
@@ -853,5 +1016,126 @@ const styles = StyleSheet.create({
   tickerPrice: {
     fontSize: 14,
     color: '#FFF',
+  },
+  availableLabel: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  chipsContainer: {
+    marginTop: 8,
+    paddingHorizontal: 16,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  tickerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  modalLogoContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  modalLogo: {
+    width: 32,
+    height: 32,
+  },
+  modalLogoPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  logoLetter: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  tickerNames: {
+    flex: 1,
+  },
+  holdingBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  holdingBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  totalLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  totalValue: {
+    fontSize: 16,
+  },
+  assetSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+  },
+  assetSummaryLogoContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  assetSummaryLogo: {
+    width: 32,
+    height: 32,
+  },
+  assetSummaryLogoPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  logoLetterSmall: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  assetSummaryInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  assetCompanyName: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  assetTypeTag: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });
