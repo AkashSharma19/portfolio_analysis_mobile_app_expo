@@ -912,6 +912,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     height: '100%',
+    fontFamily: 'Outfit_400Regular',
   },
   clearButton: {
     padding: 4,
