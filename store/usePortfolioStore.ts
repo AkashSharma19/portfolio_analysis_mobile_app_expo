@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { calculateXIRR } from '../lib/finance';
 import { PortfolioSummary, Ticker, Transaction } from '../types';
 import { supabase } from '../lib/supabase';
+import { fetchYahooQuote, fetchYahooQuotesBatch, getCompanyLogoUrl } from '../services/yahooFinanceService';
 
 interface PortfolioState {
   transactions: Transaction[];
@@ -12,6 +13,9 @@ interface PortfolioState {
   removeTransaction: (id: string) => void;
   updateTransaction: (id: string, transaction: Transaction) => void;
   fetchTickers: () => Promise<void>;
+  fetchSingleTicker: (symbol: string) => Promise<Ticker | null>;
+  remapCompanySymbol: (oldSymbol: string, newSymbol: string) => Promise<boolean>;
+  getTickerSource: (symbol: string) => 'yahoo' | 'sheet';
   calculateSummary: () => PortfolioSummary;
   getAllocationData: (
     dimension: 'Sector' | 'Company Name' | 'Asset Type' | 'Broker',
@@ -107,21 +111,15 @@ export const usePortfolioStore = create<PortfolioState>()(
         })),
       fetchTickers: async () => {
         try {
-          // 1. Fetch Tickers from Supabase
-          const { data: tickersData, error: tickersError } = await supabase
+          // 1. Fetch cached Tickers from Supabase
+          const { data: tickersData } = await supabase
             .from('tickers')
             .select('*');
 
-          if (tickersError) throw tickersError;
-
           // 2. Fetch Global Configs from Supabase
-          const { data: configsData, error: configsError } = await supabase
+          const { data: configsData } = await supabase
             .from('global_configs')
             .select('*');
-
-          if (configsError) {
-            console.warn('Failed to fetch global configs:', configsError);
-          }
 
           let logo: string | null = null;
           let link: string | null = null;
@@ -133,8 +131,9 @@ export const usePortfolioStore = create<PortfolioState>()(
             link = linkConfig?.value?.url || null;
           }
 
-          if (tickersData) {
-            // Map the database snake_case fields back to the format the UI expects
+          let currentTickers: Ticker[] = get().tickers || [];
+
+          if (tickersData && tickersData.length > 0) {
             const mappedTickers: Ticker[] = tickersData.map((t: any) => {
               const historicalData = t.historical_data || {};
               return {
@@ -146,7 +145,7 @@ export const usePortfolioStore = create<PortfolioState>()(
                 'Yesterday Close': t.yesterday_close !== null ? Number(t.yesterday_close) : undefined,
                 High52: t.high_52 !== null ? Number(t.high_52) : undefined,
                 Low52: t.low_52 !== null ? Number(t.low_52) : undefined,
-                Logo: t.logo,
+                Logo: (t.logo && !t.logo.includes('icon.horse')) ? t.logo : getCompanyLogoUrl(t.ticker, t.company_name),
                 'Market Cap': t.market_cap,
                 PE: t.pe !== null ? Number(t.pe) : null,
                 DividendYield: t.dividend_yield !== null ? Number(t.dividend_yield) : null,
@@ -154,16 +153,257 @@ export const usePortfolioStore = create<PortfolioState>()(
                 ...historicalData,
               };
             });
-
-            set({
-              tickers: mappedTickers,
-              headerLogo: logo,
-              headerLink: link,
-              lastSyncedAt: Date.now(),
-            });
+            currentTickers = mappedTickers;
           }
+
+          // 3. Identify all distinct active symbols to refresh in real-time
+          const { transactions, watchlist } = get();
+          const txSymbols = transactions.map((t) => t.symbol.trim().toUpperCase());
+          const watchSymbols = (watchlist || []).map((w: any) =>
+            (typeof w === 'string' ? w : (w?.symbol || '')).trim().toUpperCase()
+          );
+          const cachedSymbols = currentTickers.map((t) => t.Tickers.trim().toUpperCase());
+
+          const symbolsToRefresh = Array.from(
+            new Set([...txSymbols, ...watchSymbols, ...cachedSymbols].filter(Boolean))
+          );
+
+          if (symbolsToRefresh.length > 0) {
+            // Fetch live quotes from Yahoo Finance
+            const liveQuotes = await fetchYahooQuotesBatch(symbolsToRefresh, 8);
+
+            if (liveQuotes.length > 0) {
+              const tickerMap = new Map<string, Ticker>();
+              currentTickers.forEach((t) => tickerMap.set(t.Tickers.trim().toUpperCase(), t));
+
+              // Merge fresh market quotes
+              liveQuotes.forEach((lq) => {
+                const sym = lq.Tickers.trim().toUpperCase();
+                const existing = tickerMap.get(sym);
+                tickerMap.set(sym, {
+                  ...(existing || {}),
+                  ...lq,
+                  Logo: (lq.Logo && !lq.Logo.includes('icon.horse')) ? lq.Logo : getCompanyLogoUrl(sym, lq['Company Name']),
+                  Sector: (lq.Sector && lq.Sector !== 'General') ? lq.Sector : (existing?.Sector || 'General'),
+                  PE: lq.PE !== undefined ? lq.PE : existing?.PE,
+                  'Market Cap': lq['Market Cap'] !== undefined ? lq['Market Cap'] : existing?.['Market Cap'],
+                });
+              });
+
+              currentTickers = Array.from(tickerMap.values());
+
+              // Async background sync to Supabase tickers table
+              const upsertRows = liveQuotes.map((q) => ({
+                ticker: q.Tickers,
+                current_value: q['Current Value'],
+                company_name: q['Company Name'],
+                asset_type: q['Asset Type'] || 'Equity',
+                sector: q.Sector || 'General',
+                yesterday_close: q['Yesterday Close'],
+                high_52: q.High52,
+                low_52: q.Low52,
+                logo: q.Logo || getCompanyLogoUrl(q.Tickers, q['Company Name']),
+                pe: q.PE,
+                market_cap: q['Market Cap'],
+                updated_at: new Date().toISOString(),
+              }));
+
+              (async () => {
+                try {
+                  const { error } = await supabase
+                    .from('tickers')
+                    .upsert(upsertRows, { onConflict: 'ticker' });
+                  if (error) console.warn('Background tickers upsert error:', error.message);
+                } catch (err) {
+                  console.warn('Background tickers upsert failed:', err);
+                }
+              })();
+            }
+          }
+
+          set({
+            tickers: currentTickers,
+            headerLogo: logo,
+            headerLink: link,
+            lastSyncedAt: Date.now(),
+          });
         } catch (error) {
-          console.error('Failed to fetch tickers from Supabase:', error);
+          console.error('Failed to fetch tickers:', error);
+        }
+      },
+      fetchSingleTicker: async (symbol: string) => {
+        const cleanSym = symbol.trim().toUpperCase();
+        if (!cleanSym) return null;
+
+        const existing = get().tickers.find(
+          (t) => t.Tickers.trim().toUpperCase() === cleanSym
+        );
+
+        try {
+          const liveTicker = await fetchYahooQuote(cleanSym);
+          if (liveTicker) {
+            const merged: Ticker = {
+              ...(existing || {}),
+              ...liveTicker,
+              Logo: (liveTicker.Logo && !liveTicker.Logo.includes('icon.horse')) ? liveTicker.Logo : getCompanyLogoUrl(cleanSym, liveTicker['Company Name']),
+              Sector: (liveTicker.Sector && liveTicker.Sector !== 'General') ? liveTicker.Sector : (existing?.Sector || 'General'),
+              PE: liveTicker.PE !== undefined ? liveTicker.PE : existing?.PE,
+              'Market Cap': liveTicker['Market Cap'] !== undefined ? liveTicker['Market Cap'] : existing?.['Market Cap'],
+            };
+
+            set((state) => {
+              const filtered = state.tickers.filter(
+                (t) => t.Tickers.trim().toUpperCase() !== cleanSym
+              );
+              return { tickers: [...filtered, merged] };
+            });
+
+            // Async background upsert to Supabase
+            (async () => {
+              try {
+                await supabase
+                  .from('tickers')
+                  .upsert({
+                    ticker: merged.Tickers,
+                    current_value: merged['Current Value'],
+                    company_name: merged['Company Name'],
+                    asset_type: merged['Asset Type'] || 'Equity',
+                    sector: merged.Sector || 'General',
+                    yesterday_close: merged['Yesterday Close'],
+                    high_52: merged.High52,
+                    low_52: merged.Low52,
+                    logo: merged.Logo,
+                    pe: merged.PE,
+                    market_cap: merged['Market Cap'],
+                    updated_at: new Date().toISOString(),
+                  }, { onConflict: 'ticker' });
+              } catch (err) {
+                console.warn('Single ticker upsert error:', err);
+              }
+            })();
+
+            return merged;
+          }
+        } catch (e) {
+          console.warn(`Failed to fetch single quote for ${cleanSym}:`, e);
+        }
+
+        return existing || null;
+      },
+      getTickerSource: (symbol: string): 'yahoo' | 'sheet' => {
+        const cleanSym = (symbol || '').trim().toUpperCase();
+        if (!cleanSym) return 'sheet';
+        const ticker = get().tickers.find(
+          (t) => t.Tickers.trim().toUpperCase() === cleanSym
+        );
+        if (ticker?.source) return ticker.source;
+        // Legacy symbols typically contain prefixes like NSE:, BOM:, NASDAQ: or lack Yahoo fundamental data
+        if (
+          cleanSym.includes(':') ||
+          cleanSym.startsWith('NSE') ||
+          cleanSym.startsWith('BOM')
+        ) {
+          return 'sheet';
+        }
+        // If it has a live Yahoo value or high52/PE/Logo, it's yahoo
+        if (ticker && (ticker.High52 || ticker.PE || ticker['Market Cap'])) {
+          return 'yahoo';
+        }
+        return 'yahoo';
+      },
+      remapCompanySymbol: async (oldSymbol: string, newSymbol: string): Promise<boolean> => {
+        const cleanOld = (oldSymbol || '').trim().toUpperCase();
+        const cleanNew = (newSymbol || '').trim().toUpperCase();
+        if (!cleanOld || !cleanNew || cleanOld === cleanNew) return false;
+
+        try {
+          // 1. Fetch live quote for the new symbol
+          const newTicker = await fetchYahooQuote(cleanNew);
+
+          // 2. Update all transactions with oldSymbol -> newSymbol
+          const updatedTransactions = get().transactions.map((t) => {
+            if (t.symbol.trim().toUpperCase() === cleanOld) {
+              return {
+                ...t,
+                symbol: cleanNew,
+                updatedAt: new Date().toISOString(),
+              };
+            }
+            return t;
+          });
+
+          // 3. Update watchlist
+          const updatedWatchlist = get().watchlist.map((w) =>
+            w.trim().toUpperCase() === cleanOld ? cleanNew : w
+          );
+
+          // 4. Update tickers array: replace/merge ticker metadata and tag with source: 'yahoo'
+          const otherTickers = get().tickers.filter(
+            (t) => t.Tickers.trim().toUpperCase() !== cleanOld && t.Tickers.trim().toUpperCase() !== cleanNew
+          );
+
+          const mergedNewTicker: Ticker = newTicker || {
+            Tickers: cleanNew,
+            'Company Name': cleanNew,
+            'Current Value': 0,
+            'Asset Type': 'Equity',
+            Sector: 'General',
+            Logo: getCompanyLogoUrl(cleanNew, cleanNew),
+            source: 'yahoo',
+          };
+          mergedNewTicker.source = 'yahoo';
+
+          set({
+            transactions: updatedTransactions,
+            watchlist: updatedWatchlist,
+            tickers: [...otherTickers, mergedNewTicker],
+            lastSyncedAt: Date.now(),
+          });
+
+          // 5. Background sync to Supabase
+          (async () => {
+            try {
+              const changedTx = updatedTransactions.filter((t) => t.symbol.trim().toUpperCase() === cleanNew);
+              if (changedTx.length > 0) {
+                const deviceId = get().getDeviceId();
+                const txRows = changedTx.map((t) => ({
+                  id: t.id,
+                  symbol: t.symbol,
+                  quantity: t.quantity,
+                  price: t.price,
+                  date: t.date,
+                  type: t.type,
+                  currency: t.currency || 'INR',
+                  broker: t.broker || '',
+                  device_id: deviceId,
+                  updated_at: new Date().toISOString(),
+                }));
+                await supabase.from('transactions').upsert(txRows, { onConflict: 'id' });
+              }
+
+              await supabase.from('tickers').upsert([{
+                ticker: mergedNewTicker.Tickers,
+                current_value: mergedNewTicker['Current Value'],
+                company_name: mergedNewTicker['Company Name'],
+                asset_type: mergedNewTicker['Asset Type'] || 'Equity',
+                sector: mergedNewTicker.Sector || 'General',
+                yesterday_close: mergedNewTicker['Yesterday Close'],
+                high_52: mergedNewTicker.High52,
+                low_52: mergedNewTicker.Low52,
+                logo: mergedNewTicker.Logo,
+                pe: mergedNewTicker.PE,
+                market_cap: mergedNewTicker['Market Cap'],
+                updated_at: new Date().toISOString(),
+              }], { onConflict: 'ticker' });
+            } catch (err) {
+              console.warn('[remapCompanySymbol] Supabase background sync failed:', err);
+            }
+          })();
+
+          return true;
+        } catch (err) {
+          console.error('Error in remapCompanySymbol:', err);
+          return false;
         }
       },
       calculateSummary: () => {
@@ -490,7 +730,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             totalCost: data.cost,
             quantity: data.quantity,
             stocksCount: data.stocksCount,
-            logo: data.symbol ? tickerMap.get(data.symbol)?.Logo : undefined,
+            logo: data.symbol ? (tickerMap.get(data.symbol)?.Logo || getCompanyLogoUrl(data.symbol, name)) : undefined,
             pnl: data.value - data.cost,
             pnlPercentage:
               data.cost > 0 ? ((data.value - data.cost) / data.cost) * 100 : 0,
@@ -599,7 +839,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             PE: ticker?.PE,
             DividendYield: ticker?.DividendYield || ticker?.['Dividend Yield'],
             DebtToEquity: ticker?.DebtToEquity || ticker?.['Debt to Equity'],
-            logo: ticker?.Logo,
+            logo: ticker?.Logo || getCompanyLogoUrl(data.symbol, ticker?.['Company Name']),
             marketCap: ticker?.['Market Cap'],
             broker: brokerLabel,
           });

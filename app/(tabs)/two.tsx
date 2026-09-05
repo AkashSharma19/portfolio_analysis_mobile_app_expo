@@ -227,7 +227,7 @@ const TransactionItem = memo(
             <ThemedText style={[styles.amountText, { color: currColors.text }]}>
               {isPrivacyMode
                 ? '****'
-                : `${item.currency === 'USD' ? '$' : showCurrencySymbol ? '₹' : ''}${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                : `${showCurrencySymbol ? '₹' : ''}${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             </ThemedText>
             <ThemedText
               style={[styles.quantityText, { color: currColors.textSecondary }]}

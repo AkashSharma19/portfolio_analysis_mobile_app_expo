@@ -1,8 +1,10 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
+import { searchMasterStocks } from '@/constants/NSE_COMPANIES';
 import { getSectorIcon } from '@/constants/Sectors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Ticker } from '@/types';
+import { getCompanyLogoUrl, searchYahooTickers } from '@/services/yahooFinanceService';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -41,6 +43,7 @@ const CHART_COLORS = [
 
 export default function ExploreScreen() {
   const fetchTickers = usePortfolioStore((state) => state.fetchTickers);
+  const fetchSingleTicker = usePortfolioStore((state) => state.fetchSingleTicker);
   const tickers = usePortfolioStore((state) => state.tickers);
   const showCurrencySymbol = usePortfolioStore(
     (state) => state.showCurrencySymbol,
@@ -63,6 +66,26 @@ export default function ExploreScreen() {
   const [filterAssetType, setFilterAssetType] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+  const [onlineResults, setOnlineResults] = useState<Ticker[]>([]);
+
+  useEffect(() => {
+    if (!searchQuery || searchQuery.trim().length < 2) {
+      setOnlineResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        setIsSearchingOnline(true);
+        const res = await searchYahooTickers(searchQuery);
+        setOnlineResults(res);
+      } catch (e) {
+      } finally {
+        setIsSearchingOnline(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const { sector: paramSector } = useLocalSearchParams<{ sector?: string }>();
 
@@ -93,14 +116,42 @@ export default function ExploreScreen() {
     let result = tickers.filter(
       (t) => t && t.Tickers && t['Asset Type'] !== 'Index',
     );
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      const localMatches = result.filter(
         (item) =>
           (item['Company Name'] &&
             item['Company Name'].toLowerCase().includes(query)) ||
           (item.Tickers && item.Tickers.toLowerCase().includes(query)),
       );
+      const localSymbols = new Set(
+        localMatches.map((t) => t.Tickers.trim().toUpperCase()),
+      );
+
+      // Search 2,578+ NSE & US Equities by Company Name and Ticker Symbol
+      const masterMatches = searchMasterStocks(query, 35);
+      const additional: Ticker[] = masterMatches
+        .filter((m) => !localSymbols.has(m.symbol.trim().toUpperCase()))
+        .map((m) => ({
+          Tickers: m.symbol,
+          'Company Name': m.name,
+          'Current Value': 0,
+          'Asset Type': m.name.toLowerCase().includes('etf') || m.name.toLowerCase().includes('bees') ? 'ETF' : 'Equity',
+          Sector: m.sector || 'General',
+          Logo: getCompanyLogoUrl(m.symbol, m.name),
+          'Yesterday Close': 0,
+        }));
+
+      const knownSet = new Set([
+        ...localMatches.map((t) => t.Tickers.trim().toUpperCase()),
+        ...additional.map((t) => t.Tickers.trim().toUpperCase()),
+      ]);
+
+      const onlineAdditional = onlineResults.filter(
+        (o) => !knownSet.has(o.Tickers.trim().toUpperCase())
+      );
+
+      result = [...localMatches, ...additional, ...onlineAdditional];
     } else if (!isSearchFocused) {
       // If no search query and search not focused, only show watchlist
       result = result.filter((item) => watchlist.includes(item.Tickers));
@@ -114,6 +165,12 @@ export default function ExploreScreen() {
     }
 
     return [...result].sort((a, b) => {
+      if (searchQuery) {
+        // Items with known prices first
+        const aHasPrice = (a['Current Value'] || 0) > 0 ? 1 : 0;
+        const bHasPrice = (b['Current Value'] || 0) > 0 ? 1 : 0;
+        if (aHasPrice !== bHasPrice) return bHasPrice - aHasPrice;
+      }
       const aCurrent = a['Current Value'] || 0;
       const aYesterday = a['Yesterday Close'] || aCurrent;
       const aChange =
@@ -126,16 +183,19 @@ export default function ExploreScreen() {
 
       return bChange - aChange;
     });
-  }, [tickers, searchQuery, filterAssetType, watchlist, isSearchFocused]);
+  }, [tickers, searchQuery, filterAssetType, watchlist, isSearchFocused, onlineResults]);
 
   const indicesData = useMemo(() => {
     return tickers.filter((t) => t['Asset Type'] === 'Index');
   }, [tickers]);
 
   const uniqueAssetTypes = useMemo(() => {
-    const assetTypes = new Set<string>(
-      tickers.map((t) => t['Asset Type']).filter((t): t is string => !!t),
-    );
+    const assetTypes = new Set<string>([
+      'Equity',
+      'ETF',
+      'Mutual Fund',
+      ...tickers.map((t) => t['Asset Type']).filter((t): t is string => !!t && t !== 'Index'),
+    ]);
     return Array.from(assetTypes).sort();
   }, [tickers]);
 
@@ -162,6 +222,9 @@ export default function ExploreScreen() {
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           addRecentSearch(companyName);
+          if (currentValue === 0) {
+            fetchSingleTicker(item.Tickers);
+          }
           router.push(`/stock-details/${item.Tickers}`);
         }}
       >
@@ -237,39 +300,62 @@ export default function ExploreScreen() {
         <View style={styles.itemRight}>
           <View style={styles.priceRow}>
             <View style={{ alignItems: 'flex-end', marginRight: 12 }}>
-              <ThemedText style={[styles.currentPrice, { color: currColors.text }]}>
-                {showCurrencySymbol ? '₹' : ''}
-                {currentValue.toLocaleString('en-IN', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </ThemedText>
-              <View
-                style={[
-                  styles.changeBadge,
-                  {
-                    backgroundColor: isPositive
-                      ? 'rgba(76, 175, 80, 0.1)'
-                      : 'rgba(244, 67, 54, 0.1)',
-                  },
-                ]}
-              >
-                <TrendingUp
-                  size={12}
-                  color={isPositive ? '#4CAF50' : '#F44336'}
+              {currentValue > 0 ? (
+                <>
+                  <ThemedText style={[styles.currentPrice, { color: currColors.text }]}>
+                    {showCurrencySymbol ? '₹' : ''}
+                    {currentValue.toLocaleString('en-IN', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </ThemedText>
+                  <View
+                    style={[
+                      styles.changeBadge,
+                      {
+                        backgroundColor: isPositive
+                          ? 'rgba(76, 175, 80, 0.1)'
+                          : 'rgba(244, 67, 54, 0.1)',
+                      },
+                    ]}
+                  >
+                    <TrendingUp
+                      size={12}
+                      color={isPositive ? '#4CAF50' : '#F44336'}
+                      style={{
+                        transform: [{ rotate: isPositive ? '0deg' : '180deg' }],
+                      }}
+                    />
+                    <ThemedText
+                      style={[
+                        styles.changeText,
+                        { color: isPositive ? '#4CAF50' : '#F44336' },
+                      ]}
+                    >
+                      {Math.abs(changePercentage).toFixed(2)}%
+                    </ThemedText>
+                  </View>
+                </>
+              ) : (
+                <View
                   style={{
-                    transform: [{ rotate: isPositive ? '0deg' : '180deg' }],
+                    backgroundColor: currColors.cardSecondary,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 6,
                   }}
-                />
-                <ThemedText
-                  style={[
-                    styles.changeText,
-                    { color: isPositive ? '#4CAF50' : '#F44336' },
-                  ]}
                 >
-                  {Math.abs(changePercentage).toFixed(2)}%
-                </ThemedText>
-              </View>
+                  <ThemedText
+                    style={{
+                      color: currColors.tint,
+                      fontSize: 12,
+                      fontWeight: '600',
+                    }}
+                  >
+                    Live Quote
+                  </ThemedText>
+                </View>
+              )}
             </View>
             <TouchableOpacity
               onPress={() => {
@@ -779,13 +865,44 @@ export default function ExploreScreen() {
                   <ThemedText
                     style={[
                       styles.emptyText,
-                      { color: currColors.textSecondary, textAlign: 'center' },
+                      { color: currColors.textSecondary, textAlign: 'center', marginBottom: 16 },
                     ]}
                   >
                     {searchQuery
-                      ? 'No companies found'
+                      ? `No local records for "${searchQuery}"`
                       : 'Your watchlist is empty.\nSearch for companies to add them.'}
                   </ThemedText>
+                  {searchQuery.trim().length > 0 && (
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: currColors.tint,
+                        paddingHorizontal: 20,
+                        paddingVertical: 12,
+                        borderRadius: 12,
+                        gap: 8,
+                      }}
+                      onPress={async () => {
+                        const cleanSym = searchQuery.trim().toUpperCase();
+                        setIsSearchingOnline(true);
+                        const res = await fetchSingleTicker(cleanSym);
+                        setIsSearchingOnline(false);
+                        if (res) {
+                          router.push(`/stock-details/${res.Tickers}`);
+                        }
+                      }}
+                    >
+                      {isSearchingOnline ? (
+                        <ActivityIndicator size="small" color={colorScheme === 'dark' ? '#000' : '#FFF'} />
+                      ) : (
+                        <Ionicons name="cloud-download-outline" size={18} color={colorScheme === 'dark' ? '#000' : '#FFF'} />
+                      )}
+                      <ThemedText style={{ color: colorScheme === 'dark' ? '#000' : '#FFF', fontWeight: '600' }}>
+                        {isSearchingOnline ? 'Looking up Yahoo Finance...' : `Look up "${searchQuery.trim().toUpperCase()}" Live`}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )
             }

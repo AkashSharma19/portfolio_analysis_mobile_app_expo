@@ -25,6 +25,9 @@ import {
   Plus,
   Check,
   Cloud,
+  ArrowRightLeft,
+  Globe,
+  ChevronRight,
 } from 'lucide-react-native';
 import { useMoneyStore } from '@/store/useMoneyStore';
 import { AccountType, Account, Loan, EMIPayment, Budget } from '../../types/money';
@@ -1511,6 +1514,35 @@ export default function ProfileScreen() {
                 </ThemedText>
               </TouchableOpacity>
             </View>
+
+            <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: currColors.border, marginVertical: 12 }} />
+
+            {/* Company & Ticker Mapping Studio Action */}
+            <TouchableOpacity
+              style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 4 }}
+              onPress={() => {
+                handleHaptic();
+                router.push('/ticker-mapping');
+              }}
+            >
+              <View
+                style={[
+                  styles.gridIconBox,
+                  { backgroundColor: 'rgba(10, 132, 255, 0.12)', marginRight: 14, marginBottom: 0 },
+                ]}
+              >
+                <ArrowRightLeft size={22} color={currColors.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <ThemedText style={[styles.gridLabel, { color: currColors.text, textAlign: 'left', fontSize: 15, fontWeight: '600' }]}>
+                  Company & Ticker Mapping
+                </ThemedText>
+                <ThemedText style={{ color: currColors.textSecondary, fontSize: 12, marginTop: 2 }}>
+                  Switch Google Sheet tickers to live Yahoo Finance
+                </ThemedText>
+              </View>
+              <ChevronRight size={16} color={currColors.textSecondary} />
+            </TouchableOpacity>
           </View>
 
           {/* Money Manager Section */}

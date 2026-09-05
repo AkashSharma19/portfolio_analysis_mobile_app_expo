@@ -3,14 +3,17 @@ import Colors from '@/constants/Colors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { format } from 'date-fns';
 import { formatIndianNumber } from '@/lib/finance';
+import { MASTER_STOCKS_LIST, inferSector } from '@/constants/NSE_COMPANIES';
+import { getCompanyLogoUrl } from '@/services/yahooFinanceService';
 import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { BackButton } from '@/components/BackButton';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
-import { ArrowDownLeft, ArrowUpRight } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight } from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   ScrollView,
@@ -46,50 +49,97 @@ export default function StockDetailsScreen() {
     (state) => state.showCurrencySymbol,
   );
   const calculateSummary = usePortfolioStore((state) => state.calculateSummary);
+  const fetchSingleTicker = usePortfolioStore((state) => state.fetchSingleTicker);
+  const getTickerSource = usePortfolioStore((state) => state.getTickerSource);
 
   const colorScheme = useColorScheme() ?? 'dark';
   const currColors = Colors[colorScheme];
 
   const [news, setNews] = React.useState<NewsItem[]>([]);
   const [loadingNews, setLoadingNews] = React.useState(true);
+  const [isHydrating, setIsHydrating] = React.useState(false);
+
+  React.useEffect(() => {
+    if (symbol) {
+      setIsHydrating(true);
+      fetchSingleTicker(symbol).finally(() => {
+        setIsHydrating(false);
+      });
+    }
+  }, [symbol, fetchSingleTicker]);
 
   const holding = useMemo(() => {
+    const cleanSym = (symbol || '').trim().toUpperCase();
     const holdings = getHoldingsData();
-    const foundHolding = holdings.find((h) => h.symbol === symbol);
+    const foundHolding = holdings.find(
+      (h) => (h.symbol || '').trim().toUpperCase() === cleanSym,
+    );
     if (foundHolding) return foundHolding;
 
-    // If not in holdings, look up ticker info
-    const ticker = tickers.find((t) => t.Tickers === symbol);
+    // 1. Look up from store tickers
+    const ticker = tickers.find(
+      (t) => (t.Tickers || '').trim().toUpperCase() === cleanSym,
+    );
     if (ticker) {
+      const currentVal = ticker['Current Value'] || 0;
+      const yClose = ticker['Yesterday Close'] || currentVal;
+      const change = currentVal - yClose;
+      const changePct = yClose !== 0 ? (change / yClose) * 100 : 0;
+
       return {
         symbol: ticker.Tickers,
-        companyName: ticker['Company Name'],
+        companyName: ticker['Company Name'] || ticker.Tickers,
         quantity: 0,
         avgPrice: 0,
-        currentPrice: ticker['Current Value'],
+        currentPrice: currentVal,
         investedValue: 0,
         currentValue: 0,
         pnl: 0,
         pnlPercentage: 0,
         contributionPercentage: 0,
-        assetType: ticker['Asset Type'] || 'Other',
-        sector: ticker['Sector'] || 'Other',
+        assetType: ticker['Asset Type'] || 'Equity',
+        sector: ticker.Sector || ticker['Sector'] || inferSector(ticker['Company Name'] || '', ticker.Tickers),
         broker: 'N/A',
-        dayChange:
-          ticker['Current Value'] -
-          (ticker['Yesterday Close'] || ticker['Current Value']),
-        dayChangePercentage: ticker['Yesterday Close']
-          ? ((ticker['Current Value'] - ticker['Yesterday Close']) /
-              ticker['Yesterday Close']) *
-            100
-          : 0,
+        dayChange: change,
+        dayChangePercentage: changePct,
         high52: ticker.High52,
         low52: ticker.Low52,
-        logo: ticker.Logo,
+        logo: ticker.Logo || getCompanyLogoUrl(ticker.Tickers, ticker['Company Name']),
         marketCap: ticker['Market Cap'],
         PE: ticker.PE,
       };
     }
+
+    // 2. Synchronous fallback to 2,578+ master stock list (avoids "Not Found" flash while loading)
+    const master = MASTER_STOCKS_LIST.find(
+      (m) => m.symbol.trim().toUpperCase() === cleanSym,
+    );
+    if (master) {
+      const resolvedSector = master.sector || inferSector(master.name, master.symbol);
+      return {
+        symbol: master.symbol,
+        companyName: master.name,
+        quantity: 0,
+        avgPrice: 0,
+        currentPrice: 0,
+        investedValue: 0,
+        currentValue: 0,
+        pnl: 0,
+        pnlPercentage: 0,
+        contributionPercentage: 0,
+        assetType: 'Equity',
+        sector: resolvedSector,
+        broker: 'N/A',
+        dayChange: 0,
+        dayChangePercentage: 0,
+        high52: undefined,
+        low52: undefined,
+        logo: getCompanyLogoUrl(master.symbol, master.name),
+        marketCap: undefined,
+        PE: undefined,
+      };
+    }
+
     return null;
   }, [getHoldingsData, symbol, transactions, tickers]);
 
@@ -219,9 +269,18 @@ export default function StockDetailsScreen() {
             { backgroundColor: currColors.background },
           ]}
         >
-          <ThemedText style={[styles.errorText, { color: currColors.text }]}>
-            Company details not found
-          </ThemedText>
+          {isHydrating ? (
+            <View style={{ alignItems: 'center', gap: 12 }}>
+              <ActivityIndicator size="large" color={currColors.tint} />
+              <ThemedText style={{ color: currColors.textSecondary, fontSize: 14 }}>
+                Fetching latest market quote...
+              </ThemedText>
+            </View>
+          ) : (
+            <ThemedText style={[styles.errorText, { color: currColors.text }]}>
+              Company details not found
+            </ThemedText>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -246,7 +305,24 @@ export default function StockDetailsScreen() {
             {holding.companyName}
           </ThemedText>
         </View>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/ticker-mapping');
+          }}
+          style={{
+            width: 36,
+            height: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 18,
+            backgroundColor: currColors.card,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: currColors.border,
+          }}
+        >
+          <ArrowRightLeft size={16} color={currColors.text} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -332,12 +408,36 @@ export default function StockDetailsScreen() {
           <View style={{ padding: 24 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <View style={{ flex: 1 }}>
-                <View style={[styles.heroHeaderRow, { marginBottom: 4, justifyContent: 'flex-start' }]}>
+                <View style={[styles.heroHeaderRow, { marginBottom: 4, justifyContent: 'flex-start', alignItems: 'center', gap: 8 }]}>
                   <ThemedText
                     style={[styles.heroLabel, { color: currColors.textSecondary }]}
                   >
                     {holding.quantity > 0 ? 'CURRENT VALUE' : 'CURRENT PRICE'}
                   </ThemedText>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      router.push('/ticker-mapping');
+                    }}
+                    style={{
+                      backgroundColor: getTickerSource(holding.symbol) === 'yahoo'
+                        ? 'rgba(52, 199, 89, 0.12)'
+                        : 'rgba(255, 149, 0, 0.12)',
+                      paddingHorizontal: 6,
+                      paddingVertical: 2,
+                      borderRadius: 4,
+                    }}
+                  >
+                    <ThemedText
+                      style={{
+                        fontSize: 10,
+                        fontWeight: '600',
+                        color: getTickerSource(holding.symbol) === 'yahoo' ? '#34C759' : '#FF9500',
+                      }}
+                    >
+                      {getTickerSource(holding.symbol) === 'yahoo' ? 'Yahoo Live' : 'Google Sheet (Remap)'}
+                    </ThemedText>
+                  </TouchableOpacity>
                 </View>
                 <ThemedText style={[styles.heroValue, { color: currColors.text, marginBottom: 0 }]}>
                   {isPrivacyMode
@@ -532,23 +632,23 @@ export default function StockDetailsScreen() {
               </View>
             )}
 
-            {holding.marketCap && (
-              <View style={styles.heroRow}>
-                <ThemedText
-                  style={[
-                    styles.heroRowLabel,
-                    { color: currColors.textSecondary },
-                  ]}
-                >
-                  Market Cap
-                </ThemedText>
-                <ThemedText
-                  style={[styles.heroRowValueWhite, { color: currColors.text }]}
-                >
-                  {formatIndianNumber(holding.marketCap)}
-                </ThemedText>
-              </View>
-            )}
+            <View style={styles.heroRow}>
+              <ThemedText
+                style={[
+                  styles.heroRowLabel,
+                  { color: currColors.textSecondary },
+                ]}
+              >
+                Market Cap
+              </ThemedText>
+              <ThemedText
+                style={[styles.heroRowValueWhite, { color: currColors.text }]}
+              >
+                {holding.marketCap && holding.marketCap !== 'N/A' && Number(holding.marketCap) > 0
+                  ? `${showCurrencySymbol ? '₹' : ''}${formatIndianNumber(Number(holding.marketCap))}`
+                  : 'N/A'}
+              </ThemedText>
+            </View>
 
             <View style={styles.heroRow}>
               <ThemedText

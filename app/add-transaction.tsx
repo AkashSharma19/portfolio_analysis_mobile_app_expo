@@ -1,7 +1,9 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
+import { searchMasterStocks } from '@/constants/NSE_COMPANIES';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Ticker, TransactionType } from '@/types';
+import { getCompanyLogoUrl, searchYahooTickers } from '@/services/yahooFinanceService';
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
@@ -10,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Check, ChevronRight, Search, X } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -36,6 +39,7 @@ export default function AddTransactionScreen() {
     transactions,
     tickers,
     fetchTickers,
+    fetchSingleTicker,
     showCurrencySymbol,
   } = usePortfolioStore();
 
@@ -60,6 +64,27 @@ export default function AddTransactionScreen() {
   const [showSymbolModal, setShowSymbolModal] = useState(false);
   const [showBrokerModal, setShowBrokerModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+  const [onlineResults, setOnlineResults] = useState<Ticker[]>([]);
+
+  // Debounced online Yahoo search for assets not found in local/master datasets
+  useEffect(() => {
+    if (!searchQuery || searchQuery.trim().length < 2) {
+      setOnlineResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        setIsSearchingOnline(true);
+        const res = await searchYahooTickers(searchQuery);
+        setOnlineResults(res);
+      } catch (e) {
+      } finally {
+        setIsSearchingOnline(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Calculate holdings map for badges and guards
   const holdingsMap = useMemo(() => {
@@ -105,13 +130,45 @@ export default function AddTransactionScreen() {
   }, [symbol, tickers]);
 
   const filteredTickers = useMemo(() => {
-    if (!searchQuery) return tickers;
-    return tickers.filter(
+    if (!searchQuery || !searchQuery.trim()) return tickers;
+    const query = searchQuery.trim().toLowerCase();
+
+    // 1. Matches from locally stored tickers (holdings / cached)
+    const localMatches = tickers.filter(
       (t) =>
-        t.Tickers.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t['Company Name'].toLowerCase().includes(searchQuery.toLowerCase()),
+        (t.Tickers && t.Tickers.toLowerCase().includes(query)) ||
+        (t['Company Name'] && t['Company Name'].toLowerCase().includes(query)),
     );
-  }, [searchQuery, tickers]);
+    const localSymbols = new Set(
+      localMatches.map((t) => t.Tickers.trim().toUpperCase()),
+    );
+
+    // 2. Matches from master stock dictionary (2,600+ NSE, ETFs, and US companies)
+    const masterMatches = searchMasterStocks(query, 35);
+    const additionalMatches: Ticker[] = masterMatches
+      .filter((m) => !localSymbols.has(m.symbol.trim().toUpperCase()))
+      .map((m) => ({
+        Tickers: m.symbol,
+        'Company Name': m.name,
+        'Current Value': 0,
+        'Asset Type': m.name.toLowerCase().includes('etf') || m.name.toLowerCase().includes('bees') ? 'ETF' : (m.name.toLowerCase().includes('fund') ? 'Mutual Fund' : 'Equity'),
+        Sector: m.sector || 'General',
+        Logo: getCompanyLogoUrl(m.symbol, m.name),
+        'Yesterday Close': 0,
+      }));
+
+    const knownSet = new Set([
+      ...localMatches.map((t) => t.Tickers.trim().toUpperCase()),
+      ...additionalMatches.map((t) => t.Tickers.trim().toUpperCase()),
+    ]);
+
+    // 3. Matches from real-time online Yahoo search
+    const onlineAdditional = onlineResults.filter(
+      (o) => !knownSet.has(o.Tickers.trim().toUpperCase())
+    );
+
+    return [...localMatches, ...additionalMatches, ...onlineAdditional];
+  }, [searchQuery, tickers, onlineResults]);
 
   const existingBrokers = useMemo(() => {
     const brokers = new Set(transactions.map((t) => t.broker).filter(Boolean));
@@ -150,14 +207,25 @@ export default function AddTransactionScreen() {
     }
   };
 
-  const selectTicker = (item: Ticker) => {
+  const selectTicker = async (item: Ticker) => {
     setSymbol(item.Tickers);
-    // Auto-fill price if adding new, otherwise keep existing
-    if (!editingTransaction) {
-      setPrice(item['Current Value'].toString());
-    }
     setShowSymbolModal(false);
     setSearchQuery('');
+
+    // Pre-fill price immediately if current value is present
+    if (!editingTransaction && item['Current Value'] > 0) {
+      setPrice(item['Current Value'].toString());
+    }
+
+    // Fetch real-time live price from Yahoo Finance
+    try {
+      const live = await fetchSingleTicker(item.Tickers);
+      if (live && live['Current Value'] > 0 && !editingTransaction) {
+        setPrice(live['Current Value'].toString());
+      }
+    } catch (err) {
+      console.warn('Live quote hydration error on ticker select:', err);
+    }
   };
 
   return (
@@ -592,12 +660,15 @@ export default function AddTransactionScreen() {
             <Search size={18} color={currColors.textSecondary} />
             <TextInput
               style={[styles.searchInput, { color: currColors.text }]}
-              placeholder="Search ticker or company"
+              placeholder="Search ticker, company, ETF or Mutual Fund"
               placeholderTextColor={currColors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoFocus
             />
+            {isSearchingOnline && (
+              <ActivityIndicator size="small" color={currColors.tint} style={{ marginRight: 6 }} />
+            )}
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
                 <X size={16} color={currColors.textSecondary} />
@@ -614,6 +685,7 @@ export default function AddTransactionScreen() {
             showsHorizontalScrollIndicator={false}
             renderItem={({ item }) => {
               const holdingQty = holdingsMap.get(item.Tickers.toUpperCase()) || 0;
+              const hasPrice = (item['Current Value'] || 0) > 0;
               return (
                 <TouchableOpacity
                   style={[
@@ -652,6 +724,27 @@ export default function AddTransactionScreen() {
                         >
                           {item.Tickers}
                         </ThemedText>
+                        {item['Asset Type'] && item['Asset Type'] !== 'Equity' && (
+                          <View
+                            style={{
+                              backgroundColor: currColors.cardSecondary,
+                              paddingHorizontal: 6,
+                              paddingVertical: 2,
+                              borderRadius: 4,
+                              marginLeft: 6,
+                            }}
+                          >
+                            <ThemedText
+                              style={{
+                                fontSize: 10,
+                                fontWeight: '600',
+                                color: currColors.tint,
+                              }}
+                            >
+                              {item['Asset Type']}
+                            </ThemedText>
+                          </View>
+                        )}
                         {holdingQty > 0 && (
                           <View
                             style={[
@@ -682,12 +775,36 @@ export default function AddTransactionScreen() {
                     </View>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
-                    <ThemedText
-                      style={[styles.tickerPrice, { color: currColors.text }]}
-                    >
-                      {showCurrencySymbol ? '₹' : ''}
-                      {item['Current Value']}
-                    </ThemedText>
+                    {hasPrice ? (
+                      <ThemedText
+                        style={[styles.tickerPrice, { color: currColors.text }]}
+                      >
+                        {showCurrencySymbol ? '₹' : ''}
+                        {item['Current Value'].toLocaleString('en-IN', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </ThemedText>
+                    ) : (
+                      <View
+                        style={{
+                          backgroundColor: currColors.cardSecondary,
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                          borderRadius: 6,
+                        }}
+                      >
+                        <ThemedText
+                          style={{
+                            color: currColors.tint,
+                            fontSize: 11,
+                            fontWeight: '600',
+                          }}
+                        >
+                          Live Quote
+                        </ThemedText>
+                      </View>
+                    )}
                     {symbol.toUpperCase() === item.Tickers.toUpperCase() && (
                       <Check
                         size={16}
@@ -699,6 +816,45 @@ export default function AddTransactionScreen() {
                 </TouchableOpacity>
               );
             }}
+            ListEmptyComponent={() => (
+              <View style={{ padding: 32, alignItems: 'center' }}>
+                <ThemedText style={{ color: currColors.textSecondary, marginBottom: 16, textAlign: 'center', fontSize: 13.5 }}>
+                  {searchQuery ? `No local tickers match "${searchQuery}".` : 'Search for a stock ticker (e.g. TCS, RELIANCE, ZOMATO)'}
+                </ThemedText>
+                {searchQuery.trim().length > 0 && (
+                  <TouchableOpacity
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: currColors.tint,
+                      paddingHorizontal: 20,
+                      paddingVertical: 12,
+                      borderRadius: 12,
+                      gap: 8,
+                    }}
+                    onPress={async () => {
+                      const cleanSym = searchQuery.trim().toUpperCase();
+                      setIsSearchingOnline(true);
+                      const res = await fetchSingleTicker(cleanSym);
+                      setIsSearchingOnline(false);
+                      if (res) {
+                        selectTicker(res);
+                      } else {
+                        // Manual fallback entry
+                        setSymbol(cleanSym);
+                        setShowSymbolModal(false);
+                        setSearchQuery('');
+                      }
+                    }}
+                  >
+                    <Search size={16} color={colorScheme === 'dark' ? '#000' : '#FFF'} />
+                    <ThemedText style={{ color: colorScheme === 'dark' ? '#000' : '#FFF', fontWeight: '600' }}>
+                      {isSearchingOnline ? 'Looking up Yahoo Finance...' : `Look up "${searchQuery.trim().toUpperCase()}" Live`}
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
             contentContainerStyle={styles.tickerList}
           />
         </View>
