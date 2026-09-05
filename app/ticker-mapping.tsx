@@ -75,24 +75,86 @@ export default function TickerMappingScreen() {
   const [onlineResults, setOnlineResults] = useState<Ticker[]>([]);
   const [isRemapping, setIsRemapping] = useState(false);
 
+  const [modalMode, setModalMode] = useState<'yahoo' | 'sheet'>('yahoo');
+  const [suggestedSheetMatch, setSuggestedSheetMatch] = useState<Ticker | null>(null);
+  const [customSheetSymbol, setCustomSheetSymbol] = useState('');
+  const [customSheetName, setCustomSheetName] = useState('');
+  const [customSheetPrice, setCustomSheetPrice] = useState('');
+  const [customSheetSector, setCustomSheetSector] = useState('General');
+  const [customSheetAssetType, setCustomSheetAssetType] = useState('Equity');
+
   // Open modal with instant auto-search & suggested live match
   const openRemapModal = async (company: any) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedCompanyForRemap(company);
 
+    // If already Yahoo, default tab to Google Sheet or Yahoo depending on what's natural; default to opposite source for 1-tap switch
+    const initialMode: 'yahoo' | 'sheet' = company.source === 'yahoo' ? 'sheet' : 'yahoo';
+    setModalMode(initialMode);
+
     const cleanSym = (company.symbol || '')
-      .replace(/^(NSE|BOM|BSE|NASDAQ|INDEX):/i, '')
+      .replace(/^(NSE|BOM|BSE|NASDAQ|NYSE|INDEX|INDEXNSE|INDEXBOM|INDEXSP|MUTF_IN|MUTF):/i, '')
       .replace(/\.(NS|BO)$/i, '')
       .trim();
     const query = cleanSym || company.companyName || company.symbol;
     setModalSearchQuery(query);
+
+    const cleanSymUpper = cleanSym.toUpperCase();
+    const queryLower = (query || '').toLowerCase();
+    const companyNameLower = (company.companyName || '').toLowerCase();
+
+    // 1. Find the real matching Google Sheet ticker from the user's Google Sheet database (tickers store)
+    const existingSheetTicker = tickers.find((t) => {
+      const symUpper = (t.Tickers || '').trim().toUpperCase();
+      const rawSym = symUpper.replace(/^(NSE|BOM|BSE|NASDAQ|NYSE|INDEX|INDEXNSE|INDEXBOM|INDEXSP|MUTF_IN|MUTF):/i, '');
+      return (
+        symUpper === company.symbol.toUpperCase() ||
+        symUpper === cleanSymUpper ||
+        rawSym === cleanSymUpper ||
+        symUpper === `NASDAQ:${cleanSymUpper}` ||
+        symUpper === `NYSE:${cleanSymUpper}` ||
+        symUpper === `NSE:${cleanSymUpper}` ||
+        symUpper === `BOM:${cleanSymUpper}`
+      );
+    }) || tickers.find((t) => {
+      const nameLower = (t['Company Name'] || '').toLowerCase();
+      return (
+        (companyNameLower && nameLower === companyNameLower) ||
+        (queryLower && nameLower.includes(queryLower)) ||
+        (queryLower && t.Tickers.toLowerCase().includes(queryLower))
+      );
+    });
+
+    const master = searchMasterStocks(cleanSym || query, 5);
+    const topCandidate = master[0];
+
+    const targetSheetTicker = existingSheetTicker?.Tickers || (cleanSym ? `NASDAQ:${cleanSym}` : `NSE:${cleanSym}`);
+    const targetSheetName = existingSheetTicker?.['Company Name'] || topCandidate?.name || company.companyName || cleanSym;
+    const targetSheetPrice = existingSheetTicker?.['Current Value'] || company.currentPrice || 0;
+    const targetSheetSector = existingSheetTicker?.Sector || topCandidate?.sector || company.sector || 'General';
+    const targetSheetAssetType = existingSheetTicker?.['Asset Type'] || company.assetType || 'Equity';
+
+    setCustomSheetSymbol(targetSheetTicker);
+    setCustomSheetName(targetSheetName);
+    setCustomSheetPrice(targetSheetPrice > 0 ? String(targetSheetPrice) : '');
+    setCustomSheetSector(targetSheetSector);
+    setCustomSheetAssetType(targetSheetAssetType);
+
+    setSuggestedSheetMatch({
+      Tickers: targetSheetTicker,
+      'Company Name': targetSheetName,
+      'Current Value': targetSheetPrice,
+      'Asset Type': targetSheetAssetType,
+      Sector: targetSheetSector,
+      Logo: existingSheetTicker?.Logo || getCompanyLogoUrl(cleanSym, targetSheetName),
+      source: 'sheet',
+    });
+
     setSuggestedMatch(null);
     setLoadingSuggested(true);
 
-    // Look for top match from master list
-    const master = searchMasterStocks(cleanSym || query, 5);
-    const topCandidate = master[0];
-    const targetSym = topCandidate ? topCandidate.symbol : cleanSym;
+    // Look for top match from master list for Yahoo
+    const targetSym = topCandidate ? topCandidate.symbol : (cleanSym.endsWith('.NS') ? cleanSym : `${cleanSym}.NS`);
 
     try {
       const liveYahoo = await fetchYahooQuote(targetSym);
@@ -130,6 +192,7 @@ export default function TickerMappingScreen() {
         currentPrice: number;
         logo?: string;
         assetType?: string;
+        sector?: string;
       }
     >();
 
@@ -144,6 +207,7 @@ export default function TickerMappingScreen() {
       const currentPrice = tickerInfo?.['Current Value'] || 0;
       const logo = tickerInfo?.Logo || getCompanyLogoUrl(sym, companyName);
       const assetType = tickerInfo?.['Asset Type'] || 'Equity';
+      const sector = tickerInfo?.Sector || 'General';
 
       if (existing) {
         existing.txCount += 1;
@@ -160,6 +224,7 @@ export default function TickerMappingScreen() {
           currentPrice,
           logo,
           assetType,
+          sector,
         });
       }
     });
@@ -210,15 +275,27 @@ export default function TickerMappingScreen() {
     return () => clearTimeout(timer);
   }, [modalSearchQuery]);
 
-  // Modal filtered replacement candidates
+  // Modal filtered replacement candidates for Yahoo
   const modalCandidates = useMemo(() => {
+    // 1. Only include authentic Yahoo format tickers from local tickers (exclude sheet tickers with colons or sheet source)
+    const yahooLocalTickers = tickers.filter((t) => {
+      const symUpper = (t.Tickers || '').trim().toUpperCase();
+      if (!symUpper) return false;
+      const isSheet =
+        t.source === 'sheet' ||
+        symUpper.includes(':') ||
+        symUpper.startsWith('MUTF_IN') ||
+        symUpper.startsWith('INDEX');
+      return !isSheet;
+    });
+
     if (!modalSearchQuery || !modalSearchQuery.trim()) {
-      return tickers.slice(0, 20);
+      return yahooLocalTickers.slice(0, 20);
     }
     const query = modalSearchQuery.trim().toLowerCase();
 
-    // 1. Matches from local tickers
-    const localMatches = tickers.filter(
+    // Matches from local Yahoo tickers
+    const localMatches = yahooLocalTickers.filter(
       (t) =>
         (t.Tickers && t.Tickers.toLowerCase().includes(query)) ||
         (t['Company Name'] && t['Company Name'].toLowerCase().includes(query))
@@ -242,6 +319,7 @@ export default function TickerMappingScreen() {
         Sector: m.sector || 'General',
         Logo: getCompanyLogoUrl(m.symbol, m.name),
         'Yesterday Close': 0,
+        source: 'yahoo',
       }));
 
     const knownSet = new Set([
@@ -249,29 +327,98 @@ export default function TickerMappingScreen() {
       ...additionalMatches.map((t) => t.Tickers.trim().toUpperCase()),
     ]);
 
-    // 3. Online Yahoo search results
+    // 3. Online Yahoo search results (strictly filter out any colon/sheet formatted results)
     const onlineAdditional = onlineResults.filter(
-      (o) => !knownSet.has(o.Tickers.trim().toUpperCase())
+      (o) => !knownSet.has(o.Tickers.trim().toUpperCase()) && !o.Tickers.includes(':')
     );
 
     return [...localMatches, ...additionalMatches, ...onlineAdditional];
   }, [modalSearchQuery, tickers, onlineResults]);
 
-  const handleSelectReplacement = (newTicker: Ticker) => {
+  // Modal filtered candidates for Google Sheet (from user's Google Sheet tickers & database)
+  const modalSheetCandidates = useMemo(() => {
+    const query = (modalSearchQuery || '').trim().toLowerCase();
+
+    // 1. Collect all authentic Google Sheet tickers from the store & transactions
+    const localSheetTickers: Ticker[] = [];
+    const seen = new Set<string>();
+
+    tickers.forEach((t) => {
+      const symUpper = (t.Tickers || '').trim().toUpperCase();
+      if (!symUpper) return;
+
+      const isSheet =
+        t.source === 'sheet' ||
+        symUpper.includes(':') ||
+        symUpper.startsWith('NSE') ||
+        symUpper.startsWith('BOM') ||
+        symUpper.startsWith('NASDAQ') ||
+        symUpper.startsWith('NYSE') ||
+        symUpper.startsWith('MUTF') ||
+        symUpper.startsWith('INDEX') ||
+        symUpper.startsWith('.') ||
+        (!symUpper.endsWith('.NS') && !symUpper.endsWith('.BO'));
+
+      if (isSheet && !seen.has(symUpper)) {
+        seen.add(symUpper);
+        localSheetTickers.push({
+          ...t,
+          source: 'sheet',
+        });
+      }
+    });
+
+    // Also include distinct sheet symbols from transactions
+    transactions.forEach((tx) => {
+      const symUpper = (tx.symbol || '').trim().toUpperCase();
+      if (!symUpper || seen.has(symUpper)) return;
+      if (
+        getTickerSource(symUpper) === 'sheet' ||
+        symUpper.includes(':') ||
+        symUpper.startsWith('NSE') ||
+        symUpper.startsWith('BOM') ||
+        symUpper.startsWith('NASDAQ') ||
+        symUpper.startsWith('NYSE') ||
+        symUpper.startsWith('MUTF') ||
+        symUpper.startsWith('INDEX') ||
+        symUpper.startsWith('.')
+      ) {
+        seen.add(symUpper);
+        localSheetTickers.push({
+          Tickers: symUpper,
+          'Company Name': symUpper,
+          'Current Value': tx.price || 0,
+          'Asset Type': 'Equity',
+          Sector: 'General',
+          Logo: getCompanyLogoUrl(symUpper, symUpper),
+          source: 'sheet',
+        });
+      }
+    });
+
+    // Filter sheet tickers directly by search query
+    const matchedSheetTickers = localSheetTickers.filter((item) => {
+      const symUpper = item.Tickers.trim().toUpperCase();
+      const name = (item['Company Name'] || '').toLowerCase();
+      const rawSym = symUpper.replace(/^(NSE|BOM|BSE|NASDAQ|NYSE|INDEX|INDEXNSE|INDEXBOM|INDEXSP|MUTF_IN|MUTF):/i, '').toLowerCase();
+
+      if (!query) return true;
+      return symUpper.toLowerCase().includes(query) || name.includes(query) || rawSym.includes(query);
+    });
+
+    return matchedSheetTickers;
+  }, [tickers, transactions, modalSearchQuery, getTickerSource]);
+
+  const handleSelectYahooReplacement = (newTicker: Ticker) => {
     if (!selectedCompanyForRemap) return;
 
     const oldSym = selectedCompanyForRemap.symbol;
     const newSym = newTicker.Tickers.trim().toUpperCase();
     const newName = newTicker['Company Name'] || newSym;
 
-    if (oldSym === newSym) {
-      Alert.alert('Same Ticker', 'The selected replacement is already the same ticker.');
-      return;
-    }
-
     Alert.alert(
-      'Remap Company?',
-      `Are you sure you want to remap "${selectedCompanyForRemap.companyName}" (${oldSym}) to "${newName}" (${newSym})?\n\nAll ${selectedCompanyForRemap.txCount} associated transaction(s) will be updated to ${newSym} with real-time Yahoo Finance data.`,
+      'Remap to Yahoo Finance?',
+      `Are you sure you want to remap "${selectedCompanyForRemap.companyName}" (${oldSym}) to "${newName}" (${newSym})?\n\nAll ${selectedCompanyForRemap.txCount} associated transaction(s) will be updated with real-time Yahoo Finance market quotes.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -281,17 +428,118 @@ export default function TickerMappingScreen() {
             try {
               setIsRemapping(true);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              const success = await remapCompanySymbol(oldSym, newSym);
+              const success = await remapCompanySymbol(oldSym, newSym, 'yahoo', {
+                companyName: newName,
+                sector: newTicker.Sector,
+                assetType: newTicker['Asset Type'],
+              });
               setIsRemapping(false);
               if (success) {
                 setSelectedCompanyForRemap(null);
                 setModalSearchQuery('');
                 Alert.alert(
                   'Remapped Successfully',
-                  `"${oldSym}" has been remapped to "${newSym}". Real-time Yahoo Finance quotes have been loaded.`
+                  `"${oldSym}" is now linked to live Yahoo Finance ticker "${newSym}".`
                 );
               } else {
                 Alert.alert('Error', 'Failed to remap company ticker. Please try again.');
+              }
+            } catch (err) {
+              setIsRemapping(false);
+              Alert.alert('Error', 'An unexpected error occurred while remapping.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSelectSheetReplacement = (newTicker: Ticker) => {
+    if (!selectedCompanyForRemap) return;
+
+    const oldSym = selectedCompanyForRemap.symbol;
+    const newSym = newTicker.Tickers.trim().toUpperCase();
+    const newName = newTicker['Company Name'] || newSym;
+    const price = newTicker['Current Value'] || selectedCompanyForRemap.currentPrice;
+
+    Alert.alert(
+      'Remap to Google Sheet?',
+      `Are you sure you want to remap "${selectedCompanyForRemap.companyName}" (${oldSym}) to Google Sheet ticker "${newSym}" (${newName})?\n\nAll ${selectedCompanyForRemap.txCount} associated transaction(s) will be updated to use this Google Sheet source.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm & Remap',
+          style: 'default',
+          onPress: async () => {
+            try {
+              setIsRemapping(true);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              const success = await remapCompanySymbol(oldSym, newSym, 'sheet', {
+                companyName: newName,
+                currentPrice: price,
+                sector: newTicker.Sector,
+                assetType: newTicker['Asset Type'],
+              });
+              setIsRemapping(false);
+              if (success) {
+                setSelectedCompanyForRemap(null);
+                Alert.alert(
+                  'Remapped Successfully',
+                  `"${oldSym}" has been remapped to Google Sheet ticker "${newSym}".`
+                );
+              } else {
+                Alert.alert('Error', 'Failed to remap to Google Sheet. Please try again.');
+              }
+            } catch (err) {
+              setIsRemapping(false);
+              Alert.alert('Error', 'An unexpected error occurred while remapping.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleCustomSheetRemap = () => {
+    if (!selectedCompanyForRemap) return;
+
+    const oldSym = selectedCompanyForRemap.symbol;
+    const newSym = customSheetSymbol.trim().toUpperCase();
+    const newName = customSheetName.trim() || newSym;
+    const priceNum = parseFloat(customSheetPrice) || 0;
+
+    if (!newSym) {
+      Alert.alert('Missing Ticker', 'Please enter a valid Google Sheet / Custom ticker symbol.');
+      return;
+    }
+
+    Alert.alert(
+      'Remap to Google Sheet / Custom?',
+      `Are you sure you want to remap "${selectedCompanyForRemap.companyName}" (${oldSym}) to Google Sheet ticker "${newSym}" (${newName})?\n\nAll ${selectedCompanyForRemap.txCount} associated transaction(s) will be updated to use this custom symbol and data source.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm & Remap',
+          style: 'default',
+          onPress: async () => {
+            try {
+              setIsRemapping(true);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              const success = await remapCompanySymbol(oldSym, newSym, 'sheet', {
+                companyName: newName,
+                currentPrice: priceNum > 0 ? priceNum : selectedCompanyForRemap.currentPrice,
+                sector: customSheetSector,
+                assetType: customSheetAssetType,
+              });
+              setIsRemapping(false);
+              if (success) {
+                setSelectedCompanyForRemap(null);
+                Alert.alert(
+                  'Remapped Successfully',
+                  `"${oldSym}" has been remapped to Google Sheet source "${newSym}".`
+                );
+              } else {
+                Alert.alert('Error', 'Failed to remap to Google Sheet ticker. Please try again.');
               }
             } catch (err) {
               setIsRemapping(false);
@@ -316,7 +564,7 @@ export default function TickerMappingScreen() {
               Company & Ticker Mapping
             </ThemedText>
             <ThemedText style={[styles.headerSubtitle, { color: currColors.textSecondary }]}>
-              Switch from Google Sheet to Yahoo Finance
+              Bidirectional: Yahoo Finance ⇄ Google Sheet
             </ThemedText>
           </View>
           <View style={{ width: 40 }} />
@@ -366,7 +614,7 @@ export default function TickerMappingScreen() {
                   </ThemedText>
                 </View>
                 <ThemedText style={[styles.statLabel, { color: currColors.textSecondary }]}>
-                  Sheet Legacy
+                  Google Sheet
                 </ThemedText>
               </View>
             </View>
@@ -374,7 +622,7 @@ export default function TickerMappingScreen() {
             <View style={[styles.cardDivider, { backgroundColor: currColors.border }]} />
 
             <ThemedText style={[styles.heroDescription, { color: currColors.textSecondary }]}>
-              Select any company below to remap its previous Google Sheet symbol to a live Yahoo Finance ticker. All transactions belonging to that company will update together automatically.
+              Two-way company remapping: Switch freely between live Yahoo Finance real-time quotes and Google Sheet / custom tickers. All linked transactions update together automatically.
             </ThemedText>
           </View>
 
@@ -495,216 +743,481 @@ export default function TickerMappingScreen() {
         </ScrollView>
       </SafeAreaView>
 
-      {/* Remap Picker Modal */}
+      {/* Bidirectional Remap Picker Modal */}
       <Modal
         visible={!!selectedCompanyForRemap}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setSelectedCompanyForRemap(null)}
       >
-        <View style={[styles.modalContainer, { backgroundColor: currColors.background }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: currColors.border }]}>
-            <View style={{ flex: 1 }}>
-              <ThemedText style={[styles.modalTitle, { color: currColors.text }]}>
-                Remap Company
-              </ThemedText>
-              <ThemedText style={[styles.modalSubtitle, { color: currColors.textSecondary }]} numberOfLines={1}>
-                {selectedCompanyForRemap?.symbol} ({selectedCompanyForRemap?.txCount} linked transactions)
-              </ThemedText>
-            </View>
-            <TouchableOpacity
-              onPress={() => setSelectedCompanyForRemap(null)}
-              style={styles.modalCloseButton}
-            >
-              <X size={24} color={currColors.text} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Side-by-Side Price & Match Comparison Card */}
-          {selectedCompanyForRemap && (
-            <View style={[styles.compareCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
-              <View style={styles.compareRow}>
-                {/* Left: Google Sheet Price */}
-                <View style={styles.compareCol}>
-                  <View style={[styles.sourceBadge, { backgroundColor: 'rgba(255, 149, 0, 0.12)', alignSelf: 'flex-start', marginBottom: 6 }]}>
-                    <ThemedText style={[styles.sourceBadgeText, { color: '#FF9500' }]}>
-                      Google Sheet (Current)
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={[styles.compareSymbol, { color: currColors.text }]} numberOfLines={1}>
-                    {selectedCompanyForRemap.symbol}
-                  </ThemedText>
-                  <ThemedText style={[styles.comparePrice, { color: currColors.textSecondary }]}>
-                    {selectedCompanyForRemap.currentPrice > 0
-                      ? `${showCurrencySymbol ? '₹' : ''}${selectedCompanyForRemap.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
-                      : 'N/A'}
-                  </ThemedText>
-                </View>
-
-                <View style={[styles.compareDivider, { backgroundColor: currColors.border }]}>
-                  <ArrowRight size={14} color={currColors.textSecondary} />
-                </View>
-
-                {/* Right: Yahoo Finance Live Price */}
-                <View style={styles.compareCol}>
-                  <View style={[styles.sourceBadge, { backgroundColor: 'rgba(52, 199, 89, 0.12)', alignSelf: 'flex-start', marginBottom: 6 }]}>
-                    <ThemedText style={[styles.sourceBadgeText, { color: '#34C759' }]}>
-                      Yahoo Finance (Live)
-                    </ThemedText>
-                  </View>
-                  {loadingSuggested ? (
-                    <ActivityIndicator size="small" color={currColors.tint} style={{ marginVertical: 6 }} />
-                  ) : suggestedMatch ? (
-                    <>
-                      <ThemedText style={[styles.compareSymbol, { color: currColors.text }]} numberOfLines={1}>
-                        {suggestedMatch.Tickers}
-                      </ThemedText>
-                      <ThemedText style={[styles.comparePrice, { color: '#34C759', fontWeight: '700' }]}>
-                        {suggestedMatch['Current Value'] > 0
-                          ? `${showCurrencySymbol ? '₹' : ''}${suggestedMatch['Current Value'].toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
-                          : 'Live Quote'}
-                      </ThemedText>
-                    </>
-                  ) : (
-                    <ThemedText style={{ color: currColors.textSecondary, fontSize: 13 }}>
-                      Searching...
-                    </ThemedText>
-                  )}
-                </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={[styles.modalContainer, { backgroundColor: currColors.background }]}>
+            {/* Modal Header */}
+            <View style={[styles.modalHeader, { borderBottomColor: currColors.border }]}>
+              <View style={{ flex: 1 }}>
+                <ThemedText style={[styles.modalTitle, { color: currColors.text }]}>
+                  Remap Company
+                </ThemedText>
+                <ThemedText style={[styles.modalSubtitle, { color: currColors.textSecondary }]} numberOfLines={1}>
+                  {selectedCompanyForRemap?.symbol} ({selectedCompanyForRemap?.txCount} linked transaction{selectedCompanyForRemap?.txCount === 1 ? '' : 's'})
+                </ThemedText>
               </View>
-
-              {/* 1-Tap Quick Remap Button for the Recommended Match */}
-              {suggestedMatch && (
-                <TouchableOpacity
-                  style={[styles.quickRemapBtn, { backgroundColor: currColors.tint }]}
-                  onPress={() => handleSelectReplacement(suggestedMatch)}
-                  activeOpacity={0.8}
-                >
-                  <Zap size={16} color={colorScheme === 'dark' ? '#000' : '#FFF'} />
-                  <ThemedText style={[styles.quickRemapBtnText, { color: colorScheme === 'dark' ? '#000' : '#FFF' }]}>
-                    1-Tap Remap to {suggestedMatch.Tickers} {suggestedMatch['Current Value'] > 0 ? `(${showCurrencySymbol ? '₹' : ''}${suggestedMatch['Current Value'].toLocaleString('en-IN')})` : ''}
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-
-          {/* Section Divider / Search Header */}
-          <View style={{ paddingHorizontal: 16, marginTop: 10, marginBottom: 6 }}>
-            <ThemedText style={{ fontSize: 11.5, fontWeight: '600', color: currColors.textSecondary, letterSpacing: 0.5 }}>
-              OR CHOOSE FROM ALL YAHOO ASSETS
-            </ThemedText>
-          </View>
-
-          {/* Modal Search Bar */}
-          <View style={[styles.modalSearchContainer, { backgroundColor: currColors.card }]}>
-            <Search size={18} color={currColors.textSecondary} />
-            <TextInput
-              style={[styles.modalSearchInput, { color: currColors.text }]}
-              placeholder="Search Yahoo Finance (Stock, ETF, Mutual Fund)..."
-              placeholderTextColor={currColors.textSecondary}
-              value={modalSearchQuery}
-              onChangeText={setModalSearchQuery}
-              autoFocus
-            />
-            {isSearchingOnline && (
-              <ActivityIndicator size="small" color={currColors.tint} style={{ marginRight: 6 }} />
-            )}
-            {modalSearchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setModalSearchQuery('')}>
-                <X size={16} color={currColors.textSecondary} />
+              <TouchableOpacity
+                onPress={() => setSelectedCompanyForRemap(null)}
+                style={styles.modalCloseButton}
+              >
+                <X size={24} color={currColors.text} />
               </TouchableOpacity>
-            )}
-          </View>
+            </View>
 
-          {/* Candidate Assets List */}
-          <FlatList
-            data={modalCandidates}
-            keyExtractor={(item) => item.Tickers}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => {
-              const isCurrent = selectedCompanyForRemap?.symbol.toUpperCase() === item.Tickers.toUpperCase();
-              return (
-                <TouchableOpacity
-                  style={[styles.candidateItem, { borderBottomColor: currColors.border }]}
-                  onPress={() => handleSelectReplacement(item)}
+            {/* Target Source Segmented Tab Switcher */}
+            <View style={[styles.modalTabContainer, { backgroundColor: currColors.cardSecondary, borderColor: currColors.border }]}>
+              <TouchableOpacity
+                style={[
+                  styles.modalTab,
+                  modalMode === 'yahoo' && [styles.modalTabActive, { backgroundColor: currColors.card }],
+                ]}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setModalMode('yahoo');
+                }}
+              >
+                <Zap size={14} color={modalMode === 'yahoo' ? '#34C759' : currColors.textSecondary} />
+                <ThemedText
+                  style={[
+                    styles.modalTabText,
+                    { color: modalMode === 'yahoo' ? currColors.text : currColors.textSecondary },
+                    modalMode === 'yahoo' && { fontWeight: '700' },
+                  ]}
                 >
-                  <View style={styles.candidateLeft}>
-                    {item.Logo ? (
-                      <View style={styles.modalLogoBox}>
-                        <Image source={{ uri: item.Logo }} style={styles.modalLogoImage} resizeMode="contain" />
-                      </View>
-                    ) : (
-                      <View style={[styles.modalLogoPlaceholder, { backgroundColor: currColors.cardSecondary }]}>
-                        <ThemedText style={[styles.logoLetter, { color: currColors.text }]}>
-                          {item.Tickers[0]}
-                        </ThemedText>
-                      </View>
-                    )}
-                    <View style={styles.candidateInfo}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <ThemedText style={[styles.candidateSymbol, { color: currColors.text }]}>
-                          {item.Tickers}
-                        </ThemedText>
-                        {item['Asset Type'] && (
-                          <View style={[styles.assetTypeTag, { backgroundColor: currColors.cardSecondary }]}>
-                            <ThemedText style={[styles.assetTypeTagText, { color: currColors.tint }]}>
-                              {item['Asset Type']}
-                            </ThemedText>
-                          </View>
-                        )}
-                        <View style={[styles.sourceBadge, { backgroundColor: 'rgba(52, 199, 89, 0.12)' }]}>
-                          <ThemedText style={[styles.sourceBadgeText, { color: '#34C759' }]}>
-                            Yahoo Live
+                  Yahoo Finance (Live)
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalTab,
+                  modalMode === 'sheet' && [styles.modalTabActive, { backgroundColor: currColors.card }],
+                ]}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setModalMode('sheet');
+                }}
+              >
+                <FileSpreadsheet size={14} color={modalMode === 'sheet' ? '#FF9500' : currColors.textSecondary} />
+                <ThemedText
+                  style={[
+                    styles.modalTabText,
+                    { color: modalMode === 'sheet' ? currColors.text : currColors.textSecondary },
+                    modalMode === 'sheet' && { fontWeight: '700' },
+                  ]}
+                >
+                  Google Sheet (Custom)
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+
+            {modalMode === 'yahoo' ? (
+              /* TAB 1: YAHOO FINANCE LIVE MODE */
+              <View style={{ flex: 1 }}>
+                {/* Side-by-Side Price & Match Comparison Card */}
+                {selectedCompanyForRemap && (
+                  <View style={[styles.compareCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
+                    <View style={styles.compareRow}>
+                      {/* Left: Current Source & Symbol */}
+                      <View style={styles.compareCol}>
+                        <View
+                          style={[
+                            styles.sourceBadge,
+                            {
+                              backgroundColor: selectedCompanyForRemap.source === 'yahoo'
+                                ? 'rgba(52, 199, 89, 0.12)'
+                                : 'rgba(255, 149, 0, 0.12)',
+                              alignSelf: 'flex-start',
+                              marginBottom: 6,
+                            },
+                          ]}
+                        >
+                          <ThemedText
+                            style={[
+                              styles.sourceBadgeText,
+                              { color: selectedCompanyForRemap.source === 'yahoo' ? '#34C759' : '#FF9500' },
+                            ]}
+                          >
+                            Current: {selectedCompanyForRemap.source === 'yahoo' ? 'Yahoo Live' : 'Google Sheet'}
                           </ThemedText>
                         </View>
+                        <ThemedText style={[styles.compareSymbol, { color: currColors.text }]} numberOfLines={1}>
+                          {selectedCompanyForRemap.symbol}
+                        </ThemedText>
+                        <ThemedText style={[styles.comparePrice, { color: currColors.textSecondary }]}>
+                          {selectedCompanyForRemap.currentPrice > 0
+                            ? `${showCurrencySymbol ? '₹' : ''}${selectedCompanyForRemap.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                            : 'N/A'}
+                        </ThemedText>
                       </View>
-                      <ThemedText style={[styles.candidateName, { color: currColors.textSecondary }]} numberOfLines={1}>
-                        {item['Company Name']}
+
+                      <View style={[styles.compareDivider, { backgroundColor: currColors.border }]}>
+                        <ArrowRight size={14} color={currColors.textSecondary} />
+                      </View>
+
+                      {/* Right: Target Yahoo Live Quote */}
+                      <View style={styles.compareCol}>
+                        <View style={[styles.sourceBadge, { backgroundColor: 'rgba(52, 199, 89, 0.12)', alignSelf: 'flex-start', marginBottom: 6 }]}>
+                          <ThemedText style={[styles.sourceBadgeText, { color: '#34C759' }]}>
+                            Target: Yahoo Live
+                          </ThemedText>
+                        </View>
+                        {loadingSuggested ? (
+                          <ActivityIndicator size="small" color={currColors.tint} style={{ marginVertical: 6 }} />
+                        ) : suggestedMatch ? (
+                          <>
+                            <ThemedText style={[styles.compareSymbol, { color: currColors.text }]} numberOfLines={1}>
+                              {suggestedMatch.Tickers}
+                            </ThemedText>
+                            <ThemedText style={[styles.comparePrice, { color: '#34C759', fontWeight: '700' }]}>
+                              {suggestedMatch['Current Value'] > 0
+                                ? `${showCurrencySymbol ? '₹' : ''}${suggestedMatch['Current Value'].toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                                : 'Live Quote'}
+                            </ThemedText>
+                          </>
+                        ) : (
+                          <ThemedText style={{ color: currColors.textSecondary, fontSize: 13 }}>
+                            Searching...
+                          </ThemedText>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* 1-Tap Quick Remap Button for the Recommended Match */}
+                    {suggestedMatch && (
+                      <TouchableOpacity
+                        style={[styles.quickRemapBtn, { backgroundColor: currColors.tint }]}
+                        onPress={() => handleSelectYahooReplacement(suggestedMatch)}
+                        activeOpacity={0.8}
+                      >
+                        <Zap size={16} color={colorScheme === 'dark' ? '#000' : '#FFF'} />
+                        <ThemedText style={[styles.quickRemapBtnText, { color: colorScheme === 'dark' ? '#000' : '#FFF' }]}>
+                          1-Tap Remap to {suggestedMatch.Tickers} {suggestedMatch['Current Value'] > 0 ? `(${showCurrencySymbol ? '₹' : ''}${suggestedMatch['Current Value'].toLocaleString('en-IN')})` : ''}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+
+                {/* Section Divider / Search Header */}
+                <View style={{ paddingHorizontal: 16, marginTop: 4, marginBottom: 4 }}>
+                  <ThemedText style={{ fontSize: 11.5, fontWeight: '600', color: currColors.textSecondary, letterSpacing: 0.5 }}>
+                    OR SEARCH ALL YAHOO ASSETS (STOCKS, ETFS, MUTUAL FUNDS)
+                  </ThemedText>
+                </View>
+
+                {/* Modal Search Bar */}
+                <View style={[styles.modalSearchContainer, { backgroundColor: currColors.card }]}>
+                  <Search size={18} color={currColors.textSecondary} />
+                  <TextInput
+                    style={[styles.modalSearchInput, { color: currColors.text }]}
+                    placeholder="Search Yahoo ticker or company..."
+                    placeholderTextColor={currColors.textSecondary}
+                    value={modalSearchQuery}
+                    onChangeText={setModalSearchQuery}
+                  />
+                  {isSearchingOnline && (
+                    <ActivityIndicator size="small" color={currColors.tint} style={{ marginRight: 6 }} />
+                  )}
+                  {modalSearchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setModalSearchQuery('')}>
+                      <X size={16} color={currColors.textSecondary} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Candidate Assets List */}
+                <FlatList
+                  data={modalCandidates}
+                  keyExtractor={(item) => item.Tickers}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                  renderItem={({ item }) => {
+                    const isCurrent = selectedCompanyForRemap?.symbol.toUpperCase() === item.Tickers.toUpperCase();
+                    return (
+                      <TouchableOpacity
+                        style={[styles.candidateItem, { borderBottomColor: currColors.border }]}
+                        onPress={() => handleSelectYahooReplacement(item)}
+                      >
+                        <View style={styles.candidateLeft}>
+                          {item.Logo ? (
+                            <View style={styles.modalLogoBox}>
+                              <Image source={{ uri: item.Logo }} style={styles.modalLogoImage} resizeMode="contain" />
+                            </View>
+                          ) : (
+                            <View style={[styles.modalLogoPlaceholder, { backgroundColor: currColors.cardSecondary }]}>
+                              <ThemedText style={[styles.logoLetter, { color: currColors.text }]}>
+                                {item.Tickers[0]}
+                              </ThemedText>
+                            </View>
+                          )}
+                          <View style={styles.candidateInfo}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <ThemedText style={[styles.candidateSymbol, { color: currColors.text }]}>
+                                {item.Tickers}
+                              </ThemedText>
+                              {item['Asset Type'] && (
+                                <View style={[styles.assetTypeTag, { backgroundColor: currColors.cardSecondary }]}>
+                                  <ThemedText style={[styles.assetTypeTagText, { color: currColors.tint }]}>
+                                    {item['Asset Type']}
+                                  </ThemedText>
+                                </View>
+                              )}
+                              <View style={[styles.sourceBadge, { backgroundColor: 'rgba(52, 199, 89, 0.12)' }]}>
+                                <ThemedText style={[styles.sourceBadgeText, { color: '#34C759' }]}>
+                                  Yahoo Live
+                                </ThemedText>
+                              </View>
+                            </View>
+                            <ThemedText style={[styles.candidateName, { color: currColors.textSecondary }]} numberOfLines={1}>
+                              {item['Company Name']}
+                            </ThemedText>
+                          </View>
+                        </View>
+
+                        <View style={{ alignItems: 'flex-end' }}>
+                          {item['Current Value'] > 0 ? (
+                            <ThemedText style={[styles.candidatePrice, { color: currColors.text }]}>
+                              {showCurrencySymbol ? '₹' : ''}
+                              {item['Current Value'].toLocaleString('en-IN', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </ThemedText>
+                          ) : (
+                            <View style={[styles.liveQuoteTag, { backgroundColor: currColors.cardSecondary }]}>
+                              <ThemedText style={{ color: currColors.tint, fontSize: 11, fontWeight: '600' }}>
+                                Select
+                              </ThemedText>
+                            </View>
+                          )}
+                          {isCurrent && <Check size={16} color={currColors.tint} style={{ marginTop: 4 }} />}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  }}
+                  ListEmptyComponent={() => (
+                    <View style={{ padding: 32, alignItems: 'center' }}>
+                      <ThemedText style={{ color: currColors.textSecondary, textAlign: 'center', fontSize: 13.5 }}>
+                        {isSearchingOnline ? 'Searching Yahoo Finance...' : `No matching tickers for "${modalSearchQuery}".`}
                       </ThemedText>
                     </View>
+                  )}
+                />
+              </View>
+            ) : (
+              /* TAB 2: GOOGLE SHEET (CUSTOM / LEGACY) MODE - FULL PARITY WITH YAHOO UI/UX */
+              <View style={{ flex: 1 }}>
+                {/* Side-by-Side Price & Match Comparison Card for Google Sheet */}
+                {selectedCompanyForRemap && (
+                  <View style={[styles.compareCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
+                    <View style={styles.compareRow}>
+                      {/* Left: Current Source & Symbol */}
+                      <View style={styles.compareCol}>
+                        <View
+                          style={[
+                            styles.sourceBadge,
+                            {
+                              backgroundColor: selectedCompanyForRemap.source === 'yahoo'
+                                ? 'rgba(52, 199, 89, 0.12)'
+                                : 'rgba(255, 149, 0, 0.12)',
+                              alignSelf: 'flex-start',
+                              marginBottom: 6,
+                            },
+                          ]}
+                        >
+                          <ThemedText
+                            style={[
+                              styles.sourceBadgeText,
+                              { color: selectedCompanyForRemap.source === 'yahoo' ? '#34C759' : '#FF9500' },
+                            ]}
+                          >
+                            Current: {selectedCompanyForRemap.source === 'yahoo' ? 'Yahoo Live' : 'Google Sheet'}
+                          </ThemedText>
+                        </View>
+                        <ThemedText style={[styles.compareSymbol, { color: currColors.text }]} numberOfLines={1}>
+                          {selectedCompanyForRemap.symbol}
+                        </ThemedText>
+                        <ThemedText style={[styles.comparePrice, { color: currColors.textSecondary }]}>
+                          {selectedCompanyForRemap.currentPrice > 0
+                            ? `${showCurrencySymbol ? '₹' : ''}${selectedCompanyForRemap.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                            : 'N/A'}
+                        </ThemedText>
+                      </View>
+
+                      <View style={[styles.compareDivider, { backgroundColor: currColors.border }]}>
+                        <ArrowRight size={14} color={currColors.textSecondary} />
+                      </View>
+
+                      {/* Right: Target Google Sheet Match */}
+                      <View style={styles.compareCol}>
+                        <View style={[styles.sourceBadge, { backgroundColor: 'rgba(255, 149, 0, 0.12)', alignSelf: 'flex-start', marginBottom: 6 }]}>
+                          <ThemedText style={[styles.sourceBadgeText, { color: '#FF9500' }]}>
+                            Target: Google Sheet
+                          </ThemedText>
+                        </View>
+                        {suggestedSheetMatch ? (
+                          <>
+                            <ThemedText style={[styles.compareSymbol, { color: currColors.text }]} numberOfLines={1}>
+                              {suggestedSheetMatch.Tickers}
+                            </ThemedText>
+                            <ThemedText style={[styles.comparePrice, { color: '#FF9500', fontWeight: '700' }]}>
+                              {suggestedSheetMatch['Current Value'] > 0
+                                ? `${showCurrencySymbol ? '₹' : ''}${suggestedSheetMatch['Current Value'].toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                                : 'Sheet Ticker'}
+                            </ThemedText>
+                          </>
+                        ) : (
+                          <ThemedText style={{ color: currColors.textSecondary, fontSize: 13 }}>
+                            Loading...
+                          </ThemedText>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* 1-Tap Quick Remap Button to Target Sheet Ticker */}
+                    {suggestedSheetMatch && (
+                      <TouchableOpacity
+                        style={[styles.quickRemapBtn, { backgroundColor: '#FF9500' }]}
+                        onPress={() => handleSelectSheetReplacement(suggestedSheetMatch)}
+                        activeOpacity={0.8}
+                      >
+                        <FileSpreadsheet size={16} color="#000" />
+                        <ThemedText style={[styles.quickRemapBtnText, { color: '#000' }]}>
+                          1-Tap Remap to {suggestedSheetMatch.Tickers} {suggestedSheetMatch['Current Value'] > 0 ? `(${showCurrencySymbol ? '₹' : ''}${suggestedSheetMatch['Current Value'].toLocaleString('en-IN')})` : ''}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+
+                {/* Standard Google Sheet Search & Candidate List */}
+                <View style={{ flex: 1 }}>
+                  {/* Modal Search Bar for Sheet */}
+                  <View style={[styles.modalSearchContainer, { backgroundColor: currColors.card }]}>
+                    <Search size={18} color={currColors.textSecondary} />
+                    <TextInput
+                      style={[styles.modalSearchInput, { color: currColors.text }]}
+                      placeholder="Search Google Sheet ticker or company..."
+                      placeholderTextColor={currColors.textSecondary}
+                      value={modalSearchQuery}
+                      onChangeText={setModalSearchQuery}
+                    />
+                    {modalSearchQuery.length > 0 && (
+                      <TouchableOpacity onPress={() => setModalSearchQuery('')}>
+                        <X size={16} color={currColors.textSecondary} />
+                      </TouchableOpacity>
+                    )}
                   </View>
 
-                  <View style={{ alignItems: 'flex-end' }}>
-                    {item['Current Value'] > 0 ? (
-                      <ThemedText style={[styles.candidatePrice, { color: currColors.text }]}>
-                        {showCurrencySymbol ? '₹' : ''}
-                        {item['Current Value'].toLocaleString('en-IN', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </ThemedText>
-                    ) : (
-                      <View style={[styles.liveQuoteTag, { backgroundColor: currColors.cardSecondary }]}>
-                        <ThemedText style={{ color: currColors.tint, fontSize: 11, fontWeight: '600' }}>
-                          Select
+                  {/* Section Header for Sheet Tickers */}
+                  <View style={{ paddingHorizontal: 16, marginTop: 2, marginBottom: 4 }}>
+                    <ThemedText style={{ fontSize: 11.5, fontWeight: '600', color: currColors.textSecondary, letterSpacing: 0.5 }}>
+                      TICKERS FROM GOOGLE SHEET ({modalSheetCandidates.length})
+                    </ThemedText>
+                  </View>
+
+                  {/* Candidate Sheet Assets FlatList */}
+                  <FlatList
+                    data={modalSheetCandidates}
+                    keyExtractor={(item) => item.Tickers}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                    renderItem={({ item }) => {
+                      const isCurrent = selectedCompanyForRemap?.symbol.toUpperCase() === item.Tickers.toUpperCase();
+                      return (
+                        <TouchableOpacity
+                          style={[styles.candidateItem, { borderBottomColor: currColors.border }]}
+                          onPress={() => handleSelectSheetReplacement(item)}
+                        >
+                          <View style={styles.candidateLeft}>
+                            {item.Logo ? (
+                              <View style={styles.modalLogoBox}>
+                                <Image source={{ uri: item.Logo }} style={styles.modalLogoImage} resizeMode="contain" />
+                              </View>
+                            ) : (
+                              <View style={[styles.modalLogoPlaceholder, { backgroundColor: currColors.cardSecondary }]}>
+                                <ThemedText style={[styles.logoLetter, { color: currColors.text }]}>
+                                  {item.Tickers.replace(/^(NSE|BOM):/i, '')[0] || item.Tickers[0]}
+                                </ThemedText>
+                              </View>
+                            )}
+                            <View style={styles.candidateInfo}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <ThemedText style={[styles.candidateSymbol, { color: currColors.text }]}>
+                                  {item.Tickers}
+                                </ThemedText>
+                                {item['Asset Type'] && (
+                                  <View style={[styles.assetTypeTag, { backgroundColor: currColors.cardSecondary }]}>
+                                    <ThemedText style={[styles.assetTypeTagText, { color: '#FF9500' }]}>
+                                      {item['Asset Type']}
+                                    </ThemedText>
+                                  </View>
+                                )}
+                                <View style={[styles.sourceBadge, { backgroundColor: 'rgba(255, 149, 0, 0.12)' }]}>
+                                  <ThemedText style={[styles.sourceBadgeText, { color: '#FF9500' }]}>
+                                    Google Sheet
+                                  </ThemedText>
+                                </View>
+                              </View>
+                              <ThemedText style={[styles.candidateName, { color: currColors.textSecondary }]} numberOfLines={1}>
+                                {item['Company Name']}
+                              </ThemedText>
+                            </View>
+                          </View>
+
+                          <View style={{ alignItems: 'flex-end' }}>
+                            {item['Current Value'] > 0 ? (
+                              <ThemedText style={[styles.candidatePrice, { color: currColors.text }]}>
+                                {showCurrencySymbol ? '₹' : ''}
+                                {item['Current Value'].toLocaleString('en-IN', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </ThemedText>
+                            ) : (
+                              <View style={[styles.liveQuoteTag, { backgroundColor: 'rgba(255, 149, 0, 0.12)' }]}>
+                                <ThemedText style={{ color: '#FF9500', fontSize: 11, fontWeight: '600' }}>
+                                  Select
+                                </ThemedText>
+                              </View>
+                            )}
+                            {isCurrent && <Check size={16} color="#FF9500" style={{ marginTop: 4 }} />}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    }}
+                    ListEmptyComponent={() => (
+                      <View style={{ padding: 32, alignItems: 'center' }}>
+                        <ThemedText style={{ color: currColors.textSecondary, textAlign: 'center', fontSize: 13.5 }}>
+                          No Google Sheet tickers found matching "{modalSearchQuery}".
                         </ThemedText>
                       </View>
                     )}
-                    {isCurrent && <Check size={16} color={currColors.tint} style={{ marginTop: 4 }} />}
-                  </View>
-                </TouchableOpacity>
-              );
-            }}
-            ListEmptyComponent={() => (
-              <View style={{ padding: 32, alignItems: 'center' }}>
-                <ThemedText style={{ color: currColors.textSecondary, textAlign: 'center', fontSize: 13.5 }}>
-                  {isSearchingOnline ? 'Searching Yahoo Finance...' : `No matching tickers for "${modalSearchQuery}".`}
+                  />
+                </View>
+              </View>
+            )}
+
+            {isRemapping && (
+              <View style={[styles.loadingOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                <ActivityIndicator size="large" color="#FFF" />
+                <ThemedText style={{ color: '#FFF', marginTop: 12, fontWeight: '600' }}>
+                  Updating company and remapping transactions...
                 </ThemedText>
               </View>
             )}
-          />
-
-          {isRemapping && (
-            <View style={[styles.loadingOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-              <ActivityIndicator size="large" color="#FFF" />
-              <ThemedText style={{ color: '#FFF', marginTop: 12, fontWeight: '600' }}>
-                Remapping company & fetching live quotes...
-              </ThemedText>
-            </View>
-          )}
-        </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -1037,5 +1550,111 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  modalTabContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    padding: 3,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  modalTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: 10,
+    gap: 6,
+  },
+  modalTabActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  modalTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sheetFormContainer: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  sheetBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 16,
+    gap: 12,
+  },
+  sheetBannerText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  formGroup: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  formRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  formLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  formInput: {
+    fontSize: 16,
+    paddingVertical: 4,
+  },
+  formDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 16,
+  },
+  confirmSheetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    gap: 8,
+    shadowColor: '#FF9500',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  confirmSheetBtnText: {
+    color: '#000',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  sheetFilterRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

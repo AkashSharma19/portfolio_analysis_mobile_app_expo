@@ -14,7 +14,12 @@ interface PortfolioState {
   updateTransaction: (id: string, transaction: Transaction) => void;
   fetchTickers: () => Promise<void>;
   fetchSingleTicker: (symbol: string) => Promise<Ticker | null>;
-  remapCompanySymbol: (oldSymbol: string, newSymbol: string) => Promise<boolean>;
+  remapCompanySymbol: (
+    oldSymbol: string,
+    newSymbol: string,
+    targetSource?: 'yahoo' | 'sheet',
+    customData?: { companyName?: string; currentPrice?: number; sector?: string; assetType?: string }
+  ) => Promise<boolean>;
   getTickerSource: (symbol: string) => 'yahoo' | 'sheet';
   calculateSummary: () => PortfolioSummary;
   getAllocationData: (
@@ -132,10 +137,20 @@ export const usePortfolioStore = create<PortfolioState>()(
           }
 
           let currentTickers: Ticker[] = get().tickers || [];
+          const localTickerMap = new Map<string, Ticker>();
+          currentTickers.forEach((t) => localTickerMap.set(t.Tickers.trim().toUpperCase(), t));
 
           if (tickersData && tickersData.length > 0) {
             const mappedTickers: Ticker[] = tickersData.map((t: any) => {
               const historicalData = t.historical_data || {};
+              const symUpper = (t.ticker || '').trim().toUpperCase();
+              const existingLocal = localTickerMap.get(symUpper);
+              const isSheet =
+                existingLocal?.source === 'sheet' ||
+                symUpper.includes(':') ||
+                symUpper.startsWith('NSE') ||
+                symUpper.startsWith('BOM');
+
               return {
                 Tickers: t.ticker,
                 'Current Value': Number(t.current_value),
@@ -150,19 +165,24 @@ export const usePortfolioStore = create<PortfolioState>()(
                 PE: t.pe !== null ? Number(t.pe) : null,
                 DividendYield: t.dividend_yield !== null ? Number(t.dividend_yield) : null,
                 DebtToEquity: t.debt_to_equity !== null ? Number(t.debt_to_equity) : null,
+                source: isSheet ? 'sheet' : (existingLocal?.source || 'yahoo'),
                 ...historicalData,
               };
             });
             currentTickers = mappedTickers;
           }
 
-          // 3. Identify all distinct active symbols to refresh in real-time
+          // 3. Identify all distinct active Yahoo symbols to refresh in real-time
           const { transactions, watchlist } = get();
-          const txSymbols = transactions.map((t) => t.symbol.trim().toUpperCase());
-          const watchSymbols = (watchlist || []).map((w: any) =>
-            (typeof w === 'string' ? w : (w?.symbol || '')).trim().toUpperCase()
-          );
-          const cachedSymbols = currentTickers.map((t) => t.Tickers.trim().toUpperCase());
+          const txSymbols = transactions
+            .map((t) => t.symbol.trim().toUpperCase())
+            .filter((sym) => get().getTickerSource(sym) === 'yahoo');
+          const watchSymbols = (watchlist || [])
+            .map((w: any) => (typeof w === 'string' ? w : (w?.symbol || '')).trim().toUpperCase())
+            .filter((sym) => get().getTickerSource(sym) === 'yahoo');
+          const cachedSymbols = currentTickers
+            .filter((t) => t.source === 'yahoo')
+            .map((t) => t.Tickers.trim().toUpperCase());
 
           const symbolsToRefresh = Array.from(
             new Set([...txSymbols, ...watchSymbols, ...cachedSymbols].filter(Boolean))
@@ -176,13 +196,15 @@ export const usePortfolioStore = create<PortfolioState>()(
               const tickerMap = new Map<string, Ticker>();
               currentTickers.forEach((t) => tickerMap.set(t.Tickers.trim().toUpperCase(), t));
 
-              // Merge fresh market quotes
+              // Merge fresh market quotes (only for yahoo assets)
               liveQuotes.forEach((lq) => {
                 const sym = lq.Tickers.trim().toUpperCase();
                 const existing = tickerMap.get(sym);
+                if (existing?.source === 'sheet') return;
                 tickerMap.set(sym, {
                   ...(existing || {}),
                   ...lq,
+                  source: 'yahoo',
                   Logo: (lq.Logo && !lq.Logo.includes('icon.horse')) ? lq.Logo : getCompanyLogoUrl(sym, lq['Company Name']),
                   Sector: (lq.Sector && lq.Sector !== 'General') ? lq.Sector : (existing?.Sector || 'General'),
                   PE: lq.PE !== undefined ? lq.PE : existing?.PE,
@@ -239,12 +261,18 @@ export const usePortfolioStore = create<PortfolioState>()(
           (t) => t.Tickers.trim().toUpperCase() === cleanSym
         );
 
+        // If explicitly a sheet ticker, do not query Yahoo Finance
+        if (existing?.source === 'sheet' || cleanSym.includes(':') || cleanSym.startsWith('NSE:') || cleanSym.startsWith('BOM:')) {
+          return existing || null;
+        }
+
         try {
           const liveTicker = await fetchYahooQuote(cleanSym);
           if (liveTicker) {
             const merged: Ticker = {
               ...(existing || {}),
               ...liveTicker,
+              source: 'yahoo',
               Logo: (liveTicker.Logo && !liveTicker.Logo.includes('icon.horse')) ? liveTicker.Logo : getCompanyLogoUrl(cleanSym, liveTicker['Company Name']),
               Sector: (liveTicker.Sector && liveTicker.Sector !== 'General') ? liveTicker.Sector : (existing?.Sector || 'General'),
               PE: liveTicker.PE !== undefined ? liveTicker.PE : existing?.PE,
@@ -297,28 +325,63 @@ export const usePortfolioStore = create<PortfolioState>()(
           (t) => t.Tickers.trim().toUpperCase() === cleanSym
         );
         if (ticker?.source) return ticker.source;
-        // Legacy symbols typically contain prefixes like NSE:, BOM:, NASDAQ: or lack Yahoo fundamental data
+        // Symbols containing colons or starting with exchange/fund prefixes are sheet
         if (
           cleanSym.includes(':') ||
           cleanSym.startsWith('NSE') ||
-          cleanSym.startsWith('BOM')
+          cleanSym.startsWith('BOM') ||
+          cleanSym.startsWith('NASDAQ') ||
+          cleanSym.startsWith('NYSE') ||
+          cleanSym.startsWith('MUTF') ||
+          cleanSym.startsWith('INDEX') ||
+          cleanSym.startsWith('.')
         ) {
           return 'sheet';
         }
-        // If it has a live Yahoo value or high52/PE/Logo, it's yahoo
-        if (ticker && (ticker.High52 || ticker.PE || ticker['Market Cap'])) {
-          return 'yahoo';
-        }
         return 'yahoo';
       },
-      remapCompanySymbol: async (oldSymbol: string, newSymbol: string): Promise<boolean> => {
+      remapCompanySymbol: async (
+        oldSymbol: string,
+        newSymbol: string,
+        targetSource: 'yahoo' | 'sheet' = 'yahoo',
+        customData?: { companyName?: string; currentPrice?: number; sector?: string; assetType?: string }
+      ): Promise<boolean> => {
         const cleanOld = (oldSymbol || '').trim().toUpperCase();
         const cleanNew = (newSymbol || '').trim().toUpperCase();
-        if (!cleanOld || !cleanNew || cleanOld === cleanNew) return false;
+        if (!cleanOld || !cleanNew) return false;
 
         try {
-          // 1. Fetch live quote for the new symbol
-          const newTicker = await fetchYahooQuote(cleanNew);
+          let mergedNewTicker: Ticker;
+
+          if (targetSource === 'yahoo') {
+            // 1. Fetch live quote for the new Yahoo symbol
+            const newTicker = await fetchYahooQuote(cleanNew);
+
+            mergedNewTicker = newTicker || {
+              Tickers: cleanNew,
+              'Company Name': customData?.companyName || cleanNew,
+              'Current Value': customData?.currentPrice || 0,
+              'Asset Type': customData?.assetType || 'Equity',
+              Sector: customData?.sector || 'General',
+              Logo: getCompanyLogoUrl(cleanNew, customData?.companyName || cleanNew),
+              source: 'yahoo',
+            };
+            mergedNewTicker.source = 'yahoo';
+          } else {
+            // 2. Target source is Google Sheet / custom
+            const existingOldTicker = get().tickers.find(
+              (t) => t.Tickers.trim().toUpperCase() === cleanOld
+            );
+            mergedNewTicker = {
+              Tickers: cleanNew,
+              'Company Name': customData?.companyName || existingOldTicker?.['Company Name'] || cleanNew,
+              'Current Value': customData?.currentPrice !== undefined ? customData.currentPrice : (existingOldTicker?.['Current Value'] || 0),
+              'Asset Type': customData?.assetType || existingOldTicker?.['Asset Type'] || 'Equity',
+              Sector: customData?.sector || existingOldTicker?.Sector || 'General',
+              Logo: existingOldTicker?.Logo || getCompanyLogoUrl(cleanNew, customData?.companyName || cleanNew),
+              source: 'sheet',
+            };
+          }
 
           // 2. Update all transactions with oldSymbol -> newSymbol
           const updatedTransactions = get().transactions.map((t) => {
@@ -337,21 +400,10 @@ export const usePortfolioStore = create<PortfolioState>()(
             w.trim().toUpperCase() === cleanOld ? cleanNew : w
           );
 
-          // 4. Update tickers array: replace/merge ticker metadata and tag with source: 'yahoo'
+          // 4. Update tickers array: replace/merge ticker metadata
           const otherTickers = get().tickers.filter(
             (t) => t.Tickers.trim().toUpperCase() !== cleanOld && t.Tickers.trim().toUpperCase() !== cleanNew
           );
-
-          const mergedNewTicker: Ticker = newTicker || {
-            Tickers: cleanNew,
-            'Company Name': cleanNew,
-            'Current Value': 0,
-            'Asset Type': 'Equity',
-            Sector: 'General',
-            Logo: getCompanyLogoUrl(cleanNew, cleanNew),
-            source: 'yahoo',
-          };
-          mergedNewTicker.source = 'yahoo';
 
           set({
             transactions: updatedTransactions,
@@ -365,34 +417,38 @@ export const usePortfolioStore = create<PortfolioState>()(
             try {
               const changedTx = updatedTransactions.filter((t) => t.symbol.trim().toUpperCase() === cleanNew);
               if (changedTx.length > 0) {
-                const deviceId = get().getDeviceId();
-                const txRows = changedTx.map((t) => ({
-                  id: t.id,
-                  symbol: t.symbol,
-                  quantity: t.quantity,
-                  price: t.price,
-                  date: t.date,
-                  type: t.type,
-                  currency: t.currency || 'INR',
-                  broker: t.broker || '',
-                  device_id: deviceId,
-                  updated_at: new Date().toISOString(),
-                }));
-                await supabase.from('transactions').upsert(txRows, { onConflict: 'id' });
+                const { data: authData } = await supabase.auth.getUser();
+                const userId = authData?.user?.id;
+                if (userId) {
+                  const txRows = changedTx.map((t) => ({
+                    id: t.id,
+                    user_id: userId,
+                    symbol: t.symbol,
+                    quantity: t.quantity,
+                    price: t.price,
+                    date: t.date,
+                    type: t.type,
+                    currency: t.currency || 'INR',
+                    broker: t.broker || '',
+                    is_deleted: false,
+                    updated_at: new Date().toISOString(),
+                  }));
+                  await supabase.from('portfolio_transactions').upsert(txRows, { onConflict: 'id' });
+                }
               }
 
               await supabase.from('tickers').upsert([{
                 ticker: mergedNewTicker.Tickers,
-                current_value: mergedNewTicker['Current Value'],
+                current_value: mergedNewTicker['Current Value'] || 0,
                 company_name: mergedNewTicker['Company Name'],
                 asset_type: mergedNewTicker['Asset Type'] || 'Equity',
                 sector: mergedNewTicker.Sector || 'General',
-                yesterday_close: mergedNewTicker['Yesterday Close'],
-                high_52: mergedNewTicker.High52,
-                low_52: mergedNewTicker.Low52,
-                logo: mergedNewTicker.Logo,
-                pe: mergedNewTicker.PE,
-                market_cap: mergedNewTicker['Market Cap'],
+                yesterday_close: mergedNewTicker['Yesterday Close'] ?? null,
+                high_52: mergedNewTicker.High52 ?? null,
+                low_52: mergedNewTicker.Low52 ?? null,
+                logo: mergedNewTicker.Logo || null,
+                pe: mergedNewTicker.PE ?? null,
+                market_cap: mergedNewTicker['Market Cap'] ?? null,
                 updated_at: new Date().toISOString(),
               }], { onConflict: 'ticker' });
             } catch (err) {
