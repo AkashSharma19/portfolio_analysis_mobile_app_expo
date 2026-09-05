@@ -40,39 +40,45 @@ const IconMap: Record<string, any> = {
   CircleArrowDown,
   Zap,
   Compass,
+  CheckCircle,
+  Eye,
 };
 
 const CATEGORY_CONFIG: Record<
   InsightCategory,
-  { color: string; emptyIcon: any; emptyTitle: string; emptyMessage: string }
+  { color: string; emptyIcon: any; emptyTitle: string; emptyMessage: string; subtitle: string }
 > = {
   Buy: {
     color: '#34C759',
     emptyIcon: CheckCircle,
     emptyTitle: 'No Buy Signals',
     emptyMessage:
-      'No significant buy opportunities detected. Your portfolio looks well-positioned.',
+      'No significant buy or accumulation opportunities detected for your holdings right now.',
+    subtitle: 'STOCKS TO BUY MORE & ACCUMULATE',
   },
   Sell: {
     color: '#FF3B30',
     emptyIcon: CheckCircle,
     emptyTitle: 'No Sell Signals',
     emptyMessage:
-      "No positions flagged for selling. You're holding strong on all fronts.",
+      "No positions flagged for trimming, stop-loss, or exit. You're holding strong.",
+    subtitle: 'POSITIONS TO TRIM OR EXIT',
   },
   Hold: {
     color: '#FF9500',
     emptyIcon: CheckCircle,
     emptyTitle: 'No Hold Signals',
     emptyMessage:
-      'No positions flagged to hold at the moment. Keep an eye on your winners.',
+      'No positions currently categorized as core compounders to hold without adjustments.',
+    subtitle: 'CORE COMPOUNDERS TO HOLD',
   },
   'Not Sure': {
     color: '#007AFF',
     emptyIcon: Eye,
     emptyTitle: 'Nothing Uncertain',
     emptyMessage:
-      'No ambiguous signals detected for your holdings right now.',
+      'No ambiguous signals detected. All positions currently have clear directional conviction.',
+    subtitle: 'POSITIONS TO WATCH & OBSERVE',
   },
 };
 
@@ -142,26 +148,92 @@ function PortfolioInsightsScreen() {
     setIsGenerating(true);
 
     try {
-      // Serialize holdings for Gemini prompt
-      const serializedHoldings = holdings
-        .map((h: any) => `- Stock Ticker: ${h.symbol}, Company Name: ${h.companyName}, Shares: ${h.quantity}, Avg Buy Price: ₹${h.avgPrice.toLocaleString('en-IN')}, Total Invested: ₹${(h.quantity * h.avgPrice).toLocaleString('en-IN')}`)
-        .join('\n');
+      const portfolioSummary = usePortfolioStore.getState().calculateSummary();
+      const totalPortfolioVal = holdings.reduce(
+        (sum: number, h: any) => sum + (h.currentValue || (h.quantity * h.avgPrice)),
+        0
+      );
+      const totalInvestedVal = holdings.reduce(
+        (sum: number, h: any) => sum + (h.investedValue || (h.quantity * h.avgPrice)),
+        0
+      );
+      const totalPnl = totalPortfolioVal - totalInvestedVal;
+      const totalPnlPct = totalInvestedVal > 0 ? (totalPnl / totalInvestedVal) * 100 : 0;
 
-      const prompt = `You are Gainbase AI, an institutional-grade portfolio manager. Analyze these stock positions:
+      // Serialize individual holdings with complete institutional metrics
+      const serializedHoldings = holdings
+        .map((h: any) => {
+          const allocPct = h.contributionPercentage !== undefined 
+            ? h.contributionPercentage 
+            : (totalPortfolioVal > 0 ? ((h.currentValue || (h.quantity * h.avgPrice)) / totalPortfolioVal) * 100 : 0);
+          const pnlPct = h.pnlPercentage !== undefined ? h.pnlPercentage : 0;
+          const currentP = h.currentPrice || h.avgPrice;
+          const highLow = (h.high52 && h.low52) ? `, 52W High: ₹${h.high52}, 52W Low: ₹${h.low52}` : '';
+          const peStr = h.PE ? `, P/E: ${h.PE}` : '';
+          const divStr = h.DividendYield ? `, Div Yield: ${h.DividendYield}%` : '';
+          const sectorStr = h.sector ? `, Sector: ${h.sector}` : '';
+          const dayStr = h.dayChangePercentage !== undefined ? `, Day Return: ${h.dayChangePercentage >= 0 ? '+' : ''}${h.dayChangePercentage.toFixed(2)}%` : '';
+
+          return `- Ticker: ${h.symbol} (${h.companyName})
+  Shares: ${h.quantity} | Avg Buy Price: ₹${h.avgPrice.toLocaleString('en-IN', { maximumFractionDigits: 2 })} | Current Market Price: ₹${currentP.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+  Total Invested: ₹${Math.round(h.investedValue || (h.quantity * h.avgPrice)).toLocaleString('en-IN')} | Current Value: ₹${Math.round(h.currentValue || (h.quantity * h.avgPrice)).toLocaleString('en-IN')}
+  Unrealized PnL: ${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}% (₹${Math.round(h.pnl || (h.currentValue - h.investedValue) || 0).toLocaleString('en-IN')}) | Portfolio Weight: ${allocPct.toFixed(1)}%${sectorStr}${dayStr}${highLow}${peStr}${divStr}`;
+        })
+        .join('\n\n');
+
+      const serializedPortfolio = `PORTFOLIO MACRO SNAPSHOT:
+- Total Portfolio Value: ₹${Math.round(totalPortfolioVal).toLocaleString('en-IN')}
+- Total Capital Invested: ₹${Math.round(totalInvestedVal).toLocaleString('en-IN')}
+- Overall Portfolio Unrealized PnL: ${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}% (₹${Math.round(totalPnl).toLocaleString('en-IN')})
+- Number of Active Holdings: ${holdings.length} stocks
+- Portfolio XIRR: ${portfolioSummary.xirr ? `${portfolioSummary.xirr.toFixed(1)}%` : 'N/A'}`;
+
+      const prompt = `You are Gainbase AI, an institutional-grade portfolio strategist and quantitative equity analyst.
+
+${serializedPortfolio}
+
+CURRENT PORTFOLIO POSITIONS (${holdings.length} Active Stocks):
 ${serializedHoldings}
 
-Instructions:
-1. Return a JSON array representing investment insights.
-2. For each insight:
-   - "category" must be exactly one of: "Buy" (fresh accumulation or averaging down), "Sell" (stop-loss, tax-loss harvesting, or high-concentration trim), "Hold" (strong position worth holding, partial profit booking), or "Not Sure" (ambiguous signals, key events to watch, streaks, sector risk).
-   - "title" must be the full company name (e.g. "Tata Consultancy Services Ltd", "Reliance Industries") matching the holdings list.
-   - "badge" is a short 2-3 word highlight tag.
-   - "value" is a quick reference stat.
-   - "reason" is 1-2 sentences of professional reasoning.
-   - "color" must be: Buy is "#34C759", Sell is "#FF3B30", Hold is "#FF9500", Not Sure is "#007AFF".
-   - "icon" must be: Buy/positive is "TrendingUp", Sell/negative is "TrendingDown" or "TriangleAlert", Hold is "TrendingUp", Not Sure/neutral is "Compass" or "Zap" or "Eye".
-   - "symbol" (optional) stock ticker symbol if holding-specific (e.g. "INFY", "RELIANCE") so tapping opens details.
-3. Be highly realistic, critical, and objective. You MUST generate AT LEAST 10 (10 to 15) actionable insights. Provide dedicated insights for individual holdings, and supplement with sector allocation, market risk, diversification, and cash drag insights so the user receives a comprehensive breakdown of at least 10 insights across Buy, Sell, Hold, and Not Sure.`;
+CRITICAL MANDATORY REQUIREMENT - 100% FULL PORTFOLIO COVERAGE:
+- The user has EXACTLY ${holdings.length} stocks in their portfolio.
+- You MUST evaluate and return an insight for EVERY SINGLE ONE of the ${holdings.length} stocks listed above (${holdings.map((h: any) => h.symbol).join(', ')}).
+- DO NOT SKIP, OMIT, MERGE, OR TRUNCATE ANY STOCK. Every stock ticker in the holdings list MUST have exactly one dedicated insight object in the returned JSON array.
+- The returned JSON array MUST contain at least ${holdings.length} objects.
+
+YOUR MISSION:
+Rigorously categorize every single stock into the single best fitting category:
+
+1. "Buy" -> WHICH STOCKS TO BUY MORE / ACCUMULATE / AVERAGE DOWN:
+   - Stocks where technical pullbacks, valuation discounts, reasonable P/E, or low portfolio allocation (< 5-8%) make scaling up or averaging down attractive.
+   - For fundamentally strong stocks experiencing a dip, explain why averaging down lowers cost basis.
+   - Provide concrete buy triggers (e.g. "Accumulate on dips near ₹X", "Scale weight up from 3% to 8%").
+
+2. "Sell" -> WHAT TO SELL / TRIM / TAKE PROFIT / STOP-LOSS:
+   - Identify over-concentrated positions (> 18-25% portfolio weight) where trimming reduces drawdown risk.
+   - Flag severe loss positions where fundamentals have deteriorated and stop-loss / tax-loss harvesting is prudent.
+   - Flag overvalued holdings trading far above historical valuation ranges where taking partial profits locks in gains.
+
+3. "Hold" -> WHAT TO HOLD & COMPOUND:
+   - Core compounders and multi-bagger runners with healthy portfolio allocation (8-15%) that should remain untouched.
+   - Quality dividend payers or market leaders with strong earnings momentum.
+   - Explain why riding the secular trend without touching the position is optimal.
+
+4. "Not Sure" -> WHAT TO OBSERVE & WATCH (Ambiguous / Crossroad Signals):
+   - Positions where risk/reward is balanced or waiting for a catalyst (e.g. upcoming quarterly earnings, technical resistance/support test, cyclical turnarounds, sector rotation).
+   - Explicitly tell the user WHAT SPECIFIC METRIC OR EVENT TO OBSERVE before deciding to Buy or Sell.
+
+INSTRUCTIONS:
+- Return a JSON array with an insight object for every holding in the portfolio.
+- "id": unique string (e.g. "buy-tcs-1", "sell-reliance-1", "hold-infy-1", "watch-hdfc-1")
+- "category": MUST be exactly one of: "Buy", "Sell", "Hold", "Not Sure"
+- "symbol": exact stock ticker (e.g. "TCS", "RELIANCE") matching the portfolio holdings
+- "title": full company name
+- "badge": short 2-3 word highlight tag (e.g. "Accumulate on Dip", "Trim Concentration", "Core Compounder", "Watch Q2 Results", "Stop-Loss Alert", "Scale Position", "Ride the Trend")
+- "value": quantitative metric highlight (e.g. "+38.4% Return", "24.5% Portfolio Weight", "-18.2% Drawdown", "P/E 21.4 (Cheap)", "Near 52W Low")
+- "reason": 2-3 sentences of deep, objective, institutional-grade rationale explaining the exact decision for this specific stock.
+- "color": Buy is "#34C759", Sell is "#FF3B30", Hold is "#FF9500", Not Sure is "#007AFF"
+- "icon": Buy is "TrendingUp" or "Zap", Sell is "TrendingDown" or "TriangleAlert", Hold is "TrendingUp" or "CheckCircle", Not Sure is "Eye" or "Compass"`;
 
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${geminiApiKey}`,
@@ -178,6 +250,7 @@ Instructions:
             ],
             generationConfig: {
               responseMimeType: 'application/json',
+              maxOutputTokens: 8192,
               responseSchema: {
                 type: 'ARRAY',
                 items: {
@@ -206,18 +279,91 @@ Instructions:
       if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
         const parsedInsights = JSON.parse(data.candidates[0].content.parts[0].text);
         
-        // Enrich logo property from active holdings if symbols match
-        const enrichedInsights = parsedInsights.map((insight: any) => {
-          const matchedHolding = holdings.find(
-            (h: any) => h.symbol?.toUpperCase() === insight.symbol?.toUpperCase()
-          );
-          return {
-            ...insight,
-            logo: matchedHolding?.logo || insight.logo || null,
-          };
+        const insightsMap = new Map<string, any>();
+        parsedInsights.forEach((insight: any) => {
+          if (insight.symbol) {
+            insightsMap.set(insight.symbol.toUpperCase().trim(), insight);
+          }
         });
 
-        setAiStockInsights(enrichedInsights);
+        // Ensure 100% of holdings are covered: for any holding omitted, synthesize an intelligent fallback
+        const completeInsights: any[] = [];
+        
+        holdings.forEach((h: any) => {
+          const sym = (h.symbol || '').toUpperCase().trim();
+          const existing = insightsMap.get(sym);
+          if (existing) {
+            completeInsights.push({
+              ...existing,
+              logo: h.logo || existing.logo || null,
+            });
+            insightsMap.delete(sym);
+          } else {
+            const pnl = h.pnlPercentage ?? 0;
+            const alloc = h.contributionPercentage ?? 0;
+            let cat: InsightCategory = 'Hold';
+            let badge = 'Core Compounder';
+            let color = '#FF9500';
+            let icon = 'TrendingUp';
+            let reason = `Holding ${h.companyName} as a long-term compounder. Core business thesis is stable.`;
+            let value = `${pnl >= 0 ? '+' : ''}${pnl.toFixed(1)}% PnL`;
+
+            if (alloc > 20) {
+              cat = 'Sell';
+              badge = 'High Concentration';
+              color = '#FF3B30';
+              icon = 'TriangleAlert';
+              reason = `Makes up ${alloc.toFixed(1)}% of your total portfolio. Consider trimming to mitigate concentration volatility.`;
+              value = `${alloc.toFixed(1)}% Weight`;
+            } else if (pnl < -15) {
+              cat = 'Sell';
+              badge = 'Stop-Loss Alert';
+              color = '#FF3B30';
+              icon = 'TrendingDown';
+              reason = `Down ${Math.abs(pnl).toFixed(1)}% from cost basis. Review fundamentals to determine if tax-loss harvesting is suitable.`;
+            } else if (pnl < -5 || (h.low52 && h.currentPrice <= h.low52 * 1.05)) {
+              cat = 'Buy';
+              badge = 'Accumulate on Dip';
+              color = '#34C759';
+              icon = 'TrendingUp';
+              reason = `Trading at an attractive valuation pullback (${pnl.toFixed(1)}%). Favorable risk/reward to average down.`;
+            } else if (alloc < 4) {
+              cat = 'Buy';
+              badge = 'Scale Position';
+              color = '#34C759';
+              icon = 'Zap';
+              reason = `Currently under-allocated at only ${alloc.toFixed(1)}% of your portfolio. Room to scale up weight.`;
+              value = `${alloc.toFixed(1)}% Weight`;
+            } else if (h.high52 && h.currentPrice >= h.high52 * 0.97) {
+              cat = 'Not Sure';
+              badge = 'Watch Breakout';
+              color = '#007AFF';
+              icon = 'Eye';
+              reason = `Trading near 52-week highs. Observe technical price action for confirmation before adding more.`;
+              value = `Near 52W High`;
+            }
+
+            completeInsights.push({
+              id: `ai-${sym.toLowerCase()}-${Date.now()}`,
+              category: cat,
+              symbol: h.symbol,
+              title: h.companyName || h.symbol,
+              badge,
+              value,
+              reason,
+              color,
+              icon,
+              logo: h.logo || null,
+            });
+          }
+        });
+
+        // Also append any remaining macroeconomic / multi-stock insights
+        insightsMap.forEach((remainingInsight) => {
+          completeInsights.push(remainingInsight);
+        });
+
+        setAiStockInsights(completeInsights);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
         const errorMsg = data.error?.message || 'Failed to generate insights. Check settings.';
@@ -492,7 +638,7 @@ Instructions:
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, marginTop: 4 }}>
               <ThemedText style={styles.sectionLabel}>
-                {activeTab.toUpperCase()} OPPORTUNITIES
+                {CATEGORY_CONFIG[activeTab]?.subtitle || `${activeTab.toUpperCase()} SIGNALS`}
               </ThemedText>
               
               <TouchableOpacity

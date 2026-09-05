@@ -1,5 +1,6 @@
-import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { useMemo } from 'react';
+import { usePortfolioStore } from '@/store/usePortfolioStore';
+import { useAiStore, AiInsight } from '@/store/useAiStore';
 
 export type InsightCategory = 'Buy' | 'Sell' | 'Hold' | 'Not Sure';
 
@@ -7,7 +8,7 @@ export interface Insight {
   id: string;
   category: InsightCategory;
   title: string; // Company name
-  subtitle: string; // Invested value or context
+  subtitle?: string; // Invested value or context
   reason: string; // Actionable explanation WHY this insight was triggered
   badge: string; // Short label for insight type (e.g. "High Concentration")
   icon: string;
@@ -16,10 +17,11 @@ export interface Insight {
   value: string; // Specific metric (e.g. "31.4% of portfolio")
   color: string;
   pnlPercentage?: number;
-  severity: number; // Higher = more urgent, used for sorting within a tab
+  severity?: number; // Higher = more urgent, used for sorting within a tab
 }
 
 export const useInsights = () => {
+  const aiStockInsights = useAiStore((state) => state.aiStockInsights);
   const getHoldingsData = usePortfolioStore((state) => state.getHoldingsData);
   const transactions = usePortfolioStore((state) => state.transactions);
   const tickers = usePortfolioStore((state) => state.tickers);
@@ -38,8 +40,12 @@ export const useInsights = () => {
   };
 
   const insights = useMemo(() => {
+    // If AI has generated active stock insights, use them as primary source of truth
+    if (aiStockInsights && aiStockInsights.length > 0) {
+      return aiStockInsights as Insight[];
+    }
+
     const list: Insight[] = [];
-    // Track symbols added per category to avoid duplicates within that category
     const addedSymbolsPerCategory = new Map<InsightCategory, Set<string>>();
 
     const canAdd = (category: InsightCategory, symbol?: string) => {
@@ -92,13 +98,13 @@ export const useInsights = () => {
           category: 'Hold',
           title: h.companyName || h.symbol,
           subtitle: `Current Value: ${formatCurrency(h.currentValue)}`,
-          reason: `Up ${h.pnlPercentage.toFixed(1)}% from your average buy price. Consider booking partial profits or holding for further upside.`,
-          badge: 'Profit Taking',
+          reason: `Up ${h.pnlPercentage.toFixed(1)}% from your average buy price. Excellent core compounder to hold for long-term compounding.`,
+          badge: 'Core Compounder',
           symbol: h.symbol,
           logo: h.logo,
           icon: 'TrendingUp',
           value: `+${h.pnlPercentage.toFixed(1)}% gain`,
-          color: '#34C759',
+          color: '#FF9500',
           pnlPercentage: h.pnlPercentage,
           severity: h.pnlPercentage,
         });
@@ -107,18 +113,15 @@ export const useInsights = () => {
     });
 
     // Sell: Tax-Loss Harvesting (PnL < -15%)
-    // Only add if NOT already a Buy/DCA candidate (i.e., we skip this if the stock
-    // will also appear in Buy — avoid the same stock firing conflicting signals)
     holdings.forEach((h) => {
       if (h.pnlPercentage < -15 && (h.contributionPercentage ?? 0) < 15) {
-        // Only suggest Tax-Loss if we don't also strongly want to DCA
         if (canAdd('Sell', h.symbol)) {
           list.push({
             id: `tax-loss-${h.symbol}`,
             category: 'Sell',
             title: h.companyName || h.symbol,
             subtitle: `Invested: ${formatCurrency(h.investedValue)}`,
-            reason: `Down ${Math.abs(h.pnlPercentage).toFixed(1)}% overall. Selling may let you harvest a tax loss to offset gains elsewhere.`,
+            reason: `Down ${Math.abs(h.pnlPercentage).toFixed(1)}% overall. Consider harvesting tax losses or exiting if investment thesis has broken.`,
             badge: 'Tax-Loss Harvest',
             symbol: h.symbol,
             logo: h.logo,
@@ -135,7 +138,7 @@ export const useInsights = () => {
 
     // ─── BUY ──────────────────────────────────────────────────────────────────
 
-    // Buy: DCA Opportunity (PnL < -10%) — exclusive priority: skip if tax-loss already added
+    // Buy: DCA Opportunity (PnL < -10%)
     holdings.forEach((h) => {
       if (h.pnlPercentage < -10 && canAdd('Buy', h.symbol)) {
         const distFromAvg = Math.abs(h.pnlPercentage);
@@ -144,13 +147,13 @@ export const useInsights = () => {
           category: 'Buy',
           title: h.companyName || h.symbol,
           subtitle: `Avg Buy: ${formatCurrency(h.avgPrice)}`,
-          reason: `Trading ${distFromAvg.toFixed(1)}% below your average cost. Averaging down can reduce your cost basis.`,
-          badge: 'DCA Opportunity',
+          reason: `Trading ${distFromAvg.toFixed(1)}% below your average cost basis. Potential opportunity to average down on quality.`,
+          badge: 'Accumulate on Dip',
           symbol: h.symbol,
           logo: h.logo,
-          icon: 'CircleArrowDown',
+          icon: 'TrendingUp',
           value: `${h.pnlPercentage.toFixed(1)}% below avg`,
-          color: '#FF9500',
+          color: '#34C759',
           pnlPercentage: h.pnlPercentage,
           severity: distFromAvg,
         });
@@ -158,11 +161,11 @@ export const useInsights = () => {
       }
     });
 
-    // Buy: Near 52W Low (within 2% of low)
+    // Buy: Near 52W Low (within 3% of low)
     holdings.forEach((h) => {
       if (
         h.low52 &&
-        h.currentPrice <= h.low52 * 1.02 &&
+        h.currentPrice <= h.low52 * 1.03 &&
         canAdd('Buy', h.symbol)
       ) {
         const pctAboveLow = ((h.currentPrice - h.low52) / h.low52) * 100;
@@ -171,21 +174,21 @@ export const useInsights = () => {
           category: 'Buy',
           title: h.companyName || h.symbol,
           subtitle: `52W Low: ${formatCurrency(h.low52)}`,
-          reason: `Only ${pctAboveLow.toFixed(1)}% above its 52-week low — a potential long-term entry point.`,
+          reason: `Trading only ${pctAboveLow.toFixed(1)}% above its 52-week low. Attractive long-term risk/reward accumulation level.`,
           badge: 'Near 52W Low',
           symbol: h.symbol,
           logo: h.logo,
-          icon: 'Compass',
+          icon: 'Zap',
           value: `${pctAboveLow.toFixed(1)}% above low`,
           color: '#34C759',
           pnlPercentage: h.pnlPercentage,
-          severity: 2 - pctAboveLow, // closer to 52W low = higher severity
+          severity: 3 - pctAboveLow,
         });
         markAdded('Buy', h.symbol);
       }
     });
 
-    // ─── NOT SURE ─────────────────────────────────────────────────────────────
+    // ─── NOT SURE / OBSERVE ───────────────────────────────────────────────────
 
     // Not Sure: Near 52W High (within 2% of high)
     holdings.forEach((h) => {
@@ -196,15 +199,15 @@ export const useInsights = () => {
           category: 'Not Sure',
           title: h.companyName || h.symbol,
           subtitle: `52W High: ${formatCurrency(h.high52)}`,
-          reason: `Just ${pctBelowHigh.toFixed(1)}% below its 52-week high. Watch for a breakout or potential pullback.`,
-          badge: 'Near 52W High',
+          reason: `Trading ${pctBelowHigh.toFixed(1)}% below its 52-week high. Observe price action for breakout confirmation before adding.`,
+          badge: 'Watch Breakout',
           symbol: h.symbol,
           logo: h.logo,
-          icon: 'Zap',
+          icon: 'Eye',
           value: `${pctBelowHigh.toFixed(1)}% below high`,
-          color: '#FF9500',
+          color: '#007AFF',
           pnlPercentage: h.pnlPercentage,
-          severity: 2 - pctBelowHigh, // closer to 52W high = higher severity
+          severity: 2 - pctBelowHigh,
         });
       }
     });
@@ -241,13 +244,13 @@ export const useInsights = () => {
             category: 'Not Sure',
             title: h.companyName || h.symbol,
             subtitle: '3-Day Winning Streak',
-            reason: `Has risen for 3 consecutive days (+${streakGain.toFixed(1)}% over 3 days). Monitor for momentum continuation or a reversal.`,
-            badge: 'Winning Streak',
+            reason: `Up ${streakGain.toFixed(1)}% over the last 3 trading sessions. Observe whether upward momentum sustains.`,
+            badge: 'Momentum Watch',
             symbol: h.symbol,
             logo: h.logo,
-            icon: 'TrendingUp',
+            icon: 'Compass',
             value: `+${streakGain.toFixed(1)}% (3d)`,
-            color: '#34C759',
+            color: '#007AFF',
             pnlPercentage: h.pnlPercentage,
             severity: streakGain,
           });
@@ -259,13 +262,13 @@ export const useInsights = () => {
             category: 'Not Sure',
             title: h.companyName || h.symbol,
             subtitle: '3-Day Losing Streak',
-            reason: `Has fallen for 3 consecutive days (${streakLoss.toFixed(1)}% over 3 days). Watch for further weakness or a bounce opportunity.`,
-            badge: 'Losing Streak',
+            reason: `Down ${streakLoss.toFixed(1)}% over 3 days. Observe if support holds before considering averaging down.`,
+            badge: 'Support Watch',
             symbol: h.symbol,
             logo: h.logo,
-            icon: 'CircleArrowDown',
+            icon: 'Eye',
             value: `${streakLoss.toFixed(1)}% (3d)`,
-            color: '#FF3B30',
+            color: '#007AFF',
             pnlPercentage: h.pnlPercentage,
             severity: Math.abs(streakLoss),
           });
@@ -288,21 +291,21 @@ export const useInsights = () => {
           category: 'Not Sure',
           title: `${sector} Sector`,
           subtitle: 'Sector Concentration',
-          reason: `${percentage.toFixed(1)}% of your portfolio is in ${sector}. Consider diversifying to reduce sector-specific risk.`,
-          badge: 'Sector Risk',
-          icon: 'TriangleAlert',
-          value: `${percentage.toFixed(1)}% of portfolio`,
-          color: '#FF9500',
+          reason: `${percentage.toFixed(1)}% of your portfolio is concentrated in ${sector}. Observe market rotation and consider balancing across sectors.`,
+          badge: 'Sector Watch',
+          icon: 'Compass',
+          value: `${percentage.toFixed(1)}% weight`,
+          color: '#007AFF',
           severity: percentage,
         });
       }
     });
 
     // Sort each insight by severity descending so the most urgent appear first
-    list.sort((a, b) => b.severity - a.severity);
+    list.sort((a, b) => (b.severity ?? 0) - (a.severity ?? 0));
 
     return list;
-  }, [holdings, isPrivacyMode, showCurrencySymbol, tickers]);
+  }, [aiStockInsights, holdings, isPrivacyMode, showCurrencySymbol, tickers]);
 
   const countByCategory = useMemo(
     () => ({

@@ -83,7 +83,7 @@ Gainbase has two distinct user modes configured in `useAppModeStore` and switche
 *   **Detail Screens**: 
     *   `stock-details/[symbol]`: Real-time and historical transactions for a stock ticker, current/yesterday close price, gains.
     *   `portfolio-health`: Visual score gauges (out of 100) based on diversity, performance, risk concentration, and activity consistency.
-    *   `insights`: Actionable suggestions categorized into **Buy**, **Sell**, **Hold**, and **Not Sure**.
+    *   `insights`: Institutional-grade AI stock portfolio strategist evaluating live holdings, weightings, PnL, P/E ratios, and 52W levels into 4 clear actionable categories: **Buy** (which stocks to buy more / accumulate / average down), **Sell** (what to trim / take profits / stop-loss), **Hold** (core compounding runners to let ride), and **Not Sure** (positions and events to watch & observe).
     *   `forecast-details`: Custom portfolio forecasting (projections) adjusting years, SIP amount, step-up percentage, and inflation adjustments.
     *   `index-comparison`: Compares portfolio returns against indexes (e.g., Nifty 50, S&P 500).
 
