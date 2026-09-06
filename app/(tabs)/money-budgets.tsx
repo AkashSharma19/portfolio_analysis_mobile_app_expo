@@ -424,16 +424,17 @@ const styles = StyleSheet.create({
   },
   summarySubTitle: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
   summaryVal: {
-    fontSize: 22,
-    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 24,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   summaryLimit: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Outfit_400Regular',
   },
   badgePill: {
@@ -446,7 +447,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderStyle: 'dashed',
     borderRadius: 1,
-    marginVertical: 12,
+    marginVertical: 16,
   },
   summaryFooter: {
     flexDirection: 'row',
@@ -454,11 +455,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Outfit_400Regular',
   },
   footerValue: {
     fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   sectionHeader: {
     marginHorizontal: 20,
@@ -466,7 +469,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -519,7 +522,8 @@ const styles = StyleSheet.create({
   },
   catNameText: {
     fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
     flex: 1,
   },
   catHeaderRight: {
@@ -530,6 +534,8 @@ const styles = StyleSheet.create({
   },
   catSpentVal: {
     fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   catLimitVal: {
     fontSize: 11,

@@ -563,7 +563,7 @@ export default function AllTransactionsScreen() {
             <ThemedText style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>
               Total Income
             </ThemedText>
-            <ThemedText style={[styles.heroRowValue, { color: '#34C759', fontFamily: 'Outfit_600SemiBold' }]}>
+            <ThemedText style={[styles.heroRowValue, { color: '#34C759' }]}>
               +{formatAmount(stats.income)}
             </ThemedText>
           </View>
@@ -572,7 +572,7 @@ export default function AllTransactionsScreen() {
             <ThemedText style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>
               Total Expenses
             </ThemedText>
-            <ThemedText style={[styles.heroRowValue, { color: '#FF3B30', fontFamily: 'Outfit_600SemiBold' }]}>
+            <ThemedText style={[styles.heroRowValue, { color: '#FF3B30' }]}>
               -{formatAmount(stats.expense)}
             </ThemedText>
           </View>
@@ -580,7 +580,7 @@ export default function AllTransactionsScreen() {
           <View
             style={[
               styles.dashedDivider,
-              { borderColor: currColors.border, marginVertical: 12, marginBottom: 12 },
+              { borderColor: currColors.border, marginVertical: 16, marginBottom: 16 },
             ]}
           />
 
@@ -588,7 +588,7 @@ export default function AllTransactionsScreen() {
             <ThemedText style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>
               Net Cash Flow
             </ThemedText>
-            <ThemedText style={[styles.heroRowValue, { color: stats.net >= 0 ? '#34C759' : '#FF3B30', fontFamily: 'Outfit_600SemiBold' }]}>
+            <ThemedText style={[styles.heroRowValue, { color: stats.net >= 0 ? '#34C759' : '#FF3B30' }]}>
               {stats.net >= 0 ? '+' : ''}{formatAmount(stats.net)}
             </ThemedText>
           </View>
@@ -905,35 +905,37 @@ const styles = StyleSheet.create({
   },
   heroLabel: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
   heroValue: {
     fontSize: 24,
-    fontFamily: 'Outfit_600SemiBold',
-    marginBottom: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
+    marginBottom: 16,
   },
   dashedDivider: {
     height: 1,
     borderWidth: 1,
     borderStyle: 'dashed',
     borderRadius: 1,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   heroRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   heroRowLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Outfit_400Regular',
   },
   heroRowValue: {
     fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   scrollContent: {
     paddingBottom: 40,

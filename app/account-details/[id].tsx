@@ -484,14 +484,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   balanceLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
+    textTransform: 'uppercase',
     marginBottom: 6,
   },
   balanceText: {
-    fontSize: 32,
-    fontFamily: 'Outfit_500Medium',
+    fontSize: 24,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   limitRow: {
     flexDirection: 'row',
@@ -507,8 +509,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   limitVal: {
-    fontSize: 15,
-    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   detailsRow: {
     borderTopWidth: 1,
@@ -524,9 +527,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   emptyCard: {
     marginHorizontal: 16,
@@ -567,7 +571,8 @@ const styles = StyleSheet.create({
   },
   txLabelText: {
     fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   txSubText: {
     fontSize: 11,
@@ -580,7 +585,8 @@ const styles = StyleSheet.create({
   },
   txAmountText: {
     fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   deleteTxBtn: {
     padding: 4,

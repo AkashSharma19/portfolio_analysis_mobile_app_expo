@@ -480,21 +480,22 @@ const styles = StyleSheet.create({
   },
   burdenTitle: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   burdenValue: {
     fontSize: 24,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   dashedDivider: {
     height: 1,
     borderWidth: 1,
     borderStyle: 'dashed',
     borderRadius: 1,
-    marginVertical: 14,
+    marginVertical: 16,
   },
   burdenFooter: {
     flexDirection: 'row',
@@ -502,11 +503,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Outfit_400Regular',
   },
   footerValue: {
-    fontSize: 15,
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   sectionHeader: {
     marginHorizontal: 20,
@@ -514,7 +517,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -561,7 +564,8 @@ const styles = StyleSheet.create({
   },
   accountName: {
     fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
     marginBottom: 2,
   },
   accountSub: {
@@ -576,6 +580,8 @@ const styles = StyleSheet.create({
   },
   accountBalance: {
     fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   iconRoundBox: {
     borderRadius: 20,

@@ -568,14 +568,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   balanceLabel: {
-    fontSize: 11,
-    fontFamily: 'Outfit_500Medium',
+    fontSize: 10,
+    fontWeight: '700',
     letterSpacing: 1,
+    textTransform: 'uppercase',
     marginBottom: 6,
   },
   balanceText: {
-    fontSize: 32,
-    fontFamily: 'Outfit_500Medium',
+    fontSize: 24,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   detailsGrid: {
     borderTopWidth: 1,
@@ -593,8 +595,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   detailVal: {
-    fontSize: 15,
-    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   linkedAccountRow: {
     flexDirection: 'row',

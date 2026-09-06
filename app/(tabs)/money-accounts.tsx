@@ -731,44 +731,45 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   iconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
   netWorthLabel: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
   netWorthVal: {
     fontSize: 24,
-    fontFamily: 'Outfit_600SemiBold',
-    marginBottom: 14,
-    marginTop: 2,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
+    marginBottom: 16,
   },
   dashedDivider: {
     height: 1,
     borderWidth: 1,
     borderStyle: 'dashed',
     borderRadius: 1,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   heroRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   heroRowLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Outfit_400Regular',
   },
   heroRowValue: {
     fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   scrollContent: {
     paddingBottom: 110,
@@ -778,7 +779,7 @@ const styles = StyleSheet.create({
   },
   groupTitle: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -791,7 +792,8 @@ const styles = StyleSheet.create({
   },
   groupTotalText: {
     fontSize: 12,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   groupWrapperCard: {
     marginHorizontal: 16,
@@ -828,7 +830,8 @@ const styles = StyleSheet.create({
   },
   accountName: {
     fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   warningBadge: {
     paddingHorizontal: 6,
@@ -850,6 +853,8 @@ const styles = StyleSheet.create({
   },
   accountBalance: {
     fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   utilizationContainer: {
     width: '100%',

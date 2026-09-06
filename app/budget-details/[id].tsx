@@ -450,13 +450,15 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
+    textTransform: 'uppercase',
     marginBottom: 4,
   },
   value: {
-    fontSize: 18,
-    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   sectionHeader: {
     marginHorizontal: 16,
@@ -465,8 +467,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   categoriesContainer: {
     marginHorizontal: 16,

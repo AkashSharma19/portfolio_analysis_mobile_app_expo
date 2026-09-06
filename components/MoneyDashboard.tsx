@@ -1199,11 +1199,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 8,
   },
   heroLabel: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -1212,38 +1212,39 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   iconButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
   heroValue: {
     fontSize: 24,
-    fontFamily: 'Outfit_600SemiBold',
-    marginBottom: 14,
-    marginTop: 2,
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
+    marginBottom: 16,
   },
   dashedDivider: {
     height: 1,
     borderWidth: 1,
     borderStyle: 'dashed',
     borderRadius: 1,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   heroRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   heroRowLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Outfit_400Regular',
   },
   heroRowValue: {
     fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   daysLeftPill: {
     paddingHorizontal: 6,
@@ -1273,7 +1274,7 @@ const styles = StyleSheet.create({
   },
   compactCardSectionLabel: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -1296,7 +1297,7 @@ const styles = StyleSheet.create({
   },
   chartCenterNum: {
     fontSize: 17,
-    fontFamily: 'Outfit_600SemiBold',
+    fontFamily: 'Outfit_500Medium',
     lineHeight: 20,
   },
   chartCenterSub: {
@@ -1314,7 +1315,7 @@ const styles = StyleSheet.create({
   },
   compactFooterBadgeText: {
     fontSize: 10,
-    fontFamily: 'Outfit_600SemiBold',
+    fontFamily: 'Outfit_500Medium',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
@@ -1362,12 +1363,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingTop: 16,
     paddingBottom: 10,
   },
   innerSectionTitle: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -1375,9 +1376,9 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   iconCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1408,6 +1409,7 @@ const styles = StyleSheet.create({
   },
   accountRowValue: {
     fontSize: 14,
+    fontWeight: '400',
     fontFamily: 'Outfit_400Regular',
   },
 
@@ -1438,7 +1440,8 @@ const styles = StyleSheet.create({
   },
   txCategory: {
     fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
   txDate: {
     fontSize: 11,
@@ -1447,6 +1450,7 @@ const styles = StyleSheet.create({
   },
   txAmount: {
     fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
+    fontWeight: '400',
+    fontFamily: 'Outfit_400Regular',
   },
 });
