@@ -193,6 +193,10 @@ function RootLayoutNav() {
             options={{ animation: 'slide_from_right', headerShown: false }}
           />
           <Stack.Screen
+            name="prepay-loan/[id]"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
             name="add-loan"
             options={{ presentation: 'modal', headerShown: false }}
           />
@@ -210,6 +214,10 @@ function RootLayoutNav() {
           />
           <Stack.Screen
             name="budget-details/[id]"
+            options={{ animation: 'slide_from_right', headerShown: false }}
+          />
+          <Stack.Screen
+            name="money-analytics"
             options={{ animation: 'slide_from_right', headerShown: false }}
           />
           <Stack.Screen

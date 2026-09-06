@@ -19,12 +19,11 @@ import {
   Edit2,
   Trash2,
   Calendar,
-  DollarSign,
-  TrendingDown,
   ChevronDown,
   Info,
   X,
   Check,
+  Zap,
 } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -36,12 +35,14 @@ import { EMIPayment } from '@/types/money';
 import { formatIndianAmount, parseIndianAmount } from '@/utils/formatters';
 
 const TYPE_CONFIG = {
-  home: { label: 'Home Loan', color: '#007AFF' },
-  car: { label: 'Car Loan', color: '#34C759' },
-  personal: { label: 'Personal Loan', color: '#FF9500' },
-  education: { label: 'Education Loan', color: '#AF52DE' },
-  other: { label: 'Other Loan', color: '#8E8E93' },
+  home: { label: 'Home Loan', color: '#007AFF', emoji: '🏠' },
+  car: { label: 'Car Loan', color: '#34C759', emoji: '🚗' },
+  personal: { label: 'Personal Loan', color: '#FF9500', emoji: '💰' },
+  education: { label: 'Education Loan', color: '#AF52DE', emoji: '🎓' },
+  other: { label: 'Other Loan', color: '#8E8E93', emoji: '🏦' },
 };
+
+type ScheduleTab = 'upcoming' | 'paid' | 'all';
 
 export default function LoanDetailsScreen() {
   const router = useRouter();
@@ -75,8 +76,7 @@ export default function LoanDetailsScreen() {
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [id, emiPayments]);
 
-  const [prepayAmount, setPrepayAmount] = useState('');
-  const [showPrepayCalc, setShowPrepayCalc] = useState(false);
+  const [scheduleTab, setScheduleTab] = useState<ScheduleTab>('upcoming');
 
   // Log Payment Modal states
   const [showLogPaymentModal, setShowLogPaymentModal] = useState(false);
@@ -105,6 +105,10 @@ export default function LoanDetailsScreen() {
     return loanPayments.reduce((sum, p) => sum + (p.principalPortion || p.amount), 0);
   }, [loanPayments]);
 
+  const totalInterestPaid = useMemo(() => {
+    return loanPayments.reduce((sum, p) => sum + (p.interestPortion || 0), 0);
+  }, [loanPayments]);
+
   const effectiveOutstanding = useMemo(() => {
     if (!loan) return 0;
     if (loanPayments.length > 0) {
@@ -113,7 +117,67 @@ export default function LoanDetailsScreen() {
     return loan.outstandingAmount;
   }, [loan, loanPayments, totalPrincipalPaid]);
 
-  // Amortization Schedule Calculation (Generates the next 12 installments + past payments)
+  // Compute remaining months
+  const monthsRemaining = useMemo(() => {
+    if (!loan || effectiveOutstanding <= 0 || loan.emiAmount <= 0) return 0;
+    const r = (loan.interestRate / 12) / 100;
+    const emi = loan.emiAmount;
+    if (r > 0 && emi <= effectiveOutstanding * r) {
+      return Math.round(effectiveOutstanding / emi);
+    }
+    let balance = effectiveOutstanding;
+    let count = 0;
+    while (balance > 0 && count < 480) {
+      const interest = balance * r;
+      const principal = emi - interest;
+      if (principal <= 0) break;
+      balance -= Math.min(balance, principal);
+      count++;
+    }
+    return count;
+  }, [loan, effectiveOutstanding]);
+
+  // Next Due Date & Days Left calculation
+  const nextDueDateInfo = useMemo(() => {
+    if (!loan || effectiveOutstanding <= 0) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const start = new Date(loan.startDate);
+    const day = start.getDate();
+
+    const hasPaidThisMonth = loanPayments.some(
+      (p) =>
+        new Date(p.date).getMonth() === today.getMonth() &&
+        new Date(p.date).getFullYear() === today.getFullYear()
+    );
+
+    let nextDue = new Date(today.getFullYear(), today.getMonth(), day);
+    if (nextDue.getMonth() !== today.getMonth()) {
+      nextDue = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+
+    if (hasPaidThisMonth) {
+      nextDue = new Date(today.getFullYear(), today.getMonth() + 1, day);
+      if (nextDue.getMonth() !== (today.getMonth() + 1) % 12) {
+        nextDue = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+      }
+    }
+
+    if (nextDue < start) {
+      nextDue = new Date(start);
+    }
+
+    const diffDays = Math.ceil((nextDue.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return {
+      date: nextDue,
+      dateFormatted: nextDue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+      daysLeft: diffDays,
+      isDueSoon: diffDays >= 0 && diffDays <= 5,
+    };
+  }, [loan, loanPayments, effectiveOutstanding]);
+
+  // Amortization Schedule Calculation
   const amortizationSchedule = useMemo(() => {
     if (!loan) return [];
 
@@ -121,33 +185,53 @@ export default function LoanDetailsScreen() {
     
     // 1. Process past paid payments (oldest first)
     const pastPaymentsAsc = [...loanPayments].reverse();
-    let bal = effectiveOutstanding;
     
-    // Calculate start balances and end balances backwards for past payments
-    const pastScheduleRows = [];
+    // Compute running balance
+    const balances: number[] = [];
+    let b = effectiveOutstanding;
     for (let i = pastPaymentsAsc.length - 1; i >= 0; i--) {
       const p = pastPaymentsAsc[i];
-      const startBalance = bal + p.principalPortion;
-      const endBalance = bal;
-      bal = startBalance; // update bal backwards
+      const startBal = b + (p.principalPortion || p.amount);
+      balances[i] = startBal;
+      b = startBal;
+    }
+
+    let regularEmiCount = 0;
+    const pastScheduleRows = [];
+    for (let i = 0; i < pastPaymentsAsc.length; i++) {
+      const p = pastPaymentsAsc[i];
+      const startBalance = balances[i];
+      const endBalance = startBalance - (p.principalPortion || p.amount);
 
       const labelDate = new Date(p.date);
       const monthLabel = labelDate.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
 
+      // Identify prepayment: 0 interest portion or explicit prepayment
+      const isPrepayment = (loan.interestRate > 0 && p.interestPortion === 0) ||
+                           (p.interestPortion === 0 && Math.abs(p.amount - loan.emiAmount) > 1);
+
+      let emiNumber: number | null = null;
+      if (!isPrepayment) {
+        regularEmiCount++;
+        emiNumber = regularEmiCount;
+      }
+
       pastScheduleRows.unshift({
         id: p.id,
+        emiNumber,
+        isPrepayment,
         isPaid: true,
         isUpcoming: false,
         monthLabel,
         startBalance,
         emi: p.amount,
-        principalPortion: p.principalPortion,
-        interestPortion: p.interestPortion,
+        principalPortion: p.principalPortion || p.amount,
+        interestPortion: p.interestPortion || 0,
         endBalance,
+        paymentRef: p,
       });
     }
     
-    // Push past payments in chronological order (oldest first)
     schedule.push(...pastScheduleRows);
 
     // 2. Generate future projections starting from the next unpaid month
@@ -164,7 +248,8 @@ export default function LoanDetailsScreen() {
       nextUnpaidDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
     }
 
-    for (let i = 0; i < 12 && balance > 0; i++) {
+    let i = 0;
+    while (balance > 0.01 && i < 480) {
       const interestPortion = balance * rate;
       const principalPortion = Math.min(balance, emi - interestPortion);
       const startBalance = balance;
@@ -175,6 +260,8 @@ export default function LoanDetailsScreen() {
 
       schedule.push({
         id: `projected-${i}`,
+        emiNumber: regularEmiCount + i + 1,
+        isPrepayment: false,
         isPaid: false,
         isUpcoming: i === 0,
         monthLabel,
@@ -184,83 +271,35 @@ export default function LoanDetailsScreen() {
         interestPortion,
         endBalance: balance,
       });
+      i++;
     }
 
     return schedule;
   }, [loan, loanPayments, effectiveOutstanding]);
 
-  // Prepayment projection calculations
-  const prepaymentSavings = useMemo(() => {
-    const prepay = parseIndianAmount(prepayAmount);
-    if (!loan || isNaN(prepay) || prepay <= 0 || prepay > loan.outstandingAmount) {
-      return null;
+  // Upcoming count
+  const upcomingCount = useMemo(() => {
+    return amortizationSchedule.filter((r) => !r.isPaid).length;
+  }, [amortizationSchedule]);
+
+  // Filtered schedule based on active tab
+  const filteredSchedule = useMemo(() => {
+    if (scheduleTab === 'upcoming') {
+      return amortizationSchedule.filter((r) => !r.isPaid);
     }
-
-    // Current projection without prepayment
-    let currentBalance = loan.outstandingAmount;
-    const r = (loan.interestRate / 12) / 100;
-    const emi = loan.emiAmount;
-    
-    let currentMonthsRemaining = 0;
-    let currentTotalInterest = 0;
-    while (currentBalance > 0 && currentMonthsRemaining < 480) {
-      const interest = currentBalance * r;
-      const principal = Math.min(currentBalance, emi - interest);
-      currentTotalInterest += interest;
-      currentBalance -= principal;
-      currentMonthsRemaining++;
+    if (scheduleTab === 'paid') {
+      return amortizationSchedule.filter((r) => r.isPaid);
     }
-
-    // Option 1: Keep EMI Same, Reduce Tenure
-    let balanceOpt1 = loan.outstandingAmount - prepay;
-    let newMonthsRemaining = 0;
-    let newTotalInterestOpt1 = 0;
-    while (balanceOpt1 > 0 && newMonthsRemaining < 480) {
-      const interest = balanceOpt1 * r;
-      const principal = Math.min(balanceOpt1, emi - interest);
-      newTotalInterestOpt1 += interest;
-      balanceOpt1 -= principal;
-      newMonthsRemaining++;
-    }
-
-    // Option 2: Keep Tenure Same, Reduce EMI
-    const balanceOpt2 = loan.outstandingAmount - prepay;
-    const N_rem = currentMonthsRemaining;
-    let newEmiOpt2 = 0;
-    let interestSavedOpt2 = 0;
-    let emiReducedOpt2 = 0;
-
-    if (N_rem > 0 && balanceOpt2 > 0) {
-      if (r > 0) {
-        newEmiOpt2 = (balanceOpt2 * r * Math.pow(1 + r, N_rem)) / (Math.pow(1 + r, N_rem) - 1);
-      } else {
-        newEmiOpt2 = balanceOpt2 / N_rem;
-      }
-      emiReducedOpt2 = Math.max(0, emi - newEmiOpt2);
-      
-      const newTotalInterestOpt2 = (newEmiOpt2 * N_rem) - balanceOpt2;
-      interestSavedOpt2 = Math.max(0, currentTotalInterest - newTotalInterestOpt2);
-    }
-
-    return {
-      // Option 1: Reduce Tenure
-      interestSaved: Math.max(0, currentTotalInterest - newTotalInterestOpt1),
-      monthsSaved: Math.max(0, currentMonthsRemaining - newMonthsRemaining),
-      
-      // Option 2: Reduce EMI
-      newEmiOpt2,
-      emiReducedOpt2,
-      interestSavedOpt2,
-    };
-  }, [loan, prepayAmount]);
+    return amortizationSchedule;
+  }, [amortizationSchedule, scheduleTab]);
 
   const config = loan ? (TYPE_CONFIG[loan.type] || TYPE_CONFIG.other) : TYPE_CONFIG.other;
 
   const formatAmount = (val: number) => {
-    if (isPrivacyMode) return '****';
+    if (isPrivacyMode) return '••••••';
     const formatted = Math.abs(val).toLocaleString('en-IN', {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
+      maximumFractionDigits: 0,
     });
     const prefix = val < 0 ? '-' : '';
     const symbol = showCurrencySymbol ? '₹' : '';
@@ -305,10 +344,8 @@ export default function LoanDetailsScreen() {
           style: 'destructive',
           onPress: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            // 1. Find if there is a matching transaction
             let txId = payment.transactionId;
             if (!txId) {
-              // Fallback match: same amount and within 5 seconds of the payment date
               const pTime = new Date(payment.date).getTime();
               const matchedTx = moneyTransactions.find((t) => {
                 const tTime = new Date(t.date).getTime();
@@ -334,7 +371,7 @@ export default function LoanDetailsScreen() {
     handleHaptic();
     if (!loan) return;
 
-    if (loan.outstandingAmount <= 0) {
+    if (effectiveOutstanding <= 0) {
       Alert.alert('Loan Completed', 'This loan is already paid off!');
       return;
     }
@@ -363,12 +400,11 @@ export default function LoanDetailsScreen() {
     }
 
     const rate = (loan.interestRate / 12) / 100;
-    const interestPortion = Math.min(loan.outstandingAmount * rate, A);
-    const principalPortion = Math.min(loan.outstandingAmount, A - interestPortion);
+    const interestPortion = Math.min(effectiveOutstanding * rate, A);
+    const principalPortion = Math.min(effectiveOutstanding, A - interestPortion);
     const finalAmount = interestPortion + principalPortion;
 
     const txId = Math.random().toString(36).substring(2, 9);
-    // 1. Add payment record
     const payment: EMIPayment = {
       id: Math.random().toString(36).substring(2, 9),
       loanId: loan.id,
@@ -381,7 +417,6 @@ export default function LoanDetailsScreen() {
     };
     addEMIPayment(payment);
 
-    // 2. Add as transaction in Money Manager (expense type)
     addMoneyTransaction({
       id: txId,
       type: 'expense',
@@ -389,69 +424,11 @@ export default function LoanDetailsScreen() {
       category: selectedCategory,
       accountId: selectedAccountId,
       date: new Date().toISOString(),
-      note: `EMI payment for ${loan.name}` + (finalAmount > loan.emiAmount ? ' (includes prepayment)' : ''),
+      note: `EMI payment for ${loan.name}` + (finalAmount > loan.emiAmount ? ' (includes extra prepayment)' : ''),
       isRecurring: false,
     });
 
     setShowLogPaymentModal(false);
-  };
-
-  const handlePrepay = () => {
-    handleHaptic();
-    const amount = parseIndianAmount(prepayAmount);
-    if (isNaN(amount) || amount <= 0 || !loan) {
-      Alert.alert('Error', 'Please enter a valid prepayment amount.');
-      return;
-    }
-    if (amount > loan.outstandingAmount) {
-      Alert.alert('Error', 'Prepayment amount cannot exceed outstanding balance.');
-      return;
-    }
-
-    Alert.alert(
-      'Make Prepayment',
-      `Log a prepayment of ${formatAmount(amount)}? This will reduce the outstanding balance directly.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            
-            const txId = Math.random().toString(36).substring(2, 9);
-            // 1. Reduce outstanding balance by adding payment
-            const payment: EMIPayment = {
-              id: Math.random().toString(36).substring(2, 9),
-              loanId: loan.id,
-              amount: amount,
-              principalPortion: amount,
-              interestPortion: 0,
-              date: new Date().toISOString(),
-              status: 'paid',
-              transactionId: txId,
-            };
-            addEMIPayment(payment);
-
-            // 2. Add expense transaction
-            if (loan.linkedAccountId) {
-              addMoneyTransaction({
-                id: txId,
-                type: 'expense',
-                amount,
-                category: 'EMI Payments',
-                accountId: loan.linkedAccountId,
-                date: new Date().toISOString(),
-                note: `Prepayment for ${loan.name}`,
-                isRecurring: false,
-              });
-            }
-
-            setPrepayAmount('');
-            setShowPrepayCalc(false);
-          },
-        },
-      ]
-    );
   };
 
   if (!loan) {
@@ -465,8 +442,7 @@ export default function LoanDetailsScreen() {
   }
 
   // Calculate overall paid progress
-  const totalPaid = Math.max(0, loan.principalAmount - effectiveOutstanding);
-  const paidPercentage = loan.principalAmount > 0 ? (totalPaid / loan.principalAmount) * 100 : 0;
+  const paidPercentage = loan.principalAmount > 0 ? (totalPrincipalPaid / loan.principalAmount) * 100 : 0;
   const linkedAccount = accounts.find((a) => a.id === loan.linkedAccountId);
 
   return (
@@ -502,321 +478,269 @@ export default function LoanDetailsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false}>
-        {/* Outstanding Card */}
+        {/* ─── 1. Unified Hero Card (Outstanding, Progress Bar & Metrics in 1 Card) ─── */}
         <View style={[styles.outstandingCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
-          <View style={[styles.indicatorPill, { backgroundColor: `${config.color}15` }]}>
-            <ThemedText style={[styles.indicatorText, { color: config.color }]}>
-              {loan.lenderName.toUpperCase()}
+          {/* Header & Lender */}
+          <View style={styles.heroHeaderRow}>
+            <ThemedText style={[styles.heroLabel, { color: currColors.textSecondary }]}>
+              OUTSTANDING BALANCE
             </ThemedText>
+            <View style={[styles.indicatorPill, { backgroundColor: `${config.color}15` }]}>
+              <ThemedText style={[styles.indicatorText, { color: config.color }]}>
+                {loan.lenderName.toUpperCase()}
+              </ThemedText>
+            </View>
           </View>
-          <ThemedText style={[styles.balanceLabel, { color: currColors.textSecondary }]}>OUTSTANDING DEBT</ThemedText>
-          <ThemedText style={[styles.balanceText, { color: currColors.text }]}>
+
+          {/* Outstanding Balance */}
+          <ThemedText style={[styles.heroValue, { color: currColors.text }]}>
             {formatAmount(effectiveOutstanding)}
           </ThemedText>
 
-          {/* Progress bar */}
-          <View style={styles.progressSection}>
-            <View style={[styles.progressBarBG, { backgroundColor: currColors.cardSecondary }]}>
-              <View style={[styles.progressBarFill, { width: `${Math.min(100, paidPercentage)}%`, backgroundColor: config.color }]} />
-            </View>
-            <View style={styles.progressLabels}>
-              <ThemedText style={{ fontSize: 11, color: currColors.textSecondary }}>
-                {paidPercentage.toFixed(1)}% paid
-              </ThemedText>
-              <ThemedText style={{ fontSize: 11, color: currColors.textSecondary }}>
-                Total Principal: {formatAmount(loan.principalAmount)}
-              </ThemedText>
-            </View>
-          </View>
-
-          {/* Details list */}
-          <View style={[styles.detailsGrid, { borderTopColor: currColors.border }]}>
-            <View style={styles.detailsCol}>
-              <ThemedText style={[styles.detailLabel, { color: currColors.textSecondary }]}>Interest Rate</ThemedText>
-              <ThemedText style={[styles.detailVal, { color: currColors.text }]}>{loan.interestRate}% p.a.</ThemedText>
-            </View>
-            <View style={styles.detailsCol}>
-              <ThemedText style={[styles.detailLabel, { color: currColors.textSecondary }]}>EMI Amount</ThemedText>
-              <ThemedText style={[styles.detailVal, { color: config.color }]}>{formatAmount(loan.emiAmount)}/mo</ThemedText>
-            </View>
-            <View style={styles.detailsCol}>
-              <ThemedText style={[styles.detailLabel, { color: currColors.textSecondary }]}>Tenure</ThemedText>
-              <ThemedText style={[styles.detailVal, { color: currColors.text }]}>{loan.tenureMonths} Months</ThemedText>
-            </View>
-          </View>
-
-          {linkedAccount ? (
-            <View style={[styles.linkedAccountRow, { backgroundColor: currColors.cardSecondary }]}>
-              <Info size={14} color={currColors.textSecondary} />
-              <ThemedText style={{ fontSize: 11, color: currColors.textSecondary, marginLeft: 8 }}>
-                EMIs debited from: <ThemedText style={{ fontFamily: 'Outfit_600SemiBold', color: currColors.text }}>{linkedAccount.name}</ThemedText>
-              </ThemedText>
-            </View>
-          ) : null}
-        </View>
-
-        {/* Log EMI Payment CTA Button */}
-        {loan.outstandingAmount > 0 ? (
-          <TouchableOpacity
-            style={[styles.payEmiBtn, { backgroundColor: config.color }]}
-            activeOpacity={0.8}
-            onPress={handleLogPayment}
-          >
-            <Calendar size={20} color="#FFFFFF" />
-            <ThemedText style={styles.payEmiBtnText}>
-              Log EMI Payment ({formatAmount(loan.emiAmount)})
-            </ThemedText>
-          </TouchableOpacity>
-        ) : null}
-
-        {/* Prepayment Calculator Section */}
-        <View style={styles.sectionContainer}>
-          <TouchableOpacity
-            style={[styles.sectionHeaderClickable, { backgroundColor: currColors.card, borderColor: currColors.border }]}
-            activeOpacity={0.8}
-            onPress={() => {
-              handleHaptic();
-              setShowPrepayCalc(!showPrepayCalc);
-            }}
-          >
-            <View style={styles.clickableHeaderLeft}>
-              <TrendingDown size={20} color="#00C9A7" />
-              <ThemedText style={[styles.clickableHeaderTitle, { color: currColors.text }]}>
-                Prepayment Savings Calculator
-              </ThemedText>
-            </View>
-            <ChevronDown
-              size={18}
-              color={currColors.textSecondary}
-              style={{ transform: [{ rotate: showPrepayCalc ? '180deg' : '0deg' }] }}
-            />
-          </TouchableOpacity>
-
-          {showPrepayCalc && (
-            <View style={[styles.calculatorBody, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
-              <ThemedText style={[styles.calcLabel, { color: currColors.textSecondary }]}>
-                ENTER PREPAYMENT AMOUNT
-              </ThemedText>
-              <View style={styles.calcInputRow}>
-                <TextInput
-                  style={[styles.calcInput, { color: currColors.text, borderColor: currColors.border }]}
-                  placeholder="e.g. 50,000"
-                  placeholderTextColor={currColors.textSecondary}
-                  keyboardType="numeric"
-                  value={prepayAmount}
-                  onChangeText={(val) => setPrepayAmount(formatIndianAmount(val))}
-                />
-                <TouchableOpacity
-                  style={[styles.calcBtn, { backgroundColor: '#00C9A7' }]}
-                  onPress={handlePrepay}
-                >
-                  <ThemedText style={styles.calcBtnText}>Apply</ThemedText>
-                </TouchableOpacity>
-              </View>
-
-              {prepaymentSavings && (
-                <View style={{ marginTop: 16 }}>
-                  {/* Option 1: Reduce Tenure */}
-                  <View style={[styles.savingsCard, { backgroundColor: currColors.cardSecondary, marginBottom: 12 }]}>
-                    <View style={{ width: '100%', marginBottom: 8 }}>
-                      <ThemedText style={{ fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: '#00C9A7' }}>
-                        OPTION 1: REDUCE TENURE (KEEP EMI SAME)
-                      </ThemedText>
-                    </View>
-                    <View style={styles.savingsCol}>
-                      <ThemedText style={{ fontSize: 10, color: currColors.textSecondary, fontFamily: 'Outfit_500Medium' }}>
-                        INTEREST SAVED
-                      </ThemedText>
-                      <ThemedText style={{ fontSize: 16, fontFamily: 'Outfit_600SemiBold', color: '#34C759', marginTop: 4 }}>
-                        {formatAmount(prepaymentSavings.interestSaved)}
-                      </ThemedText>
-                    </View>
-                    <View style={styles.savingsCol}>
-                      <ThemedText style={{ fontSize: 10, color: currColors.textSecondary, fontFamily: 'Outfit_500Medium' }}>
-                        TENURE REDUCED BY
-                      </ThemedText>
-                      <ThemedText style={{ fontSize: 16, fontFamily: 'Outfit_600SemiBold', color: '#007AFF', marginTop: 4 }}>
-                        {prepaymentSavings.monthsSaved} months
-                      </ThemedText>
-                    </View>
-                  </View>
-
-                  {/* Option 2: Reduce EMI */}
-                  <View style={[styles.savingsCard, { backgroundColor: currColors.cardSecondary }]}>
-                    <View style={{ width: '100%', marginBottom: 8 }}>
-                      <ThemedText style={{ fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: '#FF9500' }}>
-                        OPTION 2: REDUCE EMI (KEEP TENURE SAME)
-                      </ThemedText>
-                    </View>
-                    <View style={styles.savingsCol}>
-                      <ThemedText style={{ fontSize: 10, color: currColors.textSecondary, fontFamily: 'Outfit_500Medium' }}>
-                        INTEREST SAVED
-                      </ThemedText>
-                      <ThemedText style={{ fontSize: 16, fontFamily: 'Outfit_600SemiBold', color: '#34C759', marginTop: 4 }}>
-                        {formatAmount(prepaymentSavings.interestSavedOpt2)}
-                      </ThemedText>
-                    </View>
-                    <View style={styles.savingsCol}>
-                      <ThemedText style={{ fontSize: 10, color: currColors.textSecondary, fontFamily: 'Outfit_500Medium' }}>
-                        NEW MONTHLY EMI
-                      </ThemedText>
-                      <ThemedText style={{ fontSize: 16, fontFamily: 'Outfit_600SemiBold', color: '#FF9500', marginTop: 4 }}>
-                        {formatAmount(prepaymentSavings.newEmiOpt2)}
-                      </ThemedText>
-                      <ThemedText style={{ fontSize: 9, color: currColors.textSecondary, marginTop: 2 }}>
-                        Saves {formatAmount(prepaymentSavings.emiReducedOpt2)}/mo
-                      </ThemedText>
-                    </View>
-                  </View>
-                </View>
-              )}
-            </View>
-          )}
-        </View>
-
-        {/* Amortization Schedule Preview */}
-        <View style={styles.sectionHeader}>
-          <ThemedText style={[styles.sectionTitle, { color: currColors.textSecondary }]}>
-            LOAN AMORTIZATION SCHEDULE
-          </ThemedText>
-        </View>
-
-        <View style={[styles.amortCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
-          <View style={[styles.amortRowHeader, { borderBottomColor: currColors.border }]}>
-            <ThemedText style={styles.amortColHeader}>Month</ThemedText>
-            <ThemedText style={styles.amortColHeader}>Principal</ThemedText>
-            <ThemedText style={styles.amortColHeader}>Interest</ThemedText>
-            <ThemedText style={styles.amortColHeaderRight}>Remaining</ThemedText>
-          </View>
-          
-          {amortizationSchedule.map((row) => (
+          {/* Progress Bar */}
+          <View style={[styles.progressBarBG, { backgroundColor: currColors.cardSecondary }]}>
             <View
-              key={row.id || row.monthLabel}
               style={[
-                styles.amortRow,
-                row.isUpcoming && {
-                  backgroundColor: 'rgba(255, 179, 0, 0.1)',
-                  borderColor: 'rgba(255, 179, 0, 0.35)',
-                  borderWidth: 1,
-                  borderRadius: 10,
-                  marginVertical: 3,
-                  paddingHorizontal: 8,
+                styles.progressBarFill,
+                {
+                  width: `${Math.min(100, Math.max(2, paidPercentage))}%`,
+                  backgroundColor: config.color,
                 },
               ]}
+            />
+          </View>
+
+          {/* Progress Micro Labels */}
+          <View style={styles.progressMetaRow}>
+            <ThemedText style={[styles.progressMetaText, { color: currColors.textSecondary }]}>
+              {paidPercentage.toFixed(0)}% paid ({formatAmount(totalPrincipalPaid)})
+            </ThemedText>
+            <ThemedText style={[styles.progressMetaText, { color: currColors.textSecondary }]}>
+              {monthsRemaining} of {loan.tenureMonths} mos left
+            </ThemedText>
+          </View>
+
+          {/* Dashed Divider */}
+          <View style={[styles.dashedDivider, { borderColor: currColors.border }]} />
+
+          {/* Metrics Rows */}
+          <View style={styles.heroRow}>
+            <ThemedText style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>
+              Monthly EMI
+            </ThemedText>
+            <ThemedText style={[styles.heroRowValue, { color: config.color }]}>
+              {formatAmount(loan.emiAmount)}/mo
+            </ThemedText>
+          </View>
+
+          <View style={styles.heroRow}>
+            <ThemedText style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>
+              Interest rate
+            </ThemedText>
+            <ThemedText style={[styles.heroRowValue, { color: currColors.text }]}>
+              {loan.interestRate}% p.a.
+            </ThemedText>
+          </View>
+
+          <View style={styles.heroRow}>
+            <ThemedText style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>
+              Original loan
+            </ThemedText>
+            <ThemedText style={[styles.heroRowValue, { color: currColors.text }]}>
+              {formatAmount(loan.principalAmount)}
+            </ThemedText>
+          </View>
+
+          <View style={[styles.heroRow, { marginBottom: 0 }]}>
+            <ThemedText style={[styles.heroRowLabel, { color: currColors.textSecondary }]}>
+              Next due
+            </ThemedText>
+            <ThemedText style={[styles.heroRowValue, { color: nextDueDateInfo?.isDueSoon ? '#FF9500' : currColors.text }]}>
+              {nextDueDateInfo ? `${nextDueDateInfo.dateFormatted} (${nextDueDateInfo.daysLeft > 0 ? `in ${nextDueDateInfo.daysLeft}d` : 'Today'})` : 'Paid off'}
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* ─── 2. Quick Action Pills Bar ─── */}
+        {effectiveOutstanding > 0 && (
+          <View style={styles.actionPillRow}>
+            <TouchableOpacity
+              style={[styles.primaryActionPill, { backgroundColor: config.color }]}
+              activeOpacity={0.8}
+              onPress={handleLogPayment}
             >
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                {row.isPaid ? (
-                  <Check size={12} color="#34C759" strokeWidth={3.5} />
-                ) : row.isUpcoming ? (
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFB300' }} />
-                ) : null}
-                <ThemedText
-                  style={{
-                    fontSize: 12,
-                    fontFamily: row.isUpcoming ? 'Outfit_600SemiBold' : 'Outfit_500Medium',
-                    color: row.isPaid
-                      ? '#34C759'
-                      : row.isUpcoming
-                        ? '#FFB300'
-                        : currColors.textSecondary,
-                  }}
-                >
-                  {row.monthLabel}
-                </ThemedText>
-              </View>
-              <ThemedText
-                style={[
-                  styles.amortColText,
-                  {
-                    color: row.isPaid
-                      ? currColors.textSecondary
-                      : currColors.text,
-                    fontFamily: row.isUpcoming ? 'Outfit_600SemiBold' : 'Outfit_500Medium',
-                  },
-                ]}
-              >
-                {formatAmount(row.principalPortion)}
+              <Calendar size={16} color="#FFFFFF" />
+              <ThemedText style={styles.primaryActionText}>
+                Log EMI ({formatAmount(loan.emiAmount)})
               </ThemedText>
-              <ThemedText
-                style={[
-                  styles.amortColText,
-                  {
-                    color: row.isPaid
-                      ? '#FF3B30' + '99'
-                      : row.isUpcoming
-                        ? '#FF9500'
-                        : '#FF3B30',
-                    fontFamily: row.isUpcoming ? 'Outfit_600SemiBold' : 'Outfit_500Medium',
-                  },
-                ]}
-              >
-                {formatAmount(row.interestPortion)}
-              </ThemedText>
-              <ThemedText
-                style={[
-                  styles.amortColTextRight,
-                  {
-                    color: row.isPaid
-                      ? currColors.textSecondary
-                      : currColors.text,
-                    fontFamily: 'Outfit_600SemiBold',
-                  },
-                ]}
-              >
-                {formatAmount(row.endBalance)}
-              </ThemedText>
-            </View>
-          ))}
-        </View>
+            </TouchableOpacity>
 
-        {/* Payment History timeline */}
-        <View style={styles.sectionHeader}>
+            <TouchableOpacity
+              style={[styles.secondaryActionPill, { backgroundColor: currColors.card, borderColor: '#00C9A740' }]}
+              activeOpacity={0.8}
+              onPress={() => {
+                handleHaptic();
+                router.push(`/prepay-loan/${loan.id}`);
+              }}
+            >
+              <Zap size={16} color="#00C9A7" />
+              <ThemedText style={[styles.secondaryActionText, { color: '#00C9A7' }]}>
+                Prepay
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ─── 3. Tabbed Amortization Schedule & History ─── */}
+        <View style={styles.scheduleHeaderRow}>
           <ThemedText style={[styles.sectionTitle, { color: currColors.textSecondary }]}>
-            EMI PAYMENTS RECORD ({loanPayments.length})
+            PAYMENT SCHEDULE ({filteredSchedule.length})
           </ThemedText>
+          {/* Segmented Filter Pills */}
+          <View style={[styles.scheduleToggleBar, { backgroundColor: currColors.cardSecondary }]}>
+            <TouchableOpacity
+              style={[styles.scheduleTogglePill, scheduleTab === 'upcoming' && { backgroundColor: currColors.card }]}
+              onPress={() => {
+                handleHaptic();
+                setScheduleTab('upcoming');
+              }}
+            >
+              <ThemedText style={{ fontSize: 11, color: scheduleTab === 'upcoming' ? '#00C9A7' : currColors.textSecondary, fontFamily: 'Outfit_500Medium' }}>
+                Upcoming ({upcomingCount})
+              </ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.scheduleTogglePill, scheduleTab === 'paid' && { backgroundColor: currColors.card }]}
+              onPress={() => {
+                handleHaptic();
+                setScheduleTab('paid');
+              }}
+            >
+              <ThemedText style={{ fontSize: 11, color: scheduleTab === 'paid' ? '#00C9A7' : currColors.textSecondary, fontFamily: 'Outfit_500Medium' }}>
+                Paid ({loanPayments.length})
+              </ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.scheduleTogglePill, scheduleTab === 'all' && { backgroundColor: currColors.card }]}
+              onPress={() => {
+                handleHaptic();
+                setScheduleTab('all');
+              }}
+            >
+              <ThemedText style={{ fontSize: 11, color: scheduleTab === 'all' ? '#00C9A7' : currColors.textSecondary, fontFamily: 'Outfit_500Medium' }}>
+                All
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {loanPayments.length === 0 ? (
+        {filteredSchedule.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
-            <ThemedText style={{ color: currColors.textSecondary, textAlign: 'center' }}>
-              No payments logged yet. Log your first monthly payment using the button above.
+            <Info size={32} color={currColors.textSecondary} style={{ marginBottom: 6 }} />
+            <ThemedText style={{ color: currColors.textSecondary, textAlign: 'center', fontFamily: 'Outfit_400Regular', fontSize: 13 }}>
+              {scheduleTab === 'paid' ? 'No EMI payments logged yet.' : 'No schedule rows available.'}
             </ThemedText>
           </View>
         ) : (
-          <View style={[styles.timelineContainer, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
-            {loanPayments.map((p, idx) => (
-              <View key={p.id} style={styles.timelineItem}>
-                <View style={styles.timelineLeft}>
-                  <View style={[styles.timelineDot, { backgroundColor: config.color }]} />
-                  {idx !== loanPayments.length - 1 && (
-                    <View style={[styles.timelineLine, { backgroundColor: currColors.border }]} />
-                  )}
-                </View>
-                <View style={styles.timelineContent}>
-                  <View style={styles.timelineHeaderRow}>
-                    <ThemedText style={[styles.timelineTitle, { color: currColors.text }]}>
-                      EMI Paid: {formatAmount(p.amount)}
-                    </ThemedText>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <ThemedText style={[styles.timelineDate, { color: currColors.textSecondary }]}>
-                        {new Date(p.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+          <View style={[styles.paymentListCard, { backgroundColor: currColors.card, borderColor: currColors.border }]}>
+            {filteredSchedule.map((row, index) => {
+              const isLast = index === filteredSchedule.length - 1;
+              return (
+                <View
+                  key={row.id || row.monthLabel}
+                  style={[
+                    styles.paymentRow,
+                    !isLast && { borderBottomWidth: 1, borderBottomColor: currColors.border },
+                    row.isUpcoming && { backgroundColor: 'rgba(0, 201, 167, 0.04)' },
+                  ]}
+                >
+                  <View style={styles.paymentLeft}>
+                    <View
+                      style={[
+                        styles.statusIconWrapper,
+                        {
+                          backgroundColor: row.isPrepayment
+                            ? 'rgba(255, 149, 0, 0.12)'
+                            : row.isPaid
+                            ? 'rgba(52, 199, 89, 0.12)'
+                            : row.isUpcoming
+                            ? 'rgba(0, 201, 167, 0.12)'
+                            : currColors.cardSecondary,
+                        },
+                      ]}
+                    >
+                      {row.isPrepayment ? (
+                        <Zap size={14} color="#FF9500" />
+                      ) : (
+                        <ThemedText
+                          style={{
+                            fontSize: 12,
+                            fontFamily: 'Outfit_600SemiBold',
+                            color: row.isPaid
+                              ? '#34C759'
+                              : row.isUpcoming
+                              ? '#00C9A7'
+                              : currColors.textSecondary,
+                          }}
+                        >
+                          {row.emiNumber}
+                        </ThemedText>
+                      )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <ThemedText style={[styles.paymentMonth, { color: currColors.text }]}>
+                          {row.monthLabel}
+                        </ThemedText>
+                        {row.isPrepayment ? (
+                          <View style={[styles.upcomingBadge, { backgroundColor: 'rgba(255, 149, 0, 0.15)' }]}>
+                            <ThemedText style={[styles.upcomingBadgeText, { color: '#FF9500' }]}>PREPAY</ThemedText>
+                          </View>
+                        ) : row.isUpcoming ? (
+                          <View style={[styles.upcomingBadge, { backgroundColor: 'rgba(0, 201, 167, 0.15)' }]}>
+                            <ThemedText style={styles.upcomingBadgeText}>NEXT</ThemedText>
+                          </View>
+                        ) : null}
+                      </View>
+                      <ThemedText style={[styles.paymentBreakdown, { color: currColors.textSecondary }]}>
+                        {row.isPrepayment
+                          ? `Principal Prepayment: ${formatAmount(row.principalPortion)}`
+                          : `Principal: ${formatAmount(row.principalPortion)} • Interest: ${formatAmount(row.interestPortion)}`}
                       </ThemedText>
-                      <TouchableOpacity onPress={() => handleDeletePayment(p)} style={{ padding: 4 }}>
-                        <Trash2 size={14} color="#FF3B30" />
-                      </TouchableOpacity>
                     </View>
                   </View>
-                  <ThemedText style={[styles.timelineSub, { color: currColors.textSecondary }]}>
-                    Principal: {formatAmount(p.principalPortion)} • Interest: {formatAmount(p.interestPortion)}
-                  </ThemedText>
+
+                  <View style={styles.paymentRight}>
+                    <ThemedText
+                      style={[
+                        styles.paymentAmount,
+                        { color: row.isPaid ? '#34C759' : currColors.text },
+                      ]}
+                    >
+                      {formatAmount(row.emi)}
+                    </ThemedText>
+                    <ThemedText style={[styles.paymentBalance, { color: currColors.textSecondary }]}>
+                      Bal: {formatAmount(row.endBalance)}
+                    </ThemedText>
+                  </View>
+
+                  {row.isPaid && row.paymentRef && (
+                    <TouchableOpacity
+                      onPress={() => handleDeletePayment(row.paymentRef!)}
+                      style={styles.deletePaymentBtn}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Trash2 size={14} color="#FF3B30" />
+                    </TouchableOpacity>
+                  )}
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>
 
-      {/* Log EMI Payment Modal */}
+      {/* ─── Log EMI Payment Modal ─── */}
       <Modal visible={showLogPaymentModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView
@@ -825,7 +749,6 @@ export default function LoanDetailsScreen() {
           >
             <View style={[styles.modalContent, { backgroundColor: currColors.card }]}>
               {showAccountSelector ? (
-                // RENDER ACCOUNT SELECTOR LIST DIRECTLY IN MODAL SHEET (Prevents iOS nested modal collision)
                 <View style={{ width: '100%', minHeight: 300, maxHeight: 450 }}>
                   <View style={[styles.modalHeader, { borderBottomColor: currColors.border, marginBottom: 12 }]}>
                     <ThemedText style={[styles.modalTitle, { color: currColors.text }]}>
@@ -849,8 +772,8 @@ export default function LoanDetailsScreen() {
                           setShowAccountSelector(false);
                         }}
                       >
-                        <ThemedText style={{ color: currColors.text, fontSize: 16 }}>{item.name}</ThemedText>
-                        <ThemedText style={{ color: currColors.textSecondary, fontSize: 12 }}>
+                        <ThemedText style={{ color: currColors.text, fontSize: 15, fontFamily: 'Outfit_400Regular' }}>{item.name}</ThemedText>
+                        <ThemedText style={{ color: currColors.textSecondary, fontSize: 13, fontFamily: 'Outfit_400Regular' }}>
                           {formatAmount(item.balance)}
                         </ThemedText>
                       </TouchableOpacity>
@@ -858,7 +781,6 @@ export default function LoanDetailsScreen() {
                   />
                 </View>
               ) : showCategorySelector ? (
-                // RENDER CATEGORY SELECTOR LIST DIRECTLY IN MODAL SHEET
                 <View style={{ width: '100%', minHeight: 300, maxHeight: 450 }}>
                   <View style={[styles.modalHeader, { borderBottomColor: currColors.border, marginBottom: 12 }]}>
                     <ThemedText style={[styles.modalTitle, { color: currColors.text }]}>
@@ -882,15 +804,13 @@ export default function LoanDetailsScreen() {
                           setShowCategorySelector(false);
                         }}
                       >
-                        <ThemedText style={{ color: currColors.text, fontSize: 16 }}>{item}</ThemedText>
+                        <ThemedText style={{ color: currColors.text, fontSize: 15, fontFamily: 'Outfit_400Regular' }}>{item}</ThemedText>
                       </TouchableOpacity>
                     )}
                   />
                 </View>
               ) : (
-                // RENDER LOG LOAN PAYMENT INPUTS
                 <>
-                  {/* Header */}
                   <View style={[styles.modalHeader, { borderBottomColor: currColors.border }]}>
                     <ThemedText style={[styles.modalTitle, { color: currColors.text }]}>
                       Log Loan Payment
@@ -900,7 +820,6 @@ export default function LoanDetailsScreen() {
                     </TouchableOpacity>
                   </View>
 
-                  {/* Amount input */}
                   <View style={styles.modalInputGroup}>
                     <ThemedText style={[styles.modalLabel, { color: currColors.textSecondary }]}>PAYMENT AMOUNT</ThemedText>
                     <TextInput
@@ -913,7 +832,6 @@ export default function LoanDetailsScreen() {
                     />
                   </View>
 
-                  {/* Account Selector */}
                   <View style={styles.modalInputGroup}>
                     <ThemedText style={[styles.modalLabel, { color: currColors.textSecondary }]}>PAY FROM ACCOUNT</ThemedText>
                     <TouchableOpacity
@@ -923,14 +841,13 @@ export default function LoanDetailsScreen() {
                         setShowAccountSelector(true);
                       }}
                     >
-                      <ThemedText style={{ color: selectedAccountId ? currColors.text : currColors.textSecondary, fontSize: 16 }}>
+                      <ThemedText style={{ color: selectedAccountId ? currColors.text : currColors.textSecondary, fontSize: 15, fontFamily: 'Outfit_400Regular' }}>
                         {accounts.find(a => a.id === selectedAccountId)?.name || 'Select Account'}
                       </ThemedText>
                       <ChevronDown size={18} color={currColors.textSecondary} />
                     </TouchableOpacity>
                   </View>
 
-                  {/* Category Selector */}
                   <View style={styles.modalInputGroup}>
                     <ThemedText style={[styles.modalLabel, { color: currColors.textSecondary }]}>EXPENSE CATEGORY</ThemedText>
                     <TouchableOpacity
@@ -940,7 +857,7 @@ export default function LoanDetailsScreen() {
                         setShowCategorySelector(true);
                       }}
                     >
-                      <ThemedText style={{ color: selectedCategory ? currColors.text : currColors.textSecondary, fontSize: 16 }}>
+                      <ThemedText style={{ color: selectedCategory ? currColors.text : currColors.textSecondary, fontSize: 15, fontFamily: 'Outfit_400Regular' }}>
                         {selectedCategory || 'Select Category'}
                       </ThemedText>
                       <ChevronDown size={18} color={currColors.textSecondary} />
@@ -949,33 +866,33 @@ export default function LoanDetailsScreen() {
 
                   {/* Dynamic split details info card */}
                   {(() => {
-                    const parsedAmt = parseFloat(paymentAmount) || 0;
+                    const parsedAmt = parseIndianAmount(paymentAmount) || 0;
                     const r_rate = (loan.interestRate / 12) / 100;
-                    const standardInterest = loan.outstandingAmount * r_rate;
+                    const standardInterest = effectiveOutstanding * r_rate;
                     
                     const dispInterest = Math.min(standardInterest, parsedAmt);
-                    const dispPrincipal = Math.min(loan.outstandingAmount, parsedAmt - dispInterest);
+                    const dispPrincipal = Math.min(effectiveOutstanding, parsedAmt - dispInterest);
                     const extraPrepayment = Math.max(0, parsedAmt - loan.emiAmount);
 
                     return (
                       <View style={[styles.splitInfoCard, { backgroundColor: currColors.cardSecondary }]}>
                         <View style={styles.splitRow}>
-                          <ThemedText style={{ fontSize: 12, color: currColors.textSecondary }}>Interest Portion:</ThemedText>
-                          <ThemedText style={{ fontSize: 13, fontFamily: 'Outfit_600SemiBold', color: '#FF3B30' }}>
+                          <ThemedText style={{ fontSize: 12, color: currColors.textSecondary, fontFamily: 'Outfit_400Regular' }}>Interest Portion:</ThemedText>
+                          <ThemedText style={{ fontSize: 13, fontFamily: 'Outfit_500Medium', color: '#FF3B30' }}>
                             {formatAmount(dispInterest)}
                           </ThemedText>
                         </View>
                         <View style={styles.splitRow}>
-                          <ThemedText style={{ fontSize: 12, color: currColors.textSecondary }}>Principal Portion:</ThemedText>
-                          <ThemedText style={{ fontSize: 13, fontFamily: 'Outfit_600SemiBold', color: '#34C759' }}>
+                          <ThemedText style={{ fontSize: 12, color: currColors.textSecondary, fontFamily: 'Outfit_400Regular' }}>Principal Portion:</ThemedText>
+                          <ThemedText style={{ fontSize: 13, fontFamily: 'Outfit_500Medium', color: '#34C759' }}>
                             {formatAmount(dispPrincipal)}
                           </ThemedText>
                         </View>
                         {extraPrepayment > 0 ? (
                           <View style={[styles.splitRow, { borderTopWidth: 1, borderTopColor: currColors.border, paddingTop: 8, marginTop: 4, borderStyle: 'dashed' }]}>
-                            <ThemedText style={{ fontSize: 12, color: '#00C9A7', fontFamily: 'Outfit_600SemiBold' }}>Extra Principal Adjustment:</ThemedText>
-                            <ThemedText style={{ fontSize: 13, fontFamily: 'Outfit_600SemiBold', color: '#00C9A7' }}>
-                              {formatAmount(extraPrepayment)}
+                            <ThemedText style={{ fontSize: 12, color: '#00C9A7', fontFamily: 'Outfit_500Medium' }}>Extra Principal Adjustment:</ThemedText>
+                            <ThemedText style={{ fontSize: 13, fontFamily: 'Outfit_500Medium', color: '#00C9A7' }}>
+                              +{formatAmount(extraPrepayment)}
                             </ThemedText>
                           </View>
                         ) : null}
@@ -983,7 +900,6 @@ export default function LoanDetailsScreen() {
                     );
                   })()}
 
-                  {/* Submit CTA */}
                   <TouchableOpacity
                     style={[styles.modalSubmitBtn, { backgroundColor: config.color }]}
                     onPress={handleConfirmLogPayment}
@@ -1017,9 +933,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1035,9 +951,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerIconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1046,349 +962,295 @@ const styles = StyleSheet.create({
   },
   outstandingCard: {
     marginHorizontal: 16,
-    borderRadius: 24,
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 20,
-    marginTop: 8,
+    padding: 18,
+    marginTop: 4,
+    marginBottom: 14,
   },
-  indicatorPill: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 16,
+  heroHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  indicatorText: {
-    fontSize: 10,
-    fontFamily: 'Outfit_600SemiBold',
-    letterSpacing: 0.5,
-  },
-  balanceLabel: {
+  heroLabel: {
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    marginBottom: 6,
   },
-  balanceText: {
+  indicatorPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  indicatorText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  heroValue: {
     fontSize: 24,
     fontWeight: '400',
     fontFamily: 'Outfit_400Regular',
-  },
-  progressSection: {
-    marginTop: 18,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   progressBarBG: {
     height: 6,
     borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   progressBarFill: {
     height: '100%',
     borderRadius: 3,
   },
-  progressLabels: {
+  progressMetaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  detailsGrid: {
-    borderTopWidth: 1,
-    marginTop: 18,
-    paddingTop: 18,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  progressMetaText: {
+    fontSize: 11,
+    fontFamily: 'Outfit_400Regular',
+  },
+  dashedDivider: {
+    height: 1,
+    borderWidth: 1,
     borderStyle: 'dashed',
+    borderRadius: 1,
+    marginVertical: 14,
   },
-  detailsCol: {
-    alignItems: 'flex-start',
+  heroRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  detailLabel: {
-    fontSize: 10,
-    marginBottom: 4,
+  heroRowLabel: {
+    fontSize: 14,
+    fontFamily: 'Outfit_400Regular',
   },
-  detailVal: {
+  heroRowValue: {
     fontSize: 14,
     fontWeight: '400',
     fontFamily: 'Outfit_400Regular',
   },
-  linkedAccountRow: {
+
+  // Action Pills Row
+  actionPillRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 18,
-  },
-  payEmiBtn: {
     marginHorizontal: 16,
-    marginTop: 14,
-    height: 52,
-    borderRadius: 16,
+    gap: 10,
+    marginBottom: 16,
+  },
+  primaryActionPill: {
+    flex: 1.5,
+    height: 44,
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 8,
   },
-  payEmiBtnText: {
+  primaryActionText: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontFamily: 'Outfit_600SemiBold',
-  },
-  sectionContainer: {
-    marginHorizontal: 16,
-    marginTop: 16,
-  },
-  sectionHeaderClickable: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-  },
-  clickableHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  clickableHeaderTitle: {
     fontSize: 14,
     fontFamily: 'Outfit_600SemiBold',
   },
-  calculatorBody: {
-    borderWidth: 1,
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-    padding: 16,
-    marginTop: -8,
-    paddingTop: 24,
-    zIndex: -1,
-  },
-  calcLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  calcInputRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  calcInput: {
+  secondaryActionPill: {
     flex: 1,
-    height: 48,
+    height: 44,
+    borderRadius: 12,
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    fontFamily: 'Outfit_400Regular',
-  },
-  calcBtn: {
-    width: 80,
-    height: 48,
-    borderRadius: 10,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
   },
-  calcBtnText: {
-    color: '#FFFFFF',
+  secondaryActionText: {
+    fontSize: 14,
     fontFamily: 'Outfit_600SemiBold',
   },
-  savingsCard: {
+
+  // Schedule & Tabs
+  scheduleHeaderRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    borderRadius: 12,
-    padding: 12,
-    gap: 12,
-  },
-  savingsCol: {
-    flex: 1,
-  },
-  sectionHeader: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginHorizontal: 16,
-    marginTop: 28,
-    marginBottom: 12,
+    marginBottom: 10,
+    marginTop: 4,
   },
   sectionTitle: {
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
+    textTransform: 'uppercase',
   },
-  emptyCard: {
-    marginHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 24,
-  },
-  amortCard: {
-    marginHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 16,
-  },
-  amortRowHeader: {
+  scheduleToggleBar: {
     flexDirection: 'row',
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    marginBottom: 8,
+    borderRadius: 8,
+    padding: 2,
   },
-  amortColHeader: {
-    flex: 1,
-    fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
-    color: '#8E8E93',
+  scheduleTogglePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
-  amortColHeaderRight: {
-    flex: 1.2,
-    fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
-    color: '#8E8E93',
-    textAlign: 'right',
-  },
-  amortRow: {
-    flexDirection: 'row',
-    paddingVertical: 8,
-  },
-  amortColText: {
-    flex: 1,
-    fontSize: 12,
-    fontFamily: 'Outfit_500Medium',
-  },
-  amortColTextRight: {
-    flex: 1.2,
-    fontSize: 12,
-    fontFamily: 'Outfit_600SemiBold',
-    textAlign: 'right',
-  },
-  timelineContainer: {
+  paymentListCard: {
     marginHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 16,
+    overflow: 'hidden',
+    marginBottom: 20,
   },
-  timelineItem: {
-    flexDirection: 'row',
-    paddingBottom: 16,
-  },
-  timelineLeft: {
-    alignItems: 'center',
-    marginRight: 16,
-    width: 12,
-  },
-  timelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginTop: 5,
-  },
-  timelineLine: {
-    width: 2,
-    flex: 1,
-    marginTop: 6,
-  },
-  timelineContent: {
-    flex: 1,
-  },
-  timelineHeaderRow: {
+  paymentRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
-  timelineTitle: {
+  paymentLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  statusIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  paymentMonth: {
+    fontSize: 13,
+    fontFamily: 'Outfit_500Medium',
+  },
+  upcomingBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  upcomingBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    color: '#00C9A7',
+  },
+  paymentBreakdown: {
+    fontSize: 11,
+    fontFamily: 'Outfit_400Regular',
+    marginTop: 2,
+  },
+  paymentRight: {
+    alignItems: 'flex-end',
+    marginLeft: 8,
+  },
+  paymentAmount: {
     fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
+    fontFamily: 'Outfit_500Medium',
   },
-  timelineDate: {
+  paymentBalance: {
     fontSize: 11,
+    fontFamily: 'Outfit_400Regular',
+    marginTop: 2,
   },
-  timelineSub: {
-    fontSize: 11,
-    marginTop: 4,
+  deletePaymentBtn: {
+    padding: 6,
+    marginLeft: 6,
   },
+  emptyCard: {
+    marginHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+    borderStyle: 'dashed',
+    marginBottom: 20,
+  },
+
+  // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     justifyContent: 'flex-end',
   },
   modalContent: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
-  },
-  nestedModalContent: {
-    height: '50%',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
+    paddingBottom: 36,
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: 16,
+    alignItems: 'center',
     borderBottomWidth: 1,
-    marginBottom: 8,
+    paddingBottom: 12,
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Outfit_600SemiBold',
   },
   modalInputGroup: {
-    marginTop: 20,
+    marginBottom: 14,
   },
   modalLabel: {
     fontSize: 10,
-    fontFamily: 'Outfit_500Medium',
+    fontWeight: '700',
     letterSpacing: 1,
-    marginBottom: 8,
+    textTransform: 'uppercase',
+    marginBottom: 6,
   },
   modalAmountInput: {
-    fontSize: 30,
-    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 22,
+    fontFamily: 'Outfit_400Regular',
     borderBottomWidth: 1,
-    paddingVertical: 8,
-    textAlign: 'center',
+    paddingVertical: 6,
   },
   modalSelectBox: {
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    alignItems: 'center',
+    height: 46,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 14,
   },
   splitInfoCard: {
-    borderRadius: 14,
-    padding: 14,
-    marginTop: 20,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
   },
   splitRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
+    marginBottom: 4,
   },
   modalSubmitBtn: {
-    height: 52,
+    height: 48,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 6,
   },
   modalSubmitBtnText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Outfit_600SemiBold',
   },
   modalItem: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    alignItems: 'center',
+    paddingVertical: 14,
     borderBottomWidth: 1,
   },
 });
