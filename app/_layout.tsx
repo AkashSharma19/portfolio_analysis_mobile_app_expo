@@ -240,10 +240,6 @@ function RootLayoutNav() {
             name="ai-chat"
             options={{ animation: 'slide_from_right', headerShown: false }}
           />
-          <Stack.Screen
-            name="ticker-mapping"
-            options={{ animation: 'slide_from_right', headerShown: false }}
-          />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

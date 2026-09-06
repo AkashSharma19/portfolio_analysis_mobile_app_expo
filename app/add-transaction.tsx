@@ -1,9 +1,9 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
-import { searchMasterStocks } from '@/constants/NSE_COMPANIES';
+
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Ticker, TransactionType } from '@/types';
-import { getCompanyLogoUrl, searchYahooTickers } from '@/services/yahooFinanceService';
+import { getCompanyLogoUrl } from '@/services/logoService';
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
@@ -64,27 +64,6 @@ export default function AddTransactionScreen() {
   const [showSymbolModal, setShowSymbolModal] = useState(false);
   const [showBrokerModal, setShowBrokerModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
-  const [onlineResults, setOnlineResults] = useState<Ticker[]>([]);
-
-  // Debounced online Yahoo search for assets not found in local/master datasets
-  useEffect(() => {
-    if (!searchQuery || searchQuery.trim().length < 2) {
-      setOnlineResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      try {
-        setIsSearchingOnline(true);
-        const res = await searchYahooTickers(searchQuery);
-        setOnlineResults(res);
-      } catch (e) {
-      } finally {
-        setIsSearchingOnline(false);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   // Calculate holdings map for badges and guards
   const holdingsMap = useMemo(() => {
@@ -133,42 +112,13 @@ export default function AddTransactionScreen() {
     if (!searchQuery || !searchQuery.trim()) return tickers;
     const query = searchQuery.trim().toLowerCase();
 
-    // 1. Matches from locally stored tickers (holdings / cached)
-    const localMatches = tickers.filter(
-      (t) =>
-        (t.Tickers && t.Tickers.toLowerCase().includes(query)) ||
-        (t['Company Name'] && t['Company Name'].toLowerCase().includes(query)),
-    );
-    const localSymbols = new Set(
-      localMatches.map((t) => t.Tickers.trim().toUpperCase()),
-    );
-
-    // 2. Matches from master stock dictionary (2,600+ NSE, ETFs, and US companies)
-    const masterMatches = searchMasterStocks(query, 35);
-    const additionalMatches: Ticker[] = masterMatches
-      .filter((m) => !localSymbols.has(m.symbol.trim().toUpperCase()))
-      .map((m) => ({
-        Tickers: m.symbol,
-        'Company Name': m.name,
-        'Current Value': 0,
-        'Asset Type': m.name.toLowerCase().includes('etf') || m.name.toLowerCase().includes('bees') ? 'ETF' : (m.name.toLowerCase().includes('fund') ? 'Mutual Fund' : 'Equity'),
-        Sector: m.sector || 'General',
-        Logo: getCompanyLogoUrl(m.symbol, m.name),
-        'Yesterday Close': 0,
-      }));
-
-    const knownSet = new Set([
-      ...localMatches.map((t) => t.Tickers.trim().toUpperCase()),
-      ...additionalMatches.map((t) => t.Tickers.trim().toUpperCase()),
-    ]);
-
-    // 3. Matches from real-time online Yahoo search
-    const onlineAdditional = onlineResults.filter(
-      (o) => !knownSet.has(o.Tickers.trim().toUpperCase())
-    );
-
-    return [...localMatches, ...additionalMatches, ...onlineAdditional];
-  }, [searchQuery, tickers, onlineResults]);
+    return tickers.filter((t) => {
+      const sym = (t.Tickers || '').toLowerCase();
+      const name = (t['Company Name'] || '').toLowerCase();
+      const rawSym = sym.replace(/^(NSE|BOM|BSE|NASDAQ|NYSE|INDEX|INDEXNSE|INDEXBOM|INDEXSP|MUTF_IN|MUTF):/i, '');
+      return sym.includes(query) || name.includes(query) || rawSym.includes(query);
+    });
+  }, [searchQuery, tickers]);
 
   const existingBrokers = useMemo(() => {
     const brokers = new Set(transactions.map((t) => t.broker).filter(Boolean));
@@ -217,7 +167,7 @@ export default function AddTransactionScreen() {
       setPrice(item['Current Value'].toString());
     }
 
-    // Fetch real-time live price from Yahoo Finance
+    // Fetch real-time live price from portfolio store
     try {
       const live = await fetchSingleTicker(item.Tickers);
       if (live && live['Current Value'] > 0 && !editingTransaction) {
@@ -666,9 +616,6 @@ export default function AddTransactionScreen() {
               onChangeText={setSearchQuery}
               autoFocus
             />
-            {isSearchingOnline && (
-              <ActivityIndicator size="small" color={currColors.tint} style={{ marginRight: 6 }} />
-            )}
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
                 <X size={16} color={currColors.textSecondary} />
@@ -832,24 +779,16 @@ export default function AddTransactionScreen() {
                       borderRadius: 12,
                       gap: 8,
                     }}
-                    onPress={async () => {
+                    onPress={() => {
                       const cleanSym = searchQuery.trim().toUpperCase();
-                      setIsSearchingOnline(true);
-                      const res = await fetchSingleTicker(cleanSym);
-                      setIsSearchingOnline(false);
-                      if (res) {
-                        selectTicker(res);
-                      } else {
-                        // Manual fallback entry
-                        setSymbol(cleanSym);
-                        setShowSymbolModal(false);
-                        setSearchQuery('');
-                      }
+                      setSymbol(cleanSym);
+                      setShowSymbolModal(false);
+                      setSearchQuery('');
                     }}
                   >
                     <Search size={16} color={colorScheme === 'dark' ? '#000' : '#FFF'} />
                     <ThemedText style={{ color: colorScheme === 'dark' ? '#000' : '#FFF', fontWeight: '600' }}>
-                      {isSearchingOnline ? 'Looking up Yahoo Finance...' : `Look up "${searchQuery.trim().toUpperCase()}" Live`}
+                      Use "{searchQuery.trim().toUpperCase()}"
                     </ThemedText>
                   </TouchableOpacity>
                 )}

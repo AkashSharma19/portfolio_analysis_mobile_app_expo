@@ -4,7 +4,7 @@ import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { format } from 'date-fns';
 import { formatIndianNumber } from '@/lib/finance';
 import { MASTER_STOCKS_LIST, inferSector } from '@/constants/NSE_COMPANIES';
-import { getCompanyLogoUrl } from '@/services/yahooFinanceService';
+import { getCompanyLogoUrl } from '@/services/logoService';
 import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { BackButton } from '@/components/BackButton';
@@ -50,7 +50,7 @@ export default function StockDetailsScreen() {
   );
   const calculateSummary = usePortfolioStore((state) => state.calculateSummary);
   const fetchSingleTicker = usePortfolioStore((state) => state.fetchSingleTicker);
-  const getTickerSource = usePortfolioStore((state) => state.getTickerSource);
+
 
   const colorScheme = useColorScheme() ?? 'dark';
   const currColors = Colors[colorScheme];
@@ -305,24 +305,7 @@ export default function StockDetailsScreen() {
             {holding.companyName}
           </ThemedText>
         </View>
-        <TouchableOpacity
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.push('/ticker-mapping');
-          }}
-          style={{
-            width: 36,
-            height: 36,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 18,
-            backgroundColor: currColors.card,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: currColors.border,
-          }}
-        >
-          <ArrowRightLeft size={16} color={currColors.text} />
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
@@ -414,30 +397,6 @@ export default function StockDetailsScreen() {
                   >
                     {holding.quantity > 0 ? 'CURRENT VALUE' : 'CURRENT PRICE'}
                   </ThemedText>
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      router.push('/ticker-mapping');
-                    }}
-                    style={{
-                      backgroundColor: getTickerSource(holding.symbol) === 'yahoo'
-                        ? 'rgba(52, 199, 89, 0.12)'
-                        : 'rgba(255, 149, 0, 0.12)',
-                      paddingHorizontal: 6,
-                      paddingVertical: 2,
-                      borderRadius: 4,
-                    }}
-                  >
-                    <ThemedText
-                      style={{
-                        fontSize: 10,
-                        fontWeight: '600',
-                        color: getTickerSource(holding.symbol) === 'yahoo' ? '#34C759' : '#FF9500',
-                      }}
-                    >
-                      {getTickerSource(holding.symbol) === 'yahoo' ? 'Yahoo Live' : 'Google Sheet (Remap)'}
-                    </ThemedText>
-                  </TouchableOpacity>
                 </View>
                 <ThemedText style={[styles.heroValue, { color: currColors.text, marginBottom: 0 }]}>
                   {isPrivacyMode

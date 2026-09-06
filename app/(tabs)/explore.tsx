@@ -1,10 +1,10 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
-import { searchMasterStocks } from '@/constants/NSE_COMPANIES';
+
 import { getSectorIcon } from '@/constants/Sectors';
 import { usePortfolioStore } from '@/store/usePortfolioStore';
 import { Ticker } from '@/types';
-import { getCompanyLogoUrl, searchYahooTickers } from '@/services/yahooFinanceService';
+import { getCompanyLogoUrl } from '@/services/logoService';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -66,26 +66,6 @@ export default function ExploreScreen() {
   const [filterAssetType, setFilterAssetType] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
-  const [onlineResults, setOnlineResults] = useState<Ticker[]>([]);
-
-  useEffect(() => {
-    if (!searchQuery || searchQuery.trim().length < 2) {
-      setOnlineResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      try {
-        setIsSearchingOnline(true);
-        const res = await searchYahooTickers(searchQuery);
-        setOnlineResults(res);
-      } catch (e) {
-      } finally {
-        setIsSearchingOnline(false);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   const { sector: paramSector } = useLocalSearchParams<{ sector?: string }>();
 
@@ -118,40 +98,12 @@ export default function ExploreScreen() {
     );
     if (searchQuery && searchQuery.trim()) {
       const query = searchQuery.trim().toLowerCase();
-      const localMatches = result.filter(
-        (item) =>
-          (item['Company Name'] &&
-            item['Company Name'].toLowerCase().includes(query)) ||
-          (item.Tickers && item.Tickers.toLowerCase().includes(query)),
-      );
-      const localSymbols = new Set(
-        localMatches.map((t) => t.Tickers.trim().toUpperCase()),
-      );
-
-      // Search 2,578+ NSE & US Equities by Company Name and Ticker Symbol
-      const masterMatches = searchMasterStocks(query, 35);
-      const additional: Ticker[] = masterMatches
-        .filter((m) => !localSymbols.has(m.symbol.trim().toUpperCase()))
-        .map((m) => ({
-          Tickers: m.symbol,
-          'Company Name': m.name,
-          'Current Value': 0,
-          'Asset Type': m.name.toLowerCase().includes('etf') || m.name.toLowerCase().includes('bees') ? 'ETF' : 'Equity',
-          Sector: m.sector || 'General',
-          Logo: getCompanyLogoUrl(m.symbol, m.name),
-          'Yesterday Close': 0,
-        }));
-
-      const knownSet = new Set([
-        ...localMatches.map((t) => t.Tickers.trim().toUpperCase()),
-        ...additional.map((t) => t.Tickers.trim().toUpperCase()),
-      ]);
-
-      const onlineAdditional = onlineResults.filter(
-        (o) => !knownSet.has(o.Tickers.trim().toUpperCase())
-      );
-
-      result = [...localMatches, ...additional, ...onlineAdditional];
+      result = result.filter((item) => {
+        const sym = (item.Tickers || '').toLowerCase();
+        const name = (item['Company Name'] || '').toLowerCase();
+        const rawSym = sym.replace(/^(NSE|BOM|BSE|NASDAQ|NYSE|INDEX|INDEXNSE|INDEXBOM|INDEXSP|MUTF_IN|MUTF):/i, '');
+        return sym.includes(query) || name.includes(query) || rawSym.includes(query);
+      });
     } else if (!isSearchFocused) {
       // If no search query and search not focused, only show watchlist
       result = result.filter((item) => watchlist.includes(item.Tickers));
@@ -183,7 +135,7 @@ export default function ExploreScreen() {
 
       return bChange - aChange;
     });
-  }, [tickers, searchQuery, filterAssetType, watchlist, isSearchFocused, onlineResults]);
+  }, [tickers, searchQuery, filterAssetType, watchlist, isSearchFocused]);
 
   const indicesData = useMemo(() => {
     return tickers.filter((t) => t['Asset Type'] === 'Index');
@@ -872,37 +824,6 @@ export default function ExploreScreen() {
                       ? `No local records for "${searchQuery}"`
                       : 'Your watchlist is empty.\nSearch for companies to add them.'}
                   </ThemedText>
-                  {searchQuery.trim().length > 0 && (
-                    <TouchableOpacity
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: currColors.tint,
-                        paddingHorizontal: 20,
-                        paddingVertical: 12,
-                        borderRadius: 12,
-                        gap: 8,
-                      }}
-                      onPress={async () => {
-                        const cleanSym = searchQuery.trim().toUpperCase();
-                        setIsSearchingOnline(true);
-                        const res = await fetchSingleTicker(cleanSym);
-                        setIsSearchingOnline(false);
-                        if (res) {
-                          router.push(`/stock-details/${res.Tickers}`);
-                        }
-                      }}
-                    >
-                      {isSearchingOnline ? (
-                        <ActivityIndicator size="small" color={colorScheme === 'dark' ? '#000' : '#FFF'} />
-                      ) : (
-                        <Ionicons name="cloud-download-outline" size={18} color={colorScheme === 'dark' ? '#000' : '#FFF'} />
-                      )}
-                      <ThemedText style={{ color: colorScheme === 'dark' ? '#000' : '#FFF', fontWeight: '600' }}>
-                        {isSearchingOnline ? 'Looking up Yahoo Finance...' : `Look up "${searchQuery.trim().toUpperCase()}" Live`}
-                      </ThemedText>
-                    </TouchableOpacity>
-                  )}
                 </View>
               )
             }

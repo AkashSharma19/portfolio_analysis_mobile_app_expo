@@ -26,7 +26,6 @@ export interface Ticker {
   PE?: number | string | null;
   DividendYield?: number | string | null;
   DebtToEquity?: number | string | null;
-  source?: 'yahoo' | 'sheet';
   [key: string]: string | number | undefined | null; // Support for dynamic 'Today - X' keys
 }
 
