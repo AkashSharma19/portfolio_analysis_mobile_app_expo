@@ -17,6 +17,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ChevronRight, Search, X, Check, ArrowLeftRight } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -403,61 +404,101 @@ export default function AddMoneyTransactionScreen() {
                 </TouchableOpacity>
               ) : null}
 
-              {/* ACCOUNT ROW (Source Account) */}
-              <TouchableOpacity
-                style={[
-                  styles.formRow,
-                  type !== 'transfer' && styles.formRowLast,
-                  type === 'transfer' && { borderBottomColor: currColors.border },
-                ]}
-                onPress={() => setShowAccountModal(true)}
-                activeOpacity={0.7}
-              >
-                <ThemedText style={[styles.label, { color: currColors.text }]}>
-                  {type === 'transfer' ? 'From Account' : 'Account'}
-                </ThemedText>
-                <View style={styles.valueContainer}>
-                  {sourceAccount ? (
-                    <View style={styles.categoryBadge}>
-                      <AccountLogoOrIcon account={sourceAccount} size={20} />
-                      <ThemedText style={[styles.valueText, { color: currColors.text }]}>
-                        {sourceAccount.name}
-                      </ThemedText>
-                    </View>
-                  ) : (
-                    <ThemedText style={[styles.valueText, styles.placeholderText, { color: currColors.textSecondary }]}>
-                      Select Account
-                    </ThemedText>
-                  )}
-                  <ChevronRight size={16} color={currColors.border} style={{ marginLeft: 6 }} />
-                </View>
-              </TouchableOpacity>
-
-              {/* TO ACCOUNT ROW (Transfer only) */}
+              {/* ACCOUNT ROW: Merged From/To for Transfer, Single row for Expense/Income */}
               {type === 'transfer' ? (
+                <View style={[styles.formRow, styles.formRowLast, styles.transferMergedRow]}>
+                  {/* FROM ACCOUNT */}
+                  <TouchableOpacity
+                    style={styles.transferSide}
+                    onPress={() => setShowAccountModal(true)}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={[styles.transferSideLabel, { color: currColors.textSecondary }]}>
+                      FROM ACCOUNT
+                    </ThemedText>
+                    <View style={styles.transferAccountPill}>
+                      {sourceAccount ? (
+                        <>
+                          <AccountLogoOrIcon account={sourceAccount} size={18} />
+                          <ThemedText style={[styles.transferAccountText, { color: currColors.text }]} numberOfLines={1}>
+                            {sourceAccount.name}
+                          </ThemedText>
+                        </>
+                      ) : (
+                        <ThemedText style={[styles.transferAccountText, { color: currColors.textSecondary }]}>
+                          Select
+                        </ThemedText>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* SWAP BUTTON */}
+                  <TouchableOpacity
+                    style={[
+                      styles.transferSwapButton,
+                      { backgroundColor: currColors.cardSecondary, borderColor: currColors.border },
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      const temp = accountId;
+                      setAccountId(toAccountId);
+                      setToAccountId(temp);
+                    }}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <ArrowLeftRight size={13} color="#00C9A7" />
+                  </TouchableOpacity>
+
+                  {/* TO ACCOUNT */}
+                  <TouchableOpacity
+                    style={[styles.transferSide, { alignItems: 'flex-end' }]}
+                    onPress={() => setShowToAccountModal(true)}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={[styles.transferSideLabel, { color: currColors.textSecondary }]}>
+                      TO ACCOUNT
+                    </ThemedText>
+                    <View style={[styles.transferAccountPill, { justifyContent: 'flex-end' }]}>
+                      {destAccount ? (
+                        <>
+                          <ThemedText style={[styles.transferAccountText, { color: currColors.text }]} numberOfLines={1}>
+                            {destAccount.name}
+                          </ThemedText>
+                          <AccountLogoOrIcon account={destAccount} size={18} />
+                        </>
+                      ) : (
+                        <ThemedText style={[styles.transferAccountText, { color: currColors.textSecondary }]}>
+                          Select
+                        </ThemedText>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ) : (
                 <TouchableOpacity
                   style={[styles.formRow, styles.formRowLast]}
-                  onPress={() => setShowToAccountModal(true)}
+                  onPress={() => setShowAccountModal(true)}
                   activeOpacity={0.7}
                 >
-                  <ThemedText style={[styles.label, { color: currColors.text }]}>To Account</ThemedText>
+                  <ThemedText style={[styles.label, { color: currColors.text }]}>Account</ThemedText>
                   <View style={styles.valueContainer}>
-                    {destAccount ? (
+                    {sourceAccount ? (
                       <View style={styles.categoryBadge}>
-                        <AccountLogoOrIcon account={destAccount} size={20} />
+                        <AccountLogoOrIcon account={sourceAccount} size={20} />
                         <ThemedText style={[styles.valueText, { color: currColors.text }]}>
-                          {destAccount.name}
+                          {sourceAccount.name}
                         </ThemedText>
                       </View>
                     ) : (
                       <ThemedText style={[styles.valueText, styles.placeholderText, { color: currColors.textSecondary }]}>
-                        Select Destination
+                        Select Account
                       </ThemedText>
                     )}
                     <ChevronRight size={16} color={currColors.border} style={{ marginLeft: 6 }} />
                   </View>
                 </TouchableOpacity>
-              ) : null}
+              )}
             </View>
 
             {/* DATE & NOTES GROUP */}
@@ -883,5 +924,40 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: Platform.OS === 'ios' ? 24 : 16,
     borderRadius: 12,
+  },
+  transferMergedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  transferSide: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  transferSideLabel: {
+    fontSize: 10,
+    fontFamily: 'Outfit_700Bold',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  transferAccountPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  transferAccountText: {
+    fontSize: 14,
+    fontFamily: 'Outfit_500Medium',
+    flexShrink: 1,
+  },
+  transferSwapButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 8,
   },
 });
